@@ -2,6 +2,7 @@ package iface
 
 import (
 	"math/big"
+	"memoContract/contracts/rolefs"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -101,24 +102,22 @@ type RoleInfo interface {
 
 // RoleFSInfo contains operations related to memo roles and filesystem-payment
 type RoleFSInfo interface {
-	DeployRoleFS()
+	DeployRoleFS() (common.Address, *rolefs.RoleFS, error)
 	// called by owner, which is the deployer
-	SetAddr(common.Address, common.Address, common.Address, common.Address)
-	AddOrder(uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int)
-	SubOrder(uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int)
-	AddRepair(uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte)
-	SubRepair(uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte)
-	ProWithdraw(uint64, uint32, *big.Int, *big.Int, [][]byte)
+	SetAddr(common.Address, common.Address, common.Address, common.Address, common.Address) error
+	AddOrder(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
+	SubOrder(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
+	AddRepair(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
+	SubRepair(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
+	ProWithdraw(common.Address, uint64, uint32, *big.Int, *big.Int, [][]byte) error
 }
 
 // RTokenInfo contains operations related to tokens that memo supported
 type RTokenInfo interface {
-	// called by owner, which is the deployer
-	AddT(common.Address) uint32
-	IsValid(uint32) bool
-	GetTA(uint32) common.Address
-	GetTI(common.Address) (uint32, bool)
-	GetTNum() uint32
+	IsValid(common.Address,uint32) (bool, error)
+	GetTA(common.Address,uint32) (common.Address, error)
+	GetTI(common.Address,common.Address) (uint32, bool, error)
+	GetTNum(common.Address) (uint32, error)
 }
 
 // IssuanceInfo contains deploy Isuance-contract function
