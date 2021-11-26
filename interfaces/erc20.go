@@ -1,37 +1,41 @@
 package iface
 
 import (
-	"github.com/ethereum/go-ethereum/common"
 	"math/big"
+
+	"memoContract/contracts/erc20"
+
+	"github.com/ethereum/go-ethereum/common"
 )
 
 // ERC20Info contains information about memo primary token
 type ERC20Info interface {
-	DeployERC20(string, string)
-	GetName() string
-	GetSymbol() string
-	GetDecimals() uint8
-	GetTotalSupply() *big.Int
-	BalanceOf(common.Address) (*big.Int)
-	Allowance(common.Address, common.Address) (*big.Int)
+	DeployERC20(string, string) (common.Address, *erc20.ERC20, error)
+	GetName(common.Address) (string, error)
+	GetSymbol(common.Address) (string, error)
+	GetDecimals(common.Address) (uint8, error)
+	GetTotalSupply(common.Address) (*big.Int, error)
+	BalanceOf(common.Address, common.Address) (*big.Int, error)
+	Allowance(common.Address, common.Address, common.Address) (*big.Int, error)
 
-	Transfer(common.Address, *big.Int) (bool)
-	Approve(common.Address, *big.Int) (bool)
-	TransferFrom(common.Address, common.Address, *big.Int) (bool)
-	IncreaseAllowance(common.Address, *big.Int) (bool)
-	DecreaseAllowance(common.Address, *big.Int) (bool)
-	MintToken(common.Address, *big.Int) (bool)
-	Burn(*big.Int) (bool)
-	AirDrop([]common.Address, *big.Int) (bool)
+	Transfer(common.Address, common.Address, *big.Int) error
+	Approve(common.Address, common.Address, *big.Int) error
+	TransferFrom(common.Address, common.Address, common.Address, *big.Int) error
+	IncreaseAllowance(common.Address, common.Address, *big.Int) error
+	DecreaseAllowance(common.Address, common.Address, *big.Int) error
+	MintToken(common.Address, common.Address,common.Address, *big.Int) error
+	Burn(common.Address, common.Address, *big.Int) error
+	AirDrop(common.Address, common.Address, []common.Address, *big.Int) error
 }
 
 // AccessControlInfo contains information about token operation permissions
 type AccessControlInfo interface {
-	SetUpRole([32]byte, common.Address) (bool)
-	HasRole([32]byte, common.Address) (bool)
-	RevokeRole([32]byte, common.Address) (bool)
-	RenounceRole([32]byte) (bool)
-	Pause() (bool)
-	Unpause() (bool)
-	GetPaused() (bool)
+	SetUpRole(common.Address, uint8, common.Address) error
+	RevokeRole(common.Address, uint8, common.Address) error
+	RenounceRole(common.Address, uint8) error
+	Pause(common.Address) error
+	Unpause(common.Address) error
+
+	GetPaused(common.Address) (bool, error)
+	HasRole(common.Address, uint8, common.Address) (bool, error)
 }

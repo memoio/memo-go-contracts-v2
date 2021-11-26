@@ -26,7 +26,7 @@ type RoleInfo interface {
 	SetPI(common.Address, common.Address, common.Address, common.Address) error
 
 	// called by anyone to get index
-	Register(common.Address, common.Address, []byte) (uint64, error)
+	Register(common.Address, common.Address, []byte) error
 
 	// called by anyone to register Keeper
 	RegisterKeeper(common.Address, uint64, []byte, []byte) error
@@ -41,10 +41,10 @@ type RoleInfo interface {
 	RegisterToken(common.Address, common.Address) error
 
 	// called by owner
-	CreateGroup(common.Address, []uint64, uint16) (uint64, error)
+	CreateGroup(common.Address, []uint64, uint16) error
 
 	// called by owner to set fsAddress for group after CreateGroup and deployFileSys
-	SetGF(common.Address, uint64, common.Address) error
+	SetGF(common.Address, common.Address, uint64) error
 
 	// called by owner
 	AddKeeperToGroup(common.Address, uint64, uint64) error
@@ -64,7 +64,7 @@ type RoleInfo interface {
 	// get the number of registered addresses
 	GetAddrsNum(common.Address) (uint64, error)
 
-	// get address by array index value(not role index, the array index value is the role index minus 1)
+	// get address by role index
 	GetAddr(common.Address, uint64) (common.Address, error)
 
 	// get the account role index by address
@@ -74,13 +74,10 @@ type RoleInfo interface {
 	GetRoleInfo(common.Address, common.Address) (bool, bool, uint8, uint64, uint64, []byte, error)
 
 	// get the number of groups
-	GetGroupsNum(common.Address, ) (uint64, error)
+	GetGroupsNum(common.Address) (uint64, error)
 
 	// get group information by gIndex
 	GetGroupInfo(common.Address, uint64) (bool, bool, bool, uint16, *big.Int, *big.Int, common.Address, error)
-
-	// get FileSys-contract address by group array index(not gIndex, group array index is gIndex minus 1)
-	GetFsAddr(common.Address, uint64) (common.Address, error)
 
 	// get address and gIndex by array index value
 	GetAddrGindex(common.Address, uint64) (common.Address, uint64, error)

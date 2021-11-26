@@ -31,13 +31,33 @@ const (
 	retryTxSleepTime          = time.Minute
 	retryGetInfoSleepTime     = time.Minute
 	waitTime                  = 3 * time.Second
+
+	// AdminRole indicates the account has Admin right in ERC20 contract
+	AdminRole = uint8(0)
+	// MinterRole indicates the account has Minter right in ERC20 contract
+	MinterRole = uint8(1)
+	// PauserRole indicates the account has Pauser right in ERC20 contract
+	PauserRole = uint8(2)
 )
 
 var (
 	// ErrTxFail indicates that the transaction is not packaged or an error occurred during the packaging process
-	ErrTxFail = errors.New("transaction fails")
+	ErrTxFail = errors.New("Transaction fails")
 	// ErrTxExecu indicates that an error occurred during packaging
 	ErrTxExecu = errors.New("Transaction mined but execution failed")
+	// ErrBalNotE indicates that the account's balance is not enough to do something
+	ErrBalNotE = errors.New("Balance is not enough")
+	// ErrAlloNotE indicates that the account's allowance is not enough to transferfrom
+	ErrAlloNotE = errors.New("Allowance is not enough")
+	// ErrInValAddr indicates that the account address is invalid
+	ErrInValAddr = errors.New("Invalid address")
+	// ErrNoMintRight indicates that the account has not Mint right in erc20 contract
+	ErrNoMintRight = errors.New("The account has not Mint right")
+	// ErrNoPauseRight indicates that the account has not Pause right in erc20 contract
+	ErrNoPauseRight = errors.New("The account has not Pause right")
+	// ErrNoAdminRight indicates that the account has not Admin right in erc20 contract
+	ErrNoAdminRight = errors.New("The account has not Admin right")
+	errAccessControlRole = errors.New("The role in accessControl is invalid")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
