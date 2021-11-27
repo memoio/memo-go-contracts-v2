@@ -397,22 +397,55 @@ func (r *ContractModule) RegisterToken(roleAddr common.Address, tokenAddr common
 	return nil
 }
 
-// CreateGroup called by admin to create a group.
-func (r *ContractModule) CreateGroup(roleAddr common.Address, kindexes []uint64, level uint16) error {
-	roleIns, err := newRole(roleAddr)
+// CreateGroup called by admin to create a group and then deploy FileSys contract and then set FileSys-address to group.
+// founder default is 0
+func (r *ContractModule) CreateGroup(roleAddr, rfsAddr common.Address, founder uint64, kindexes []uint64, level uint16) error {
+	gIndex, err := r.createGroup(roleAddr, kindexes, level)
 	if err != nil {
 		return err
 	}
 
-	log.Println("begin CreateGroup in Role contract...")
+	// deploy FileSys
+	fsAddr, _, err := r.DeployFileSys(founder, gIndex, roleAddr, rfsAddr, kindexes)
+	if err != nil {
+		return err
+	}
+
+	err = r.SetGF(roleAddr, fsAddr, gIndex)
+	return err
+}
+
+// CreateGroup called by admin to create a group.
+func (r *ContractModule) createGroup(roleAddr common.Address, kindexes []uint64, level uint16) (uint64, error) {
 	tx := &types.Transaction{}
+
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return 0, err
+	}
+
+	// check kindexes
+	var tmpAddr common.Address
+	for _, kindex := range kindexes {
+		tmpAddr, err = r.GetAddr(roleAddr, kindex)
+		isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, tmpAddr)
+		if err != nil {
+			return 0, err
+		}
+		if roleType != KeeperRoleType || isActive || isBanned {
+			log.Println(kindex, " in kindexes is invalid, the address is", tmpAddr)
+			return 0, ErrIndex
+		}
+	}
+
+	log.Println("begin CreateGroup in Role contract...")
 	retryCount := 0
 	checkRetryCount := 0
 
 	for {
 		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
 		if errMA != nil {
-			return errMA
+			return 0, errMA
 		}
 
 		// generally caused by too low gasprice
@@ -427,7 +460,7 @@ func (r *ContractModule) CreateGroup(roleAddr common.Address, kindexes []uint64,
 				break
 			}
 			if retryCount > sendTransactionRetryCount {
-				return err
+				return 0, err
 			}
 			time.Sleep(retryTxSleepTime)
 			continue
@@ -436,16 +469,21 @@ func (r *ContractModule) CreateGroup(roleAddr common.Address, kindexes []uint64,
 		err = checkTx(tx)
 		if err != nil {
 			checkRetryCount++
-			log.Println("RegisterToken in Role transaction fails:", err)
+			log.Println("CreateGroup in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
-				return err
+				return 0, err
 			}
 			continue
 		}
 		break
 	}
-	log.Println("RegisterToken in Role has been successful!")
-	return nil
+	log.Println("CreateGroup in Role has been successful!")
+
+	gIndex, err := getGIndexFromRLogs(tx.Hash())
+	if err != nil {
+		return 0, err
+	}
+	return gIndex, nil
 }
 
 // SetGF called by admin to set fsAddress for group after CreateGroup and deployFileSys.

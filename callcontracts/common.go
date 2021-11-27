@@ -5,8 +5,11 @@ import (
 	"errors"
 	"log"
 	"math/big"
+	"memoContract/contracts/role"
+	"strings"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -38,6 +41,13 @@ const (
 	MinterRole = uint8(1)
 	// PauserRole indicates the account has Pauser right in ERC20 contract
 	PauserRole = uint8(2)
+
+	// UserRoleType indicates user's roleType in Role contract
+	UserRoleType = 1
+	// ProviderRoleType indicates provider's roleType in Role contract
+	ProviderRoleType = 2
+	// KeeperRoleType indicates keeper's roleType in Role contract
+	KeeperRoleType = 3
 )
 
 var (
@@ -56,8 +66,10 @@ var (
 	// ErrNoPauseRight indicates that the account has not Pause right in erc20 contract
 	ErrNoPauseRight = errors.New("The account has not Pause right")
 	// ErrNoAdminRight indicates that the account has not Admin right in erc20 contract
-	ErrNoAdminRight = errors.New("The account has not Admin right")
+	ErrNoAdminRight      = errors.New("The account has not Admin right")
 	errAccessControlRole = errors.New("The role in accessControl is invalid")
+	// ErrIndex indicates that the rindex does not meet the requirements
+	ErrIndex = errors.New("The role index is invalid")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
@@ -149,4 +161,26 @@ func rebuild(err error, tx *types.Transaction, auth *bind.TransactOpts) {
 		auth.GasPrice = new(big.Int).Add(tx.GasPrice(), big.NewInt(defaultGasPrice))
 		log.Println("rebuild transaction... nonce is ", auth.Nonce, " gasPrice is ", auth.GasPrice)
 	}
+}
+
+// get gIndex from logs in receipt
+func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
+	receipt := getTransactionReceipt(hash)
+
+	if len(receipt.Logs) != 1 {
+		return 0, errors.New("length of logs in receipt is error")
+	}
+
+	contractAbi, err := abi.JSON(strings.NewReader(string(role.RoleABI)))
+	if err != nil {
+		log.Println("abi json err:", err)
+		return 0, err
+	}
+
+	intr, err := contractAbi.Events["CreateGroup"].Inputs.UnpackValues(receipt.Logs[0].Data)
+	if err != nil {
+		log.Println("unpack log err: ", err)
+		return 0, err
+	}
+	return intr[0].(uint64), nil
 }

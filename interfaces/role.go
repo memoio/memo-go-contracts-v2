@@ -41,7 +41,7 @@ type RoleInfo interface {
 	RegisterToken(common.Address, common.Address) error
 
 	// called by owner
-	CreateGroup(common.Address, []uint64, uint16) error
+	CreateGroup(common.Address, common.Address, uint64, []uint64, uint16) error
 
 	// called by owner to set fsAddress for group after CreateGroup and deployFileSys
 	SetGF(common.Address, common.Address, uint64) error
