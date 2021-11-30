@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"crypto/ecdsa"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -18,8 +20,22 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-// EndPoint is rpc endpoint of geth node
-var EndPoint string
+var (
+	// EndPoint is rpc endpoint of geth node
+	EndPoint string
+	//ERC20 contract address
+	ERC20 string
+	// Role contract address
+	Role string
+	// RoleFS contract address
+	RoleFS string
+	// FileSys contract address
+	FileSys string
+	// PledgePool contract address
+	PledgePool string
+	// Issuance contract address
+	Issuance string
+)
 
 const (
 	//InvalidAddr implements invalid contracts-address
@@ -48,6 +64,7 @@ const (
 	ProviderRoleType = 2
 	// KeeperRoleType indicates keeper's roleType in Role contract
 	KeeperRoleType = 3
+	register       = "role-register"
 )
 
 var (
@@ -70,6 +87,19 @@ var (
 	errAccessControlRole = errors.New("The role in accessControl is invalid")
 	// ErrIndex indicates that the rindex does not meet the requirements
 	ErrIndex = errors.New("The role index is invalid")
+	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
+	ErrIsBanned = errors.New("The account is banned in Role contract")
+	// ErrTIndex tindex invalid
+	ErrTIndex = errors.New("The token index is invalid")
+	// ErrRoleReg has registered
+	ErrRoleReg = errors.New("The account has already registered a role")
+	// ErrInvalidG invalid gindex
+	ErrInvalidG = errors.New("invalid group index")
+	// ErrNotSetPP need set PledgePool address in Role contract
+	ErrNotSetPP = errors.New("haven't set pledgePool address in Role contract before call RegisterToken")
+	// ErrKSignsNE ksigns err
+	ErrKSignsNE = errors.New("the account of kSigns is not enough")
+	errAllowanceExc = errors.New("the account's allowance to other account excess balance")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
@@ -79,7 +109,8 @@ type TxOpts struct {
 	GasLimit uint64
 }
 
-//ContractModule  The basic information of node used for contract
+// ContractModule  The basic information of node used for contract.
+// Address and private key need to correspond.
 type ContractModule struct {
 	addr   common.Address //local address
 	hexSk  string         //local privateKey
@@ -183,4 +214,19 @@ func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
 		return 0, err
 	}
 	return intr[0].(uint64), nil
+}
+
+// SignForRegister Used to call Register on behalf of other accounts
+func SignForRegister(caller common.Address, sk *ecdsa.PrivateKey) ([]byte, error) {
+	//(caller, register)的哈希值
+	label := common.LeftPadBytes([]byte(register), 32)
+	hash := crypto.Keccak256(caller.Bytes(), label)
+
+	//私钥对上述哈希值签名
+	sig, err := crypto.Sign(hash, sk)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
 }

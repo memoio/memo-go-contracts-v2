@@ -35,7 +35,7 @@ type RoleInfo interface {
 	RegisterProvider(common.Address, uint64, []byte) error
 
 	// called by anyone to register User
-	RegisterUser(common.Address, uint64, uint64, uint32, []byte, []byte) error
+	RegisterUser(common.Address, common.Address, uint64, uint64, uint32, []byte, []byte) error
 
 	// called by owner to add token
 	RegisterToken(common.Address, common.Address) error
@@ -56,10 +56,12 @@ type RoleInfo interface {
 	SetPledgeMoney(common.Address, *big.Int, *big.Int) error
 
 	// called by user or called by others
-	Recharge(common.Address, uint64, uint32, *big.Int, []byte) error
+	Recharge(common.Address, common.Address, uint64, uint32, *big.Int, []byte) error
 
 	// called by memo-role or called by others
-	WithdrawFromFs(common.Address, uint64, uint32, *big.Int, []byte) error
+	WithdrawFromFs(common.Address, common.Address, uint64, uint32, *big.Int, []byte) error
+
+	PledgePool(common.Address) (common.Address, error)
 
 	// get the number of registered addresses
 	GetAddrsNum(common.Address) (uint64, error)
@@ -100,11 +102,11 @@ type RoleFSInfo interface {
 	DeployRoleFS() (common.Address, *rolefs.RoleFS, error)
 	// called by owner, which is the deployer
 	SetAddr(common.Address, common.Address, common.Address, common.Address, common.Address) error
-	AddOrder(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
-	SubOrder(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
-	AddRepair(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
-	SubRepair(common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
-	ProWithdraw(common.Address, uint64, uint32, *big.Int, *big.Int, [][]byte) error
+	AddOrder(common.Address, common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
+	SubOrder(common.Address, common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
+	AddRepair(common.Address, common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
+	SubRepair(common.Address, common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
+	ProWithdraw(common.Address, common.Address, common.Address, uint64, uint32, *big.Int, *big.Int, [][]byte) error
 }
 
 // RTokenInfo contains operations related to tokens that memo supported

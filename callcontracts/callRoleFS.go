@@ -85,6 +85,48 @@ func newRoleFS(roleFSAddr common.Address) (*rolefs.RoleFS, error) {
 	return roleFSIns, nil
 }
 
+func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleType uint8, tIndex uint32, roleAddr, rTokenAddr common.Address) (uint64, error) {
+	// check whether uIndex is user
+	uaddr, err := rfs.GetAddr(roleAddr, uIndex)
+	if err != nil {
+		return 0, err
+	}
+	isActive, isBanned, roleType, _, ugIndex, _, err := rfs.GetRoleInfo(roleAddr, uaddr)
+	if roleType != uRoleType || !isActive || isBanned {
+		log.Println("uIndex ", uIndex, " roleType:", roleType, " isBanned:", isBanned, " isActive:", isActive)
+		return 0, ErrIndex
+	}
+	// check whether pIndex is provider
+	paddr, err := rfs.GetAddr(roleAddr, pIndex)
+	if err != nil {
+		return 0, err
+	}
+	isActive, isBanned, roleType, _, pgIndex, _, err := rfs.GetRoleInfo(roleAddr, paddr)
+	if roleType != pRoleType || !isActive || isBanned {
+		log.Println("pIndex ", pIndex, " roleType:", roleType, " isBanned:", isBanned, " isActive:", isActive)
+		return 0, ErrIndex
+	}
+	// check whether their gIndex is same
+	isActive, isBanned, roleType, _, cgIndex, _, err := rfs.GetRoleInfo(roleAddr, rfs.addr)
+	if roleType != KeeperRoleType || !isActive || isBanned {
+		log.Println("caller ", rfs.addr.Hex(), " roleType:", roleType, " isBanned:", isBanned, " isActive:", isActive)
+		return 0, ErrIndex
+	}
+	if ugIndex != pgIndex || ugIndex != cgIndex {
+		log.Println("uIndex's gIndex:", ugIndex, " pIndex's gIndex:", pgIndex, " caller's gIndex:", cgIndex)
+		return 0, ErrIndex
+	}
+	// check tindex
+	isValid, err := rfs.IsValid(rTokenAddr, tIndex)
+	if err != nil {
+		return 0, err
+	}
+	if !isValid {
+		return 0, ErrTIndex
+	}
+	return ugIndex, nil
+}
+
 // SetAddr called by admin, which is the deployer. Set some address type variables.
 func (rfs *ContractModule) SetAddr(roleFS, issuan, role, fileSys, rtoken common.Address) error {
 	roleFSIns, err := newRoleFS(roleFS)
@@ -138,10 +180,23 @@ func (rfs *ContractModule) SetAddr(roleFS, issuan, role, fileSys, rtoken common.
 
 // AddOrder called by keeper? Add the storage order in the FileSys.
 // hash(uIndex, pIndex, _start, end, _size, nonce, tIndex, sPrice)?
-func (rfs *ContractModule) AddOrder(roleFS common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
+func (rfs *ContractModule) AddOrder(roleFS, roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
 		return err
+	}
+
+	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	if err != nil {
+		return err
+	}
+	// check ksigns's length
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	if err != nil {
+		return err
+	}
+	if len(ksigns) < int(gkNum*2/3) {
+		return ErrKSignsNE
 	}
 
 	log.Println("begin AddOrder in RoleFS contract...")
@@ -190,10 +245,23 @@ func (rfs *ContractModule) AddOrder(roleFS common.Address, uIndex, pIndex, start
 
 // SubOrder called by keeper? Reduce the storage order in the FileSys.
 // hash(uIndex, pIndex, _start, end, _size, nonce, tIndex, sPrice)?
-func (rfs *ContractModule) SubOrder(roleFS common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
+func (rfs *ContractModule) SubOrder(roleFS, roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
 		return err
+	}
+
+	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	if err != nil {
+		return err
+	}
+	// check ksigns's length
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	if err != nil {
+		return err
+	}
+	if len(ksigns) < int(gkNum*2/3) {
+		return ErrKSignsNE
 	}
 
 	log.Println("begin SubOrder in RoleFS contract...")
@@ -242,10 +310,23 @@ func (rfs *ContractModule) SubOrder(roleFS common.Address, uIndex, pIndex, start
 
 // AddRepair called by keeper. Add the repair order in the FileSys.
 // hash(pIndex, _start, end, _size, nonce, tIndex, sPrice), signed by newProvider
-func (rfs *ContractModule) AddRepair(roleFS common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
+func (rfs *ContractModule) AddRepair(roleFS, roleAddr, rTokenAddr common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
 		return err
+	}
+
+	gIndex, err := rfs.checkParam(pIndex, nPIndex, ProviderRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	if err != nil {
+		return err
+	}
+	// check ksigns's length
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	if err != nil {
+		return err
+	}
+	if len(ksigns) < int(gkNum*2/3) {
+		return ErrKSignsNE
 	}
 
 	log.Println("begin AddRepair in RoleFS contract...")
@@ -294,10 +375,24 @@ func (rfs *ContractModule) AddRepair(roleFS common.Address, pIndex, nPIndex, sta
 
 // SubRepair called by keeper. Reduce the repair order in the FileSys.
 // hash(pIndex, _start, end, _size, nonce, tIndex, sPrice), signed by newProvider
-func (rfs *ContractModule) SubRepair(roleFS common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
+func (rfs *ContractModule) SubRepair(roleFS, roleAddr, rTokenAddr common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
 		return err
+	}
+
+	gIndex, err := rfs.checkParam(pIndex, nPIndex, ProviderRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	if err != nil {
+		return err
+	}
+
+	// check ksigns's length
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	if err != nil {
+		return err
+	}
+	if len(ksigns) < int(gkNum*2/3) {
+		return ErrKSignsNE
 	}
 
 	log.Println("begin SubRepair in RoleFS contract...")
@@ -346,10 +441,33 @@ func (rfs *ContractModule) SubRepair(roleFS common.Address, pIndex, nPIndex, sta
 
 // ProWithdraw called by keeper? Retrieve the Provider's balance in FileSys.
 // hash(pIndex, tIndex, pay, lost)?
-func (rfs *ContractModule) ProWithdraw(roleFS common.Address, pIndex uint64, tIndex uint32, pay, lost *big.Int, ksigns [][]byte) error {
+func (rfs *ContractModule) ProWithdraw(roleFS, roleAddr, rTokenAddr common.Address, pIndex uint64, tIndex uint32, pay, lost *big.Int, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
 		return err
+	}
+
+	// check pIndex
+	addr, err := rfs.GetAddr(roleAddr, pIndex)
+	if err != nil {
+		return err
+	}
+	isActive, isBanned, roleType, _, gIndex, _, err := rfs.GetRoleInfo(roleAddr, addr)
+	if err != nil {
+		return err
+	}
+	if !isActive || isBanned || roleType != ProviderRoleType {
+		log.Println("pIndex isActive:", isActive, " isBanned:", isBanned, " roleType:", roleType)
+		return ErrIndex
+	}
+
+	// check ksigns's length
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	if err != nil {
+		return err
+	}
+	if len(ksigns) < int(gkNum*2/3) {
+		return ErrKSignsNE
 	}
 
 	log.Println("begin call ProWithdraw in RoleFS contract...")

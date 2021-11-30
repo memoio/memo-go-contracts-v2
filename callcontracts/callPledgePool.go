@@ -94,11 +94,42 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 
 // Pledge money.
 // Called by the account itself or by another account on its behalf.
-// 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是money）
-func (p *ContractModule) Pledge(pledgepAddr common.Address, rindex uint64, value *big.Int, sign []byte) error {
+// 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是value）
+func (p *ContractModule) Pledge(pledgepAddr, erc20Addr, roleAddr common.Address, rindex uint64, value *big.Int, sign []byte) error {
 	pledgepIns, err := newPledgePool(pledgepAddr)
 	if err != nil {
 		return err
+	}
+
+	addr, err := p.GetAddr(roleAddr, rindex)
+	if err != nil {
+		return err
+	}
+
+	// check the rindex is not being banned
+	_, isBanned, _, _, _, _, err := p.GetRoleInfo(roleAddr, addr)
+	if isBanned {
+		return ErrIsBanned
+	}
+
+	// check whether the allowance[addr][pledgePoolAddr] is not less than value, if not, will set allowance automatically by code.
+	allo, err := p.Allowance(erc20Addr, addr, pledgepAddr)
+	if err != nil {
+		return err
+	}
+	if allo.Cmp(value) < 0 {
+		tmp := big.NewInt(0)
+		tmp.Sub(value, allo)
+		log.Println("The allowance of ", addr.Hex(), " to ", pledgepAddr.Hex(), " is not enough, also need to add allowance", tmp)
+		// if called by the account itself， then call IncreaseAllowance directly.
+		if sign == nil && p.addr.Hex() == addr.Hex() {
+			err = p.IncreaseAllowance(erc20Addr, pledgepAddr, tmp)
+			if err != nil {
+				return err
+			}
+		} else { // otherwise, quit Pledge
+			return ErrAlloNotE
+		}
 	}
 
 	log.Println("begin Pledge in PledgePool contract with value", value, " and rindex", rindex, " ...")
@@ -147,10 +178,25 @@ func (p *ContractModule) Pledge(pledgepAddr common.Address, rindex uint64, value
 
 // Withdraw Called by the account itself or by another account on its behalf.
 // withdraw its balance from PledgePool.
-func (p *ContractModule) Withdraw(pledgepAddr common.Address, rindex uint64, tindex uint32, value *big.Int, sign []byte) error {
+func (p *ContractModule) Withdraw(pledgepAddr, roleAddr, rTokenAddr common.Address, rindex uint64, tindex uint32, value *big.Int, sign []byte) error {
 	pledgepIns, err := newPledgePool(pledgepAddr)
 	if err != nil {
 		return err
+	}
+
+	// check if rindex is banned
+	addr, err := p.GetAddr(roleAddr, rindex)
+	if err != nil {
+		return err
+	}
+	_, isBanned, _, _, _, _, err := p.GetRoleInfo(roleAddr, addr)
+	if isBanned {
+		return ErrIsBanned
+	}
+	// check if tindex is valid
+	isValid, err := p.IsValid(rTokenAddr, tindex)
+	if !isValid {
+		return ErrTIndex
 	}
 
 	log.Println("begin Withdraw in PledgePool contract with value", value, " and rindex", rindex, " and tindex", tindex, " ...")

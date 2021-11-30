@@ -3,7 +3,6 @@ package callconts
 import (
 	"log"
 	"math/big"
-	"memoContract/contracts/role"
 	iface "memoContract/interfaces"
 	"time"
 
@@ -24,24 +23,19 @@ func NewOwn(addr common.Address, hexSk string, txopts *TxOpts) iface.OwnerInfo {
 	return own
 }
 
-// newOwner new a instance of Owner contract
-func newOwner(ownerAddr common.Address) (*role.Owner, error) {
-	ownerIns, err := role.NewOwner(ownerAddr, getClient(EndPoint))
-	if err != nil {
-		return nil, err
-	}
-	return ownerIns, nil
-}
-
 // AlterOwner called by admin, to alter Role-contract's owner
-// 'ownerAddr' indicates the Owner contract address
-func (own *ContractModule) AlterOwner(ownerAddr common.Address, newOwnerAddr common.Address) error {
-	ownerIns, err := newOwner(ownerAddr)
+// 'roleAddr' indicates the Role contract address
+func (own *ContractModule) AlterOwner(roleAddr common.Address, newOwnerAddr common.Address) error {
+	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
 	}
 
-	log.Println("begin AlterOwner in Owner contract...")
+	if newOwnerAddr.Hex() == InvalidAddr {
+		return ErrInValAddr
+	}
+
+	log.Println("begin AlterOwner in Role contract...")
 	tx := &types.Transaction{}
 	retryCount := 0
 	checkRetryCount := 0
@@ -55,7 +49,7 @@ func (own *ContractModule) AlterOwner(ownerAddr common.Address, newOwnerAddr com
 		// generally caused by too low gasprice
 		rebuild(err, tx, auth)
 
-		tx, err = ownerIns.AlterOwner(auth, newOwnerAddr)
+		tx, err = roleIns.AlterOwner(auth, newOwnerAddr)
 		if err != nil {
 			retryCount++
 			log.Println("alterOwner Err:", err)
@@ -73,7 +67,7 @@ func (own *ContractModule) AlterOwner(ownerAddr common.Address, newOwnerAddr com
 		err = checkTx(tx)
 		if err != nil {
 			checkRetryCount++
-			log.Println("AlterOwner in Owner transaction fails:", err)
+			log.Println("AlterOwner in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
@@ -81,26 +75,26 @@ func (own *ContractModule) AlterOwner(ownerAddr common.Address, newOwnerAddr com
 		}
 		break
 	}
-	log.Println("AlterOwner in Owner has been successful!")
+	log.Println("AlterOwner in Role has been successful!")
 	return nil
 }
 
 // GetOwner get the owner-address of Role contract
-// 'ownerAddr' indicates the Owner contract address
-func (own *ContractModule) GetOwner(ownerAddr common.Address) (common.Address, error) {
+// 'roleAddr' indicates the Role contract address
+func (own *ContractModule) GetOwner(roleAddr common.Address) (common.Address, error) {
 	var ownAddr common.Address
 
-	ownerIns, err := newOwner(ownerAddr)
+	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return ownAddr, err
 	}
 
-	log.Println("begin GetOwner in Owner contract...")
+	log.Println("begin GetOwner in Role contract...")
 	retryCount := 0
 
 	for {
 		retryCount++
-		ownAddr, err = ownerIns.GetOwner(&bind.CallOpts{
+		ownAddr, err = roleIns.GetOwner(&bind.CallOpts{
 			From: own.addr,
 		})
 		if err != nil {

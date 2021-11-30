@@ -149,6 +149,13 @@ func (r *ContractModule) Register(roleAddr, addr common.Address, sign []byte) er
 		return err
 	}
 
+	// check if addr has registered
+	_, _, _, index, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	if index > 0 { // has registered already
+		log.Println("Has registered, index is ", index)
+		return nil
+	}
+
 	log.Println("begin Register in Role contract...")
 	tx := &types.Transaction{}
 	retryCount := 0
@@ -198,6 +205,18 @@ func (r *ContractModule) RegisterKeeper(roleAddr common.Address, index uint64, b
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
+	}
+
+	addr, err := r.GetAddr(roleAddr, index)
+	if err != nil {
+		return err
+	}
+	_, _, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	if err != nil {
+		return err
+	}
+	if roleType != 0 { // role already registered
+		return ErrRoleReg
 	}
 
 	log.Println("begin RegisterKeeper in Role contract...")
@@ -251,6 +270,18 @@ func (r *ContractModule) RegisterProvider(roleAddr common.Address, index uint64,
 		return err
 	}
 
+	addr, err := r.GetAddr(roleAddr, index)
+	if err != nil {
+		return err
+	}
+	_, _, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	if err != nil {
+		return err
+	}
+	if roleType != 0 { // role already registered
+		return ErrRoleReg
+	}
+
 	log.Println("begin RegisterProvider in Role contract...")
 	tx := &types.Transaction{}
 	retryCount := 0
@@ -296,10 +327,41 @@ func (r *ContractModule) RegisterProvider(roleAddr common.Address, index uint64,
 }
 
 // RegisterUser called by anyone to register User role
-func (r *ContractModule) RegisterUser(roleAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte) error {
+func (r *ContractModule) RegisterUser(roleAddr, rTokenAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte) error {
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
+	}
+
+	// check index
+	addr, err := r.GetAddr(roleAddr, index)
+	if err != nil {
+		return err
+	}
+	_, _, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	if err != nil {
+		return err
+	}
+	if roleType != 0 { // role already registered
+		return ErrRoleReg
+	}
+
+	// check gindex
+	isActive, isBanned, _, _, _, _, _, err := r.GetGroupInfo(roleAddr, gindex)
+	if err != nil {
+		return err
+	}
+	if !isActive || isBanned {
+		return ErrInvalidG
+	}
+
+	// check tindex
+	isValid, err := r.IsValid(rTokenAddr, tindex)
+	if err != nil {
+		return err
+	}
+	if !isValid {
+		return ErrTIndex
 	}
 
 	log.Println("begin RegisterUser in Role contract...")
@@ -351,6 +413,15 @@ func (r *ContractModule) RegisterToken(roleAddr common.Address, tokenAddr common
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
+	}
+
+	// check whether pledgePool address in Role contract is valid
+	pledgePool, err := r.PledgePool(roleAddr)
+	if err != nil {
+		return err
+	}
+	if pledgePool.Hex() == InvalidAddr {
+		return ErrNotSetPP
 	}
 
 	log.Println("begin RegisterToken in Role contract...")
@@ -483,6 +554,7 @@ func (r *ContractModule) createGroup(roleAddr common.Address, kindexes []uint64,
 	if err != nil {
 		return 0, err
 	}
+	log.Println("CreateGroup in Role, the gIndex is", gIndex)
 	return gIndex, nil
 }
 
@@ -491,6 +563,15 @@ func (r *ContractModule) SetGF(roleAddr, fsAddr common.Address, gIndex uint64) e
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
+	}
+
+	// check gIndex
+	num, err := r.GetGroupsNum(roleAddr)
+	if err != nil {
+		return err
+	}
+	if gIndex == 0 || gIndex > num {
+		return ErrInvalidG
 	}
 
 	log.Println("begin SetGF in Role contract...")
@@ -544,6 +625,35 @@ func (r *ContractModule) AddKeeperToGroup(roleAddr common.Address, kIndex uint64
 		return err
 	}
 
+	// check gIndex
+	num, err := r.GetGroupsNum(roleAddr)
+	if err != nil {
+		return err
+	}
+	if gIndex == 0 || gIndex > num {
+		log.Println("gIndex shouldn't be zero or more than groupsNum", num)
+		return ErrInvalidG
+	}
+	_, isBanned, _, _, _, _, _, err := r.GetGroupInfo(roleAddr, gIndex)
+	if isBanned {
+		log.Println("the group represented by gIndex is banned")
+		return ErrInvalidG
+	}
+
+	// check kIndex
+	addr, err := r.GetAddr(roleAddr, kIndex)
+	if err != nil {
+		return err
+	}
+	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	if err != nil {
+		return err
+	}
+	if isActive || isBanned || roleType != KeeperRoleType {
+		log.Println("The account represented by kIndex", kIndex, " isActive:", isActive, " isBanned:", isBanned, " roleType:", roleType)
+		return ErrIndex
+	}
+
 	log.Println("begin AddKeeperToGroup in Role contract...")
 	tx := &types.Transaction{}
 	retryCount := 0
@@ -593,6 +703,35 @@ func (r *ContractModule) AddProviderToGroup(roleAddr common.Address, pIndex uint
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
+	}
+
+	// check pIndex
+	addr, err := r.GetAddr(roleAddr, pIndex)
+	if err != nil {
+		return err
+	}
+	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	if err != nil {
+		return err
+	}
+	if isActive || isBanned || roleType != ProviderRoleType {
+		log.Println("The account represented by pIndex", pIndex, " isActive:", isActive, " isBanned:", isBanned, " roleType:", roleType)
+		return ErrIndex
+	}
+
+	// check gIndex
+	num, err := r.GetGroupsNum(roleAddr)
+	if err != nil {
+		return err
+	}
+	if gIndex == 0 || gIndex > num {
+		log.Println("gIndex shouldn't be zero or more than groupsNum", num)
+		return ErrInvalidG
+	}
+	_, isBanned, _, _, _, _, _, err = r.GetGroupInfo(roleAddr, gIndex)
+	if isBanned {
+		log.Println("the group represented by gIndex is banned")
+		return ErrInvalidG
 	}
 
 	log.Println("begin AddProviderToGroup in Role contract...")
@@ -691,10 +830,30 @@ func (r *ContractModule) SetPledgeMoney(roleAddr common.Address, kpledge *big.In
 }
 
 // Recharge called by user or called by others.
-func (r *ContractModule) Recharge(roleAddr common.Address, uIndex uint64, tIndex uint32, money *big.Int, sign []byte) error {
+func (r *ContractModule) Recharge(roleAddr, rTokenAddr common.Address, uIndex uint64, tIndex uint32, money *big.Int, sign []byte) error {
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
+	}
+
+	// uIndex need to be user
+	addr, err := r.GetAddr(roleAddr, uIndex)
+	if err != nil {
+		return err
+	}
+	_, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	if isBanned || roleType != UserRoleType {
+		log.Println("The uIndex", uIndex, " isBanned:", isBanned, " roleType:", roleType)
+		return ErrIndex
+	}
+
+	// check tindex
+	isValid, err := r.IsValid(rTokenAddr, tIndex)
+	if err != nil {
+		return err
+	}
+	if !isValid {
+		return ErrTIndex
 	}
 
 	log.Println("begin Recharge in Role contract...")
@@ -742,10 +901,19 @@ func (r *ContractModule) Recharge(roleAddr common.Address, uIndex uint64, tIndex
 }
 
 // WithdrawFromFs called by memo-role or called by others.
-func (r *ContractModule) WithdrawFromFs(roleAddr common.Address, rIndex uint64, tIndex uint32, amount *big.Int, sign []byte) error {
+func (r *ContractModule) WithdrawFromFs(roleAddr, rTokenAddr common.Address, rIndex uint64, tIndex uint32, amount *big.Int, sign []byte) error {
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
 		return err
+	}
+
+	// check tindex
+	isValid, err := r.IsValid(rTokenAddr, tIndex)
+	if err != nil {
+		return err
+	}
+	if !isValid {
+		return ErrTIndex
 	}
 
 	log.Println("begin WithdrawFromFs in Role contract...")
@@ -790,6 +958,32 @@ func (r *ContractModule) WithdrawFromFs(roleAddr common.Address, rIndex uint64, 
 	}
 	log.Println("WithdrawFromFs in Role has been successful!")
 	return nil
+}
+
+// PledgePool get pledgepool
+func (r *ContractModule) PledgePool(roleAddr common.Address) (common.Address, error) {
+	var pp common.Address
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return pp, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		pp, err = roleIns.PledgePool(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return pp, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return pp, nil
+	}
 }
 
 // GetAddrsNum get the number of registered addresses.

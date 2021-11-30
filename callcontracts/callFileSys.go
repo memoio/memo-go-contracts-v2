@@ -34,6 +34,7 @@ func newFileSys(fsAddr common.Address) (*filesys.FileSys, error) {
 }
 
 // DeployFileSys deploy a FileSys contract, called by admin.
+// Called after the admin calls the CreateGroup function in the Role Contract.
 // 'r' indicates role-contract address, 'rfs' indicates RoleFS-contract address.
 func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Address, keepers []uint64) (common.Address, *filesys.FileSys, error) {
 	var fsAddr, fsAddress common.Address

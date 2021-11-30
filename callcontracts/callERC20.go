@@ -304,6 +304,22 @@ func (e *ContractModule) IncreaseAllowance(erc20Addr, recipient common.Address, 
 		return ErrInValAddr
 	}
 
+	// the given allowance shouldn't exceeds the balance
+	bal, err := e.BalanceOf(erc20Addr, e.addr)
+	if err != nil {
+		return err
+	}
+	allo, err := e.Allowance(erc20Addr, e.addr, recipient)
+	if err != nil {
+		return err
+	}
+	sum := big.NewInt(0)
+	sum.Add(value, allo)
+	if bal.Cmp(sum) < 0 {
+		log.Println(e.addr.Hex(), " balance is", bal, ", allowance sum is", sum)
+		return errAllowanceExc
+	}
+
 	log.Println("begin IncreaseAllowance to", recipient.Hex(), " with value", value, " in ERC20 contract...")
 	tx := &types.Transaction{}
 	retryCount := 0
