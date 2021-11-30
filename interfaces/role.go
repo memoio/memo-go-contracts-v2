@@ -62,6 +62,12 @@ type RoleInfo interface {
 	WithdrawFromFs(common.Address, common.Address, uint64, uint32, *big.Int, []byte) error
 
 	PledgePool(common.Address) (common.Address, error)
+	Foundation(common.Address) (common.Address, error)
+	PledgeK(common.Address) (*big.Int, error)
+	PledgeP(common.Address) (*big.Int, error)
+	RToken(common.Address) (common.Address, error)
+	Issuance(common.Address) (common.Address, error)
+	Rolefs(common.Address) (common.Address, error)
 
 	// get the number of registered addresses
 	GetAddrsNum(common.Address) (uint64, error)
@@ -120,4 +126,11 @@ type RTokenInfo interface {
 // IssuanceInfo contains deploy Isuance-contract function
 type IssuanceInfo interface {
 	DeployIssuance(rfs common.Address) (common.Address, *role.Issuance, error)
+	MintLevel(common.Address) (*big.Int, error)
+	LastMint(common.Address) (*big.Int, error)
+	Price(common.Address) (*big.Int, error)
+	Size(common.Address) (*big.Int, error)
+	SpaceTime(common.Address) (*big.Int, error)
+	TotalPay(common.Address) (*big.Int, error)
+	TotalPaid(common.Address) (*big.Int, error)
 }

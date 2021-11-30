@@ -986,6 +986,162 @@ func (r *ContractModule) PledgePool(roleAddr common.Address) (common.Address, er
 	}
 }
 
+// Foundation get foundation address
+func (r *ContractModule) Foundation(roleAddr common.Address) (common.Address, error) {
+	var f common.Address
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return f, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		f, err = roleIns.Foundation(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return f, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return f, nil
+	}
+}
+
+// PledgeK get the pledgeAmount that the account need to pledge when it register Keeper
+func (r *ContractModule) PledgeK(roleAddr common.Address) (*big.Int, error) {
+	pk := big.NewInt(0)
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return pk, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		pk, err = roleIns.PledgeK(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return pk, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return pk, nil
+	}
+}
+
+// PledgeP get the pledgeAmount that the account need to pledge when it register Provider
+func (r *ContractModule) PledgeP(roleAddr common.Address) (*big.Int, error) {
+	pp := big.NewInt(0)
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return pp, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		pp, err = roleIns.PledgeP(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return pp, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return pp, nil
+	}
+}
+
+// RToken get RToken contract address
+func (r *ContractModule) RToken(roleAddr common.Address) (common.Address, error) {
+	var rt common.Address
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return rt, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		rt, err = roleIns.RToken(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return rt, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return rt, nil
+	}
+}
+
+// Issuance get Issuance contract address
+func (r *ContractModule) Issuance(roleAddr common.Address) (common.Address, error) {
+	var is common.Address
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return is, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		is, err = roleIns.Issuance(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return is, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return is, nil
+	}
+}
+
+// Rolefs get RoleFS contract address
+func (r *ContractModule) Rolefs(roleAddr common.Address) (common.Address, error) {
+	var rfs common.Address
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return rfs, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		rfs, err = roleIns.Rolefs(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return rfs, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return rfs, nil
+	}
+}
+
 // GetAddrsNum get the number of registered addresses.
 func (r *ContractModule) GetAddrsNum(roleAddr common.Address) (uint64, error) {
 	var anum uint64

@@ -296,3 +296,30 @@ func (p *ContractModule) GetBalanceInPPool(pledgepAddr common.Address, rindex ui
 		return amount, nil
 	}
 }
+
+// TotalPledge Get all pledge amount in specified token.
+func (p *ContractModule) TotalPledge(pledgepAddr common.Address) (*big.Int, error) {
+	var amount *big.Int
+
+	pledgepIns, err := newPledgePool(pledgepAddr)
+	if err != nil {
+		return amount, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		amount, err = pledgepIns.TotalPledge(&bind.CallOpts{
+			From: p.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return amount, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return amount, nil
+	}
+}

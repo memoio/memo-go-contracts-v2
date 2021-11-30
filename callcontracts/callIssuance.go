@@ -7,6 +7,7 @@ import (
 	iface "memoContract/interfaces"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -76,4 +77,194 @@ func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Ad
 	}
 	log.Println("Issuance has been successfully deployed! The address is ", issuAddr.Hex())
 	return issuAddr, issuIns, nil
+}
+
+func newIssuance(issuAddr common.Address) (*role.Issuance, error) {
+	issuIns, err := role.NewIssuance(issuAddr, getClient(EndPoint))
+	if err != nil {
+		return nil, err
+	}
+	return issuIns, nil
+}
+
+// MintLevel get mintLevel in Issuance contract
+func (issu *ContractModule) MintLevel(issuAddr common.Address) (*big.Int, error) {
+	m := big.NewInt(0)
+	issuIns, err := newIssuance(issuAddr)
+	if err != nil {
+		return m, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		m, err = issuIns.MintLevel(&bind.CallOpts{
+			From: issu.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return m, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return m, nil
+	}
+}
+
+// LastMint get lastMint in Issuance contract
+func (issu *ContractModule) LastMint(issuAddr common.Address) (*big.Int, error) {
+	m := big.NewInt(0)
+	issuIns, err := newIssuance(issuAddr)
+	if err != nil {
+		return m, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		m, err = issuIns.LastMint(&bind.CallOpts{
+			From: issu.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return m, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return m, nil
+	}
+}
+
+// Price get price in Issuance contract
+func (issu *ContractModule) Price(issuAddr common.Address) (*big.Int, error) {
+	m := big.NewInt(0)
+	issuIns, err := newIssuance(issuAddr)
+	if err != nil {
+		return m, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		m, err = issuIns.Price(&bind.CallOpts{
+			From: issu.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return m, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return m, nil
+	}
+}
+
+// Size get size in Issuance contract
+func (issu *ContractModule) Size(issuAddr common.Address) (*big.Int, error) {
+	m := big.NewInt(0)
+	issuIns, err := newIssuance(issuAddr)
+	if err != nil {
+		return m, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		m, err = issuIns.Size(&bind.CallOpts{
+			From: issu.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return m, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return m, nil
+	}
+}
+
+// SpaceTime get spaceTime in Issuance contract
+func (issu *ContractModule) SpaceTime(issuAddr common.Address) (*big.Int, error) {
+	m := big.NewInt(0)
+	issuIns, err := newIssuance(issuAddr)
+	if err != nil {
+		return m, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		m, err = issuIns.SpaceTime(&bind.CallOpts{
+			From: issu.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return m, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return m, nil
+	}
+}
+
+// TotalPay get totalPay in Issuance contract
+func (issu *ContractModule) TotalPay(issuAddr common.Address) (*big.Int, error) {
+	m := big.NewInt(0)
+	issuIns, err := newIssuance(issuAddr)
+	if err != nil {
+		return m, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		m, err = issuIns.TotalPay(&bind.CallOpts{
+			From: issu.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return m, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return m, nil
+	}
+}
+
+// TotalPaid get totalPaid in Issuance contract
+func (issu *ContractModule) TotalPaid(issuAddr common.Address) (*big.Int, error) {
+	m := big.NewInt(0)
+	issuIns, err := newIssuance(issuAddr)
+	if err != nil {
+		return m, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		m, err = issuIns.TotalPaid(&bind.CallOpts{
+			From: issu.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return m, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return m, nil
+	}
 }

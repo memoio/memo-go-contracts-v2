@@ -15,4 +15,5 @@ type PledgePoolInfo interface {
 	Withdraw(common.Address, common.Address, common.Address, uint64, uint32, *big.Int, []byte) error
 	GetPledge(common.Address, uint32) (*big.Int, error)
 	GetBalanceInPPool(common.Address, uint64, uint32) (*big.Int, error)
+	TotalPledge(common.Address) (*big.Int, error)
 }
