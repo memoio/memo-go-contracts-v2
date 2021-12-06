@@ -3,6 +3,7 @@ package callconts
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math/big"
 	"memoContract/contracts/role"
@@ -20,30 +21,33 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+// the following variables need to be assigned according to the running results in actual applications
 var (
 	// EndPoint is rpc endpoint of geth node
 	EndPoint string
 	//ERC20 contract address
-	ERC20 string
+	ERC20Addr common.Address
 	// Role contract address
-	Role string
+	RoleAddr common.Address
 	// RoleFS contract address
-	RoleFS string
+	RoleFSAddr common.Address
 	// FileSys contract address
-	FileSys string
+	FileSysAddr common.Address
 	// PledgePool contract address
-	PledgePool string
+	PledgePoolAddr common.Address
 	// Issuance contract address
-	Issuance string
+	IssuanceAddr common.Address
 )
 
 const (
 	//InvalidAddr implements invalid contracts-address
-	InvalidAddr               = "0x0000000000000000000000000000000000000000"
-	spaceTimePayGasLimit      = uint64(8000000)
-	spaceTimePayGasPrice      = 2 * defaultGasPrice
-	defaultGasPrice           = 200
-	defaultGasLimit           = uint64(8000000)
+	InvalidAddr          = "0x0000000000000000000000000000000000000000"
+	spaceTimePayGasLimit = uint64(8000000)
+	spaceTimePayGasPrice = 2 * DefaultGasPrice
+	// DefaultGasPrice default gas price in sending transaction
+	DefaultGasPrice = 200
+	// DefaultGasLimit default gas limit in sending transaction
+	DefaultGasLimit           = uint64(8000000)
 	sendTransactionRetryCount = 5
 	checkTxRetryCount         = 8
 	checkTxSleepTime          = 5
@@ -98,8 +102,9 @@ var (
 	// ErrNotSetPP need set PledgePool address in Role contract
 	ErrNotSetPP = errors.New("haven't set pledgePool address in Role contract before call RegisterToken")
 	// ErrKSignsNE ksigns err
-	ErrKSignsNE = errors.New("the account of kSigns is not enough")
+	ErrKSignsNE     = errors.New("the account of kSigns is not enough")
 	errAllowanceExc = errors.New("the account's allowance to other account excess balance")
+	errPledgeNE = errors.New("The pledge money is not enough to pledgeKeeper or pledgeProvider")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
@@ -189,7 +194,7 @@ func getTransactionReceipt(hash common.Hash) *types.Receipt {
 func rebuild(err error, tx *types.Transaction, auth *bind.TransactOpts) {
 	if err == ErrTxFail && tx != nil {
 		auth.Nonce = big.NewInt(int64(tx.Nonce()))
-		auth.GasPrice = new(big.Int).Add(tx.GasPrice(), big.NewInt(defaultGasPrice))
+		auth.GasPrice = new(big.Int).Add(tx.GasPrice(), big.NewInt(DefaultGasPrice))
 		log.Println("rebuild transaction... nonce is ", auth.Nonce, " gasPrice is ", auth.GasPrice)
 	}
 }
@@ -229,4 +234,24 @@ func SignForRegister(caller common.Address, sk *ecdsa.PrivateKey) ([]byte, error
 	}
 
 	return sig, nil
+}
+
+// QueryEthBalance gets eth balance
+func QueryEthBalance(addr, ethEndPoint string) *big.Int {
+	var result string
+	client, err := rpc.Dial(ethEndPoint)
+	if err != nil {
+		log.Fatal("rpc.dial err:", err)
+	}
+	err = client.Call(&result, "eth_getBalance", addr, "latest")
+	if err != nil {
+		log.Fatal("client.call err:", err)
+	}
+	fmt.Println("balance:", result)
+	a := big.NewInt(0)
+	a, success := a.SetString(result[2:], 16)
+	if !success {
+		log.Fatal("hex to bigInt fails")
+	}
+	return a
 }

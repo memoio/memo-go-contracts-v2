@@ -66,7 +66,7 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 		if err != nil {
 			retryCount++
 			log.Println("deploy PledgePool Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -150,7 +150,7 @@ func (p *ContractModule) Pledge(pledgepAddr, erc20Addr, roleAddr common.Address,
 		if err != nil {
 			retryCount++
 			log.Println("Pledge Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -217,7 +217,7 @@ func (p *ContractModule) Withdraw(pledgepAddr, roleAddr, rTokenAddr common.Addre
 		if err != nil {
 			retryCount++
 			log.Println("Withdraw Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}

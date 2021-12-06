@@ -3,8 +3,6 @@ package callconts
 import (
 	"log"
 	"math/big"
-	"memoContract/contracts/erc20"
-	iface "memoContract/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -13,35 +11,15 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// NewAccessControl new a instance of ContractModule
-func NewAccessControl(addr common.Address, hexSk string, txopts *TxOpts) iface.AccessControlInfo {
-	a := &ContractModule{
-		addr:   addr,
-		hexSk:  hexSk,
-		txopts: txopts,
-	}
-
-	return a
-}
-
-// newAccessControl new an instance of AccessControl contract, 'acAddr' indicates AccessControl contract address
-func newAccessControl(acAddr common.Address) (*erc20.AccessControl, error) {
-	acIns, err := erc20.NewAccessControl(acAddr, getClient(EndPoint))
-	if err != nil {
-		return nil, err
-	}
-	return acIns, nil
-}
-
 // SetUpRole Called by who has DEFAULT_ADMIN_ROLE. Set role to addr.
 // role: DEFAULT_ADMIN_ROLE(0)、MINTER_ROLE(1)、PAUSER_ROLE(2)
-func (ac *ContractModule) SetUpRole(acAddr common.Address, role uint8, addr common.Address) error {
-	acIns, err := newAccessControl(acAddr)
+func (ac *ContractModule) SetUpRole(erc20Addr common.Address, role uint8, addr common.Address) error {
+	acIns, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
 
-	hasAdmin, err := ac.HasRole(acAddr, uint8(0), ac.addr)
+	hasAdmin, err := ac.HasRole(erc20Addr, uint8(0), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -75,7 +53,7 @@ func (ac *ContractModule) SetUpRole(acAddr common.Address, role uint8, addr comm
 		if err != nil {
 			retryCount++
 			log.Println("SetUpRole Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -102,13 +80,13 @@ func (ac *ContractModule) SetUpRole(acAddr common.Address, role uint8, addr comm
 }
 
 // RevokeRole Called by who has DEFAULT_ADMIN_ROLE. Revoke other account's role.
-func (ac *ContractModule) RevokeRole(acAddr common.Address, role uint8, addr common.Address) error {
-	acIns, err := newAccessControl(acAddr)
+func (ac *ContractModule) RevokeRole(erc20Addr common.Address, role uint8, addr common.Address) error {
+	acIns, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
 
-	hasAdmin, err := ac.HasRole(acAddr, uint8(0), ac.addr)
+	hasAdmin, err := ac.HasRole(erc20Addr, uint8(0), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -142,7 +120,7 @@ func (ac *ContractModule) RevokeRole(acAddr common.Address, role uint8, addr com
 		if err != nil {
 			retryCount++
 			log.Println("RevokeRole Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -169,8 +147,8 @@ func (ac *ContractModule) RevokeRole(acAddr common.Address, role uint8, addr com
 }
 
 // RenounceRole Account renounce its role .
-func (ac *ContractModule) RenounceRole(acAddr common.Address, role uint8) error {
-	acIns, err := newAccessControl(acAddr)
+func (ac *ContractModule) RenounceRole(erc20Addr common.Address, role uint8) error {
+	acIns, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
@@ -193,7 +171,7 @@ func (ac *ContractModule) RenounceRole(acAddr common.Address, role uint8) error 
 		if err != nil {
 			retryCount++
 			log.Println("RenounceRole Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -220,13 +198,13 @@ func (ac *ContractModule) RenounceRole(acAddr common.Address, role uint8) error 
 }
 
 // Pause Set to true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE.
-func (ac *ContractModule) Pause(acAddr common.Address) error {
-	acIns, err := newAccessControl(acAddr)
+func (ac *ContractModule) Pause(erc20Addr common.Address) error {
+	acIns, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
 
-	hasPause, err := ac.HasRole(acAddr, uint8(2), ac.addr)
+	hasPause, err := ac.HasRole(erc20Addr, uint8(2), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -252,7 +230,7 @@ func (ac *ContractModule) Pause(acAddr common.Address) error {
 		if err != nil {
 			retryCount++
 			log.Println("Pause Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -279,13 +257,13 @@ func (ac *ContractModule) Pause(acAddr common.Address) error {
 }
 
 // Unpause Set to false to allow transfer operation in erc20. Called by who has PAUSER_ROLE.
-func (ac *ContractModule) Unpause(acAddr common.Address) error {
-	acIns, err := newAccessControl(acAddr)
+func (ac *ContractModule) Unpause(erc20Addr common.Address) error {
+	acIns, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
 
-	hasPause, err := ac.HasRole(acAddr, uint8(2), ac.addr)
+	hasPause, err := ac.HasRole(erc20Addr, uint8(2), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -311,7 +289,7 @@ func (ac *ContractModule) Unpause(acAddr common.Address) error {
 		if err != nil {
 			retryCount++
 			log.Println("Unpause Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -338,10 +316,10 @@ func (ac *ContractModule) Unpause(acAddr common.Address) error {
 }
 
 // HasRole Check whether the account has the right.
-func (ac *ContractModule) HasRole(acAddr common.Address, role uint8, addr common.Address) (bool, error) {
+func (ac *ContractModule) HasRole(erc20Addr common.Address, role uint8, addr common.Address) (bool, error) {
 	var has bool
 
-	acIns, err := newAccessControl(acAddr)
+	acIns, err := newERC20(erc20Addr)
 	if err != nil {
 		return has, err
 	}
@@ -365,10 +343,10 @@ func (ac *ContractModule) HasRole(acAddr common.Address, role uint8, addr common
 }
 
 // GetPaused Check whether the account has the right.
-func (ac *ContractModule) GetPaused(acAddr common.Address) (bool, error) {
+func (ac *ContractModule) GetPaused(erc20Addr common.Address) (bool, error) {
 	var isPaused bool
 
-	acIns, err := newAccessControl(acAddr)
+	acIns, err := newERC20(erc20Addr)
 	if err != nil {
 		return isPaused, err
 	}

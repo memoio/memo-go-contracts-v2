@@ -51,7 +51,7 @@ func (rfs *ContractModule) DeployRoleFS() (common.Address, *rolefs.RoleFS, error
 		if err != nil {
 			retryCount++
 			log.Println("deploy RoleFS Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -152,7 +152,7 @@ func (rfs *ContractModule) SetAddr(roleFS, issuan, role, fileSys, rtoken common.
 		if err != nil {
 			retryCount++
 			log.Println("setAddr Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -217,7 +217,7 @@ func (rfs *ContractModule) AddOrder(roleFS, roleAddr, rTokenAddr common.Address,
 		if err != nil {
 			retryCount++
 			log.Println("AddOrder Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -282,7 +282,7 @@ func (rfs *ContractModule) SubOrder(roleFS, roleAddr, rTokenAddr common.Address,
 		if err != nil {
 			retryCount++
 			log.Println("SubOrder Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -347,7 +347,7 @@ func (rfs *ContractModule) AddRepair(roleFS, roleAddr, rTokenAddr common.Address
 		if err != nil {
 			retryCount++
 			log.Println("AddRepair Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -413,7 +413,7 @@ func (rfs *ContractModule) SubRepair(roleFS, roleAddr, rTokenAddr common.Address
 		if err != nil {
 			retryCount++
 			log.Println("SubRepair Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -488,7 +488,7 @@ func (rfs *ContractModule) ProWithdraw(roleFS, roleAddr, rTokenAddr common.Addre
 		if err != nil {
 			retryCount++
 			log.Println("ProWithdraw Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}

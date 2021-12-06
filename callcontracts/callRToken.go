@@ -20,10 +20,10 @@ func NewRT(addr common.Address, hexSk string, txopts *TxOpts) iface.RTokenInfo {
 	return rt
 }
 
-// IsValid check whether the tokenIndex is valid
-func (rt *ContractModule) IsValid(rtokenAddr common.Address, tIndex uint32) (bool, error) {
+// IsValid check whether the tokenIndex is valid, rtokenAddr indicates RToken contract address, get it by RToken() in callRole.go
+func (rt *ContractModule) IsValid(rTokenAddr common.Address, tIndex uint32) (bool, error) {
 	var isvalid bool
-	rToken, err := role.NewRToken(rtokenAddr, getClient(EndPoint))
+	rToken, err := role.NewRToken(rTokenAddr, getClient(EndPoint))
 	if err != nil {
 		return false, err
 	}

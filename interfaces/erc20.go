@@ -23,13 +23,11 @@ type ERC20Info interface {
 	TransferFrom(common.Address, common.Address, common.Address, *big.Int) error
 	IncreaseAllowance(common.Address, common.Address, *big.Int) error
 	DecreaseAllowance(common.Address, common.Address, *big.Int) error
-	MintToken(common.Address, common.Address,common.Address, *big.Int) error
-	Burn(common.Address, common.Address, *big.Int) error
-	AirDrop(common.Address, common.Address, []common.Address, *big.Int) error
-}
+	MintToken(common.Address, common.Address, *big.Int) error
+	Burn(common.Address, *big.Int) error
+	AirDrop(common.Address, []common.Address, *big.Int) error
 
-// AccessControlInfo contains information about token operation permissions
-type AccessControlInfo interface {
+	// AccessControl
 	SetUpRole(common.Address, uint8, common.Address) error
 	RevokeRole(common.Address, uint8, common.Address) error
 	RenounceRole(common.Address, uint8) error
