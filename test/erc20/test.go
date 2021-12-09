@@ -43,7 +43,7 @@ func main() {
 		GasLimit: callconts.DefaultGasLimit,
 	}
 	e := callconts.NewERC20(common.HexToAddress(test.AdminAddr), test.AdminSk, txopts)
-
+	
 	fmt.Println("============1. begin test deploy ERC20 contract============")
 	erc20Addr, _, err := e.DeployERC20(name, symbol)
 	if err != nil {

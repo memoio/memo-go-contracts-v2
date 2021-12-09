@@ -493,21 +493,21 @@ func (r *ContractModule) RegisterToken(roleAddr common.Address, tokenAddr common
 }
 
 // CreateGroup called by admin to create a group and then deploy FileSys contract and then set FileSys-address to group.
-// founder default is 0
-func (r *ContractModule) CreateGroup(roleAddr, rfsAddr common.Address, founder uint64, kindexes []uint64, level uint16) error {
+// founder default is 0, len(keepers)>=level then group is active
+func (r *ContractModule) CreateGroup(roleAddr, rfsAddr common.Address, founder uint64, kindexes []uint64, level uint16) (uint64, error) {
 	gIndex, err := r.createGroup(roleAddr, kindexes, level)
 	if err != nil {
-		return err
+		return gIndex, err
 	}
 
 	// deploy FileSys
 	fsAddr, _, err := r.DeployFileSys(founder, gIndex, roleAddr, rfsAddr, kindexes)
 	if err != nil {
-		return err
+		return gIndex, err
 	}
 
 	err = r.SetGF(roleAddr, fsAddr, gIndex)
-	return err
+	return gIndex, err
 }
 
 // CreateGroup called by admin to create a group.

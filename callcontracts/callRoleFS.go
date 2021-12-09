@@ -180,6 +180,9 @@ func (rfs *ContractModule) SetAddr(roleFS, issuan, role, fileSys, rtoken common.
 
 // AddOrder called by keeper? Add the storage order in the FileSys.
 // hash(uIndex, pIndex, _start, end, _size, nonce, tIndex, sPrice)?
+// 目前合约中还未对签名进行判断处理
+// nonce需要从0开始依次累加
+// 调用该函数前，需要admin为RoleFS合约账户赋予MINTER_ROLE权限
 func (rfs *ContractModule) AddOrder(roleFS, roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
@@ -245,6 +248,7 @@ func (rfs *ContractModule) AddOrder(roleFS, roleAddr, rTokenAddr common.Address,
 
 // SubOrder called by keeper? Reduce the storage order in the FileSys.
 // hash(uIndex, pIndex, _start, end, _size, nonce, tIndex, sPrice)?
+// 目前合约中还未对签名信息做判断处理
 func (rfs *ContractModule) SubOrder(roleFS, roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
