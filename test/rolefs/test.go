@@ -28,7 +28,7 @@ func main() {
 	// 查看余额，支付交易Gas费
 	bal := callconts.QueryEthBalance(test.AdminAddr, ethEndPoint)
 	fmt.Println("test admin-account has balance: ", bal, " in Ethereum")
-	bal = callconts.QueryEthBalance(test.Addr, ethEndPoint)
+	bal = callconts.QueryEthBalance(test.Acc1, ethEndPoint)
 	fmt.Println("test common-account has balance: ", bal, " in Ethereum")
 
 	// 用于测试的一些参数

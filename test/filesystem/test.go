@@ -35,8 +35,8 @@ func main() {
 	// 部署Role的参数
 	pledgeK := big.NewInt(1e18)
 	pledgeP := big.NewInt(1e18)
-	var addrs []common.Address = []common.Address{common.HexToAddress(test.Addr), common.HexToAddress(test.Addr2), common.HexToAddress(test.Addr3), common.HexToAddress(test.Addr4), common.HexToAddress(test.Addr5)}
-	var sks []string = []string{test.Sk, test.Sk2, test.Sk3, test.Sk4, test.Sk5}
+	var addrs []common.Address = []common.Address{common.HexToAddress(test.Acc1), common.HexToAddress(test.Acc2), common.HexToAddress(test.Acc3), common.HexToAddress(test.Acc4), common.HexToAddress(test.Acc5)}
+	var sks []string = []string{test.Sk1, test.Sk2, test.Sk3, test.Sk4, test.Sk5}
 
 	// 查看余额，支付交易Gas费，余额不足时，需充值（暂时手动）
 	bal := callconts.QueryEthBalance(test.AdminAddr, ethEndPoint)

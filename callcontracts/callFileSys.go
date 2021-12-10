@@ -163,9 +163,12 @@ func (fs *ContractModule) GetStoreInfo(fsAddr common.Address, uIndex uint64, pIn
 	retryCount := 0
 	for {
 		retryCount++
-		_time, size, price, err = fsIns.GetStoreInfo(&bind.CallOpts{
-			From: fs.addr,
-		}, uIndex, pIndex, tIndex)
+		_time, size, price, err = fsIns.GetStoreInfo(
+			&bind.CallOpts{From: fs.addr},
+			uIndex,
+			pIndex,
+			tIndex,
+		)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
 				return _time, size, price, err
@@ -191,9 +194,12 @@ func (fs *ContractModule) GetChannelInfo(fsAddr common.Address, uIndex uint64, p
 	retryCount := 0
 	for {
 		retryCount++
-		amount, nonce, expire, err = fsIns.GetChannelInfo(&bind.CallOpts{
-			From: fs.addr,
-		}, uIndex, pIndex, tIndex)
+		amount, nonce, expire, err = fsIns.GetChannelInfo(
+			&bind.CallOpts{From: fs.addr},
+			uIndex,
+			pIndex,
+			tIndex,
+		)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
 				return amount, nonce, expire, err

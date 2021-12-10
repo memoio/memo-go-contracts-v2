@@ -84,30 +84,30 @@ const (
 
 var (
 	// ErrTxFail indicates that the transaction is not packaged or an error occurred during the packaging process
-	ErrTxFail = errors.New("Transaction fails")
+	ErrTxFail = errors.New("transaction fails")
 	// ErrTxExecu indicates that an error occurred during packaging
-	ErrTxExecu = errors.New("Transaction mined but execution failed")
+	ErrTxExecu = errors.New("transaction mined but execution failed")
 	// ErrBalNotE indicates that the account's balance is not enough to do something
-	ErrBalNotE = errors.New("Balance is not enough")
+	ErrBalNotE = errors.New("balance is not enough")
 	// ErrAlloNotE indicates that the account's allowance is not enough to transferfrom
-	ErrAlloNotE = errors.New("Allowance is not enough")
+	ErrAlloNotE = errors.New("allowance is not enough")
 	// ErrInValAddr indicates that the account address is invalid
-	ErrInValAddr = errors.New("Invalid address")
+	ErrInValAddr = errors.New("invalid address")
 	// ErrNoMintRight indicates that the account has not Mint right in erc20 contract
-	ErrNoMintRight = errors.New("The account has not Mint right")
+	ErrNoMintRight = errors.New("the account has not Mint right")
 	// ErrNoPauseRight indicates that the account has not Pause right in erc20 contract
-	ErrNoPauseRight = errors.New("The account has not Pause right")
+	ErrNoPauseRight = errors.New("the account has not Pause right")
 	// ErrNoAdminRight indicates that the account has not Admin right in erc20 contract
-	ErrNoAdminRight      = errors.New("The account has not Admin right")
-	errAccessControlRole = errors.New("The role in accessControl is invalid")
+	ErrNoAdminRight      = errors.New("the account has not Admin right")
+	errAccessControlRole = errors.New("the role in accessControl is invalid")
 	// ErrIndex indicates that the rindex does not meet the requirements
-	ErrIndex = errors.New("The role index is invalid")
+	ErrIndex = errors.New("the role index is invalid")
 	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
-	ErrIsBanned = errors.New("The account is banned in Role contract")
+	ErrIsBanned = errors.New("the account is banned in Role contract")
 	// ErrTIndex tindex invalid
-	ErrTIndex = errors.New("The token index is invalid")
+	ErrTIndex = errors.New("the token index is invalid")
 	// ErrRoleReg has registered
-	ErrRoleReg = errors.New("The account has already registered a role")
+	ErrRoleReg = errors.New("the account has already registered a role")
 	// ErrInvalidG invalid gindex
 	ErrInvalidG = errors.New("invalid group index")
 	// ErrNotSetPP need set PledgePool address in Role contract
@@ -115,7 +115,7 @@ var (
 	// ErrKSignsNE ksigns err
 	ErrKSignsNE     = errors.New("the account of kSigns is not enough")
 	errAllowanceExc = errors.New("the account's allowance to other account excess balance")
-	errPledgeNE = errors.New("The pledge money is not enough to pledgeKeeper or pledgeProvider")
+	errPledgeNE     = errors.New("the pledge money is not enough to pledgeKeeper or pledgeProvider")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
@@ -162,6 +162,7 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 //CheckTx check whether transaction is successful through receipt
 func checkTx(tx *types.Transaction) error {
 	log.Println("Check Tx hash:", tx.Hash().Hex(), "nonce:", tx.Nonce(), "gasPrice:", tx.GasPrice())
+	log.Println("waiting for miner...")
 
 	var receipt *types.Receipt
 	for i := 0; i < 20; i++ {

@@ -28,7 +28,7 @@ func main() {
 	// 查看余额，支付交易Gas费
 	bal := callconts.QueryEthBalance(test.AdminAddr, ethEndPoint)
 	fmt.Println("test admin-account has balance: ", bal, " in Ethereum")
-	bal = callconts.QueryEthBalance(test.Addr, ethEndPoint)
+	bal = callconts.QueryEthBalance(test.Acc1, ethEndPoint)
 	fmt.Println("test common-account has balance: ", bal, " in Ethereum")
 
 	var (
@@ -53,7 +53,7 @@ func main() {
 	//erc20Addr := common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 
 	fmt.Println("============2. begin test GetName============")
-	e = callconts.NewERC20(common.HexToAddress(test.Addr), test.Sk, txopts)
+	e = callconts.NewERC20(common.HexToAddress(test.Acc1), test.Sk1, txopts)
 	n, err := e.GetName(erc20Addr)
 	if err != nil {
 		log.Fatal(err)
@@ -81,7 +81,7 @@ func main() {
 	}
 
 	fmt.Println("============5. begin test BalanceOf============")
-	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr))
+	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func main() {
 	}
 
 	fmt.Println("============6. begin test Allowance============")
-	allo, err := e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Addr))
+	allo, err := e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,18 +149,18 @@ func main() {
 	}
 
 	fmt.Println("============11. begin test SetUpRole in AccessControl============")
-	e = callconts.NewERC20(common.HexToAddress(test.Addr), test.Sk, txopts)
-	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr))
+	e = callconts.NewERC20(common.HexToAddress(test.Acc1), test.Sk1, txopts)
+	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err == nil {
 		log.Fatal(err)
 	}
 	fmt.Println(err)
 	e = callconts.NewERC20(common.HexToAddress(test.AdminAddr), test.AdminSk, txopts)
-	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr))
+	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
-	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr))
+	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -169,11 +169,11 @@ func main() {
 	}
 
 	fmt.Println("============12. begin test RevokeRole in AccessControl============")
-	err = e.RevokeRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr))
+	err = e.RevokeRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
-	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr))
+	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -217,15 +217,15 @@ func main() {
 	}
 
 	fmt.Println("============15. begin test Transfer in ERC20============")
-	bal0, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr))
+	bal0, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = e.Transfer(erc20Addr, common.HexToAddress(test.Addr), big.NewInt(100))
+	err = e.Transfer(erc20Addr, common.HexToAddress(test.Acc1), big.NewInt(100))
 	if err != nil {
 		log.Fatal(err)
 	}
-	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr))
+	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -235,11 +235,11 @@ func main() {
 	}
 
 	fmt.Println("============16. begin test Approve in ERC20============")
-	err = e.Approve(erc20Addr, common.HexToAddress(test.Addr), big.NewInt(500))
+	err = e.Approve(erc20Addr, common.HexToAddress(test.Acc1), big.NewInt(500))
 	if err != nil {
 		log.Fatal(err)
 	}
-	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Addr))
+	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -249,16 +249,16 @@ func main() {
 	}
 
 	fmt.Println("============17. begin test TransferFrom in ERC20============")
-	e = callconts.NewERC20(common.HexToAddress(test.Addr), test.Sk, txopts)
-	bal0, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr2))
+	e = callconts.NewERC20(common.HexToAddress(test.Acc1), test.Sk1, txopts)
+	bal0, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = e.TransferFrom(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Addr2), big.NewInt(100))
+	err = e.TransferFrom(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Acc2), big.NewInt(100))
 	if err != nil {
 		log.Fatal(err)
 	}
-	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Addr))
+	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -266,22 +266,22 @@ func main() {
 	if allo.Cmp(big.NewInt(400)) != 0 {
 		log.Fatal("TransferFrom allowance fails")
 	}
-	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr2))
+	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("balance of Addr2 is: ", bal)
+	fmt.Println("balance of Acc2 is: ", bal)
 	if tmp.Sub(bal, bal0).Cmp(big.NewInt(100)) != 0 {
 		log.Fatal("TransferFrom fails")
 	}
 
 	fmt.Println("============18. begin test IncreaseAllowance in ERC20============")
 	e = callconts.NewERC20(common.HexToAddress(test.AdminAddr), test.AdminSk, txopts)
-	err = e.IncreaseAllowance(erc20Addr, common.HexToAddress(test.Addr), big.NewInt(500))
+	err = e.IncreaseAllowance(erc20Addr, common.HexToAddress(test.Acc1), big.NewInt(500))
 	if err != nil {
 		log.Fatal(err)
 	}
-	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Addr))
+	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -291,11 +291,11 @@ func main() {
 	}
 
 	fmt.Println("============19. begin test DecreaseAllowance in ERC20============")
-	err = e.DecreaseAllowance(erc20Addr, common.HexToAddress(test.Addr), big.NewInt(900))
+	err = e.DecreaseAllowance(erc20Addr, common.HexToAddress(test.Acc1), big.NewInt(900))
 	if err != nil {
 		log.Fatal(err)
 	}
-	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Addr))
+	allo, err = e.Allowance(erc20Addr, common.HexToAddress(test.AdminAddr), common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -305,43 +305,43 @@ func main() {
 	}
 
 	fmt.Println("============20. begin test AirDrop in ERC20============")
-	bal0, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr))
+	bal0, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
-	bal01, err := e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr2))
+	bal01, err := e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("balance of Addr、Addr2 is: ", bal0, bal01)
-	err = e.AirDrop(erc20Addr, []common.Address{common.HexToAddress(test.Addr), common.HexToAddress(test.Addr2)}, big.NewInt(100))
+	fmt.Println("balance of Addr、Acc2 is: ", bal0, bal01)
+	err = e.AirDrop(erc20Addr, []common.Address{common.HexToAddress(test.Acc1), common.HexToAddress(test.Acc2)}, big.NewInt(100))
 	if err != nil {
 		log.Fatal(err)
 	}
-	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr))
+	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
-	bal11, err := e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr2))
+	bal11, err := e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("balance of Addr、Addr2 is: ", bal, bal11)
+	fmt.Println("balance of Addr、Acc2 is: ", bal, bal11)
 	if tmp.Sub(bal, bal0).Cmp(big.NewInt(100)) != 0 || tmp.Sub(bal11, bal01).Cmp(big.NewInt(100)) != 0 {
 		log.Fatal("AirDrop fails")
 	}
 
 	fmt.Println("============21. begin test Burn in ERC20============")
-	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr))
+	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
-	e = callconts.NewERC20(common.HexToAddress(test.Addr), test.Sk, txopts)
+	e = callconts.NewERC20(common.HexToAddress(test.Acc1), test.Sk1, txopts)
 	err = e.Burn(erc20Addr, bal)
 	if err != nil {
 		log.Fatal(err)
 	}
-	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr))
+	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -350,22 +350,22 @@ func main() {
 		log.Fatal("Burn by Addr fails")
 	}
 
-	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr2))
+	err = e.SetUpRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
 	}
-	e = callconts.NewERC20(common.HexToAddress(test.Addr2), test.Sk2, txopts)
+	e = callconts.NewERC20(common.HexToAddress(test.Acc2), test.Sk2, txopts)
 	err = e.Burn(erc20Addr, bal11)
 	if err != nil {
 		log.Fatal(err)
 	}
-	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Addr2))
+	bal, err = e.BalanceOf(erc20Addr, common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("balance of Addr2 is: ", bal)
+	fmt.Println("balance of Acc2 is: ", bal)
 	if bal.Cmp(big.NewInt(0)) != 0 {
-		log.Fatal("Burn by Addr2 fails")
+		log.Fatal("Burn by Acc2 fails")
 	}
 
 	fmt.Println("============22. begin test RenounceRole in AccessControl============")
@@ -373,20 +373,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr2))
+	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
 	}
 	if hasAdminRole {
-		log.Fatal("Addr2 RenounceRole fails")
+		log.Fatal("Acc2 RenounceRole fails")
 	}
 
-	e = callconts.NewERC20(common.HexToAddress(test.Addr), test.Sk, txopts)
+	e = callconts.NewERC20(common.HexToAddress(test.Acc1), test.Sk1, txopts)
 	err = e.RenounceRole(erc20Addr, callconts.AdminRole)
 	if err != nil {
 		log.Fatal(err)
 	}
-	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Addr))
+	hasAdminRole, err = e.HasRole(erc20Addr, callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
 	}
