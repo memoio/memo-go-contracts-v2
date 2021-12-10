@@ -46,7 +46,7 @@ func (rt *ContractModule) IsValid(rTokenAddr common.Address, tIndex uint32) (boo
 	}
 }
 
-// GetTA get the address of tokenIndex
+// GetTA get the address of tokenIndex. Return (0x0, nil) if the tIndex is invalid
 func (rt *ContractModule) GetTA(rTokenAddr common.Address, tIndex uint32) (common.Address, error) {
 	var taddr common.Address
 	rToken, err := role.NewRToken(rTokenAddr, getClient(EndPoint))
