@@ -16,6 +16,12 @@ var (
 	qethEndPoint string
 )
 
+// test process
+// 1. deploy Role
+// 2. deploy PledgePool
+// 3. deploy RoleFS
+// 4. deploy Issuance
+// 5. call setPI
 func main() {
 	//--eth=http://119.147.213.219:8101 --qeth=http://119.147.213.219:8101      testnet网
 	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
@@ -36,17 +42,72 @@ func main() {
 	pledgeK := big.NewInt(1e18)
 	pledgeP := big.NewInt(1e18)
 
+	// tx options
 	txopts := &callconts.TxOpts{
 		Nonce:    nil,
 		GasPrice: big.NewInt(callconts.DefaultGasPrice),
 		GasLimit: callconts.DefaultGasLimit,
 	}
-	e := callconts.NewR(adminAddr, test.AdminSk, txopts)
 
-	fmt.Println("============1. begin test deploy Role contract============")
-	roleAddr, _, err := e.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
+	fmt.Println("========== 1. deploy Role contract ==========")
+	// deploy Role with admin
+	roleCaller := callconts.NewR(adminAddr, test.AdminSk, txopts)
+	roleAddr, _, err := roleCaller.DeployRole(
+		test.Foundation,
+		test.PrimaryToken,
+		pledgeK,
+		pledgeP,
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Role contract Address:", roleAddr.Hex())
+	fmt.Println("Role Address:", roleAddr.Hex())
+
+	fmt.Println("========== 2. deploy PledgePool contract ==========")
+	// get RToken address
+	rtAddr, err := roleCaller.RToken(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("RToken Address:", rtAddr.Hex())
+
+	// deploy PledgePool with admin
+	pledgeCaller := callconts.NewPledgePool(adminAddr, test.AdminSk, txopts)
+	pledgeAddr, _, err := pledgeCaller.DeployPledgePool(
+		test.PrimaryToken,
+		rtAddr,
+		roleAddr,
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("PledgePool Address:", pledgeAddr.Hex())
+
+	fmt.Println("========== 3. deploy RoleFS contract ==========")
+	// caller by admin
+	rfsCaller := callconts.NewRFS(adminAddr, test.AdminSk, txopts)
+	rfsAddr, _, err := rfsCaller.DeployRoleFS()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("RoleFS address: ", rfsAddr.Hex())
+
+	fmt.Println("========== 4. deploy Issuance contract ==========")
+	// caller by admin
+	issuCaller := callconts.NewIssu(adminAddr, test.AdminSk, txopts)
+	issuAddr, _, err := issuCaller.DeployIssuance(rfsAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Issuance address: ", issuAddr.Hex()) // 0xB15FEDB8017845331b460786fb5129C1Da06f6B1
+
+	fmt.Println("========== 5. call setPI() ==========")
+	// call with addrs
+	roleCaller.SetPI(
+		roleAddr,
+		pledgeAddr,
+		issuAddr,
+		rfsAddr,
+	)
+
 }
