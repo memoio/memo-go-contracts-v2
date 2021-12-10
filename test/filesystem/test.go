@@ -40,10 +40,10 @@ func main() {
 
 	// 查看余额，支付交易Gas费，余额不足时，需充值（暂时手动）
 	bal := callconts.QueryEthBalance(test.AdminAddr, ethEndPoint)
-	fmt.Println("test admin-account has balance: ", bal, " in Ethereum")
-	for _, addr := range addrs {
+	fmt.Println("admin balance: ", bal, " in Ethereum")
+	for i, addr := range addrs {
 		bal = callconts.QueryEthBalance(addr.Hex(), ethEndPoint)
-		fmt.Println("test common-account ", addr.Hex(), " has balance: ", bal, " in Ethereum")
+		fmt.Println("acc", i, " balance: ", bal, " in Ethereum")
 	}
 
 	txopts := &callconts.TxOpts{
@@ -58,7 +58,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("The balance of admin account in erc20 is ", bal)
+	fmt.Println("admin balance in primaryToken is ", bal)
 	if bal.Cmp(big.NewInt(test.MoneyTo*5)) < 0 {
 		// mintToken
 		err = erc20.MintToken(test.PrimaryToken, adminAddr, big.NewInt(test.MoneyTo*5))
@@ -69,14 +69,14 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("After mint, the balance of admin account in erc20 is ", bal)
+		fmt.Println("after mint, admin balance in primaryToken is ", bal)
 	}
-	for _, addr := range addrs {
+	for i, addr := range addrs {
 		bal, err = erc20.BalanceOf(test.PrimaryToken, addr)
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println("The balance of ", addr.Hex(), " in erc20 is ", bal)
+		fmt.Println("acc", i, " balance in primaryToken is ", bal)
 		if bal.Cmp(pledgeK) < 0 {
 			err = erc20.Transfer(test.PrimaryToken, addr, pledgeK) // admin给测试账户转账，用于测试（充值或质押）
 			if err != nil {
@@ -86,7 +86,7 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println("After transfer, the balance of ", addr.Hex(), " in erc20 is ", bal)
+			fmt.Println("after transfer, acc", i, " balance in primaryToken is ", bal)
 		}
 	}
 
