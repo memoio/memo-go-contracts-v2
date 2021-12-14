@@ -528,6 +528,7 @@ func (r *ContractModule) createGroup(roleAddr common.Address, kindexes []uint64,
 			return 0, err
 		}
 		if roleType != KeeperRoleType || isActive || isBanned {
+			log.Println("roleType: ", roleType, " isActive: ", isActive, " isBanned: ", isBanned)
 			log.Println(kindex, " in kindexes is invalid, the address is", tmpAddr)
 			return 0, ErrIndex
 		}
