@@ -92,7 +92,7 @@ func main() {
 
 	fmt.Println("============1. begin test deploy FileSys contract============")
 	// 部署FileSys合约前准备工作：部署Role合约、部署RoleFS合约、账户注册角色、调用Role合约中的CreateGroup函数
-	// 顺序：Role、RoleFS、PledgePool、CreateGroup(FileSys)、
+	// 顺序：Role、RoleFS、PledgePool、Issuance、CreateGroup(FileSys)、
 	r := callconts.NewR(adminAddr, test.AdminSk, txopts)
 	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
 	if err != nil {
@@ -109,7 +109,7 @@ func main() {
 	fmt.Println("The RoleFS contract address: ", rolefsAddr.Hex())
 	//rolefsAddr := common.HexToAddress("0xAAaC6D27153BF52d66Eed127e0321372B2FFF67C")
 
-	// 账户注册, addr:User addr2、addr3、addr4:Keeper addr5:Provider
+	// 账户注册, acc1:User; acc2、acc3、acc4:Keeper; acc5:Provider
 	rIndexes := make([]uint64, 5)
 	for i, addr := range addrs {
 		r = callconts.NewR(addr, sks[i], txopts)

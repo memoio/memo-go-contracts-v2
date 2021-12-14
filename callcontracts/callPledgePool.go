@@ -94,7 +94,7 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 
 // Pledge money.
 // Called by the account itself or by another account on its behalf.
-// 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是value）
+// 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是value）,如果是账户本身调用，则会由代码自动approve
 func (p *ContractModule) Pledge(pledgepAddr, erc20Addr, roleAddr common.Address, rindex uint64, value *big.Int, sign []byte) error {
 	pledgepIns, err := newPledgePool(pledgepAddr)
 	if err != nil {
@@ -112,7 +112,7 @@ func (p *ContractModule) Pledge(pledgepAddr, erc20Addr, roleAddr common.Address,
 		return ErrIsBanned
 	}
 
-	// check whether the allowance[addr][pledgePoolAddr] is not less than value, if not, will set allowance automatically by code.
+	// check whether the allowance[addr][pledgePoolAddr] is not less than value, if not, will approve automatically by code.
 	allo, err := p.Allowance(erc20Addr, addr, pledgepAddr)
 	if err != nil {
 		return err

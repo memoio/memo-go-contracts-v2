@@ -1343,12 +1343,16 @@ func (r *ContractModule) GetAddrGindex(roleAddr common.Address, rIndex uint64) (
 		return addr, gIndex, err
 	}
 
+	if rIndex == 0 {
+		return addr, 0, ErrIndex
+	}
+
 	retryCount := 0
 	for {
 		retryCount++
 		addr, gIndex, err = roleIns.GetAddrGindex(&bind.CallOpts{
 			From: r.addr,
-		}, rIndex)
+		}, rIndex-1)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
 				return addr, gIndex, err
