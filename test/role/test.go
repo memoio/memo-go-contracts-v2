@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Fast bool = true
+	Fast bool = false
 )
 
 var (
@@ -22,12 +22,6 @@ var (
 	qethEndPoint string
 )
 
-// test process
-// 1. deploy Role
-// 2. deploy PledgePool
-// 3. deploy RoleFS
-// 4. deploy Issuance
-// 5. call setPI
 func main() {
 	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
 	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
@@ -155,89 +149,71 @@ func main() {
 
 	fmt.Println("============ 1. prepair for testing ============")
 
-	// 准备工作：
-	// 部署<Role合约>，获取<RToken合约>地址
-	// 部署<RoleFS合约>
-	// 注册所有帐号
-	// 部署<PledgePool合约>
-	// Keeper和Provider质押代币
-	// 部署<Issuance合约>
-	// 注册Keeper和Provider角色
-	// 调用<Role合约>中的CreateGroup函数,自动部署<FileSys合约>
-	// 顺序：Role、RoleFS、PledgePool、CreateGroup(FileSys)
+	// 合约部署顺序：Role、RoleFS、PledgePool、CreateGroup(FileSys)
 
 	r := callconts.NewR(adminAddr, test.AdminSk, txopts)
-
 	// deploy Role
 	if Fast {
 		fmt.Println("@@ fast test skip deploy Role, use existing address")
 	} else {
-
 		fmt.Println(">>>> begin deploy Role")
 
-		// 部署Role合约的时候指定使用的ERC20 Token,以及最小的Pledge值
-		roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
+		// deploy Role
+		roleAddr, _, err = r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The Role contract address: ", roleAddr.Hex())
 
 		// get RToken
-		rtokenAddr, err := r.RToken(roleAddr)
+		rtokenAddr, err = r.RToken(roleAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The RToken contract address: ", rtokenAddr.Hex())
-		//rtokenAddr := common.HexToAddress("0x081458b892fb2caEb3e4a6234F9183594531b715")
 
 		// deploy RoleFS
 		rfs := callconts.NewRFS(adminAddr, test.AdminSk, txopts)
-		rolefsAddr, _, err := rfs.DeployRoleFS()
+		rolefsAddr, _, err = rfs.DeployRoleFS()
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The RoleFS contract address: ", rolefsAddr.Hex())
-
 	}
 
-	// register accounts
-	// acc1: User
-	// acc2, acc3, acc4: Keeper
-	// acc5: Provider
-
-	var rIndexes []uint64
-
-	// const slice for fast test
+	var rIndexes = make([]uint64, 5)
+	// register accounts： User=[acc1] Keeper=[acc2, acc3, acc4] Provider=[acc5]
 	if Fast {
 		fmt.Println("@@ fast test skip register accounts, use default role indexes")
 		rIndexes = []uint64{1, 2, 3, 4, 5}
 	} else {
-		fmt.Println(">>>> begin register accountss to get role indexes")
-		rIndexes = make([]uint64, 5)
+		fmt.Println(">>>> begin register accounts to get role indexes")
 		for i, addr := range addrs {
+			fmt.Printf("Role address: %s, register acc: %s\n", roleAddr.Hex(), addr)
 			r = callconts.NewR(addr, sks[i], txopts)
 			err = r.Register(roleAddr, addr, nil)
 			if err != nil {
 				log.Fatal(err)
 			}
+
+			fmt.Println("call GetRoleIndex")
 			rIndexes[i], err = r.GetRoleIndex(roleAddr, addr)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-
 	}
 
 	fmt.Println("Role indexes is ", rIndexes)
 
 	var p iface.PledgePoolInfo
-	// register accounts
+	// deploy pledge pool
 	if Fast {
-		fmt.Println("@@ fast test skip register accounts, use default role indexes")
+		fmt.Println("@@ fast test skip deloy pledge pool, use existing contract")
 	} else {
 		fmt.Println(">>>> begin deploy PledgePool")
-		p := callconts.NewPledgePool(adminAddr, test.AdminSk, txopts)
-		pledgePoolAddr, _, err := p.DeployPledgePool(test.PrimaryToken, rtokenAddr, roleAddr)
+		p = callconts.NewPledgePool(adminAddr, test.AdminSk, txopts)
+		pledgePoolAddr, _, err = p.DeployPledgePool(test.PrimaryToken, rtokenAddr, roleAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -252,12 +228,12 @@ func main() {
 	} else {
 		fmt.Println(">>>> Getting min pledge from Role")
 		// get min Pledge for keeper and provider
-		pledgek, err := r.PledgeK(roleAddr) // 申请Keeper最少需质押的金额
+		pledgek, err = r.PledgeK(roleAddr) // 申请Keeper最少需质押的金额
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("min pledge for applying keeper: ", pledgek)
-		pledgep, err := r.PledgeP(roleAddr) // 申请Provider最少需质押的金额
+		pledgep, err = r.PledgeP(roleAddr) // 申请Provider最少需质押的金额
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -268,15 +244,26 @@ func main() {
 	if Fast {
 		fmt.Println("@@ fast test skip Pledge, use existing")
 	} else {
-		fmt.Println(">>>> begin pledge")
-		fmt.Println("Keepers pledge minPledgeK for register")
+		fmt.Println(">>>> begin keepers pledge")
+
 		for i, rindex := range rIndexes[1:4] {
+			fmt.Println("params:")
+			fmt.Println(
+				" add:", addrs[i+1],
+				" roleAddr:", roleAddr,
+				" pledgePoolAddr:", pledgePoolAddr,
+				" sk:", sks[i+1],
+				" rindex:", rindex,
+				" pledgek:", pledgek,
+				" txopts:", txopts,
+			)
 			err = toPledge(addrs[i+1], roleAddr, pledgePoolAddr, sks[i+1], rindex, pledgek, txopts)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		fmt.Println("Provider pledge minPledgeP for register")
+
+		fmt.Println(">>>> begin provider pledge")
 		err = toPledge(addrs[4], roleAddr, pledgePoolAddr, sks[4], rIndexes[4], pledgep, txopts)
 		if err != nil {
 			log.Fatal(err)
@@ -291,7 +278,7 @@ func main() {
 
 		issu := callconts.NewIssu(adminAddr, test.AdminSk, txopts)
 
-		issuanceAddr, _, err := issu.DeployIssuance(rolefsAddr)
+		issuanceAddr, _, err = issu.DeployIssuance(rolefsAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -305,28 +292,33 @@ func main() {
 		}
 	}
 
-	// register keepers and provider
+	// register keepers and provider role
 	if Fast {
-		fmt.Println("@@ fast test skip deploy keeper and provider")
+		fmt.Println("@@ fast test skip register roles, use existing roles")
 	} else {
 		fmt.Println(">>>> begin register keepers")
 		callconts.PledgePoolAddr = pledgePoolAddr
 		for i, rindex := range rIndexes[1:4] {
 			r := callconts.NewR(addrs[i+1], sks[i+1], txopts)
 			fmt.Println(addrs[i+1].Hex(), " begin to register Keeper...")
+
 			// 查询admin帐号在PledgePool合约中的ERC20 balance
+			fmt.Println("pledgePoolAddr: ", pledgePoolAddr, " rindex:", rindex)
+			p = callconts.NewPledgePool(adminAddr, test.AdminSk, txopts)
 			bal, err := p.GetBalanceInPPool(pledgePoolAddr, rindex, 0)
 			if err != nil {
 				log.Fatal(err)
 			}
 			fmt.Println("rindex ", rindex, " balance in PledgePool is ", bal)
-			// 获取账户信息
+
+			// 获取角色信息
 			_, _, roleType, index, _, _, err := r.GetRoleInfo(roleAddr, addrs[i+1])
 			if err != nil {
 				log.Fatal(err)
 			}
 			fmt.Println("The rindex", rindex, " information in Role contract, roleType:", roleType, " index:", index)
 
+			// register keeper role
 			if roleType == 0 {
 				err = r.RegisterKeeper(roleAddr, rindex, []byte("Hello, test"), nil)
 				if err != nil {
@@ -344,13 +336,14 @@ func main() {
 		}
 		fmt.Println("provider info: ")
 		fmt.Println("isActive:", isActive, " roleType:", roleType, " index:", index, " gIndex:", gIndex)
+
+		// register provider
 		if roleType == 0 {
 			err = r.RegisterProvider(roleAddr, rIndexes[4], nil)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-
 	}
 
 	// create group
@@ -366,7 +359,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("INFOS:")
+	fmt.Println(">>>> Show Info:")
 	fmt.Println("rIndexes: ", rIndexes)
 	fmt.Println("addrs: ", addrs)
 	fmt.Println("gIndex: ", gIndex)
@@ -379,16 +372,6 @@ func main() {
 	}
 	fmt.Println("The group info- isActive:", isActive, " isBanned: ", isBanned, " isReady:", isReady, " level:", level, " size:", _size, " price:", price, " fsAddr:", fsAddr.Hex())
 
-	// ----> The Role contract address:  0x0aE0e81C338E9128Aa630Ece410ee73F0CEEc88c
-	// ----> The RToken contract address:  0x1c40028BB314D4Ecd3Ead67104fb5D790Fe52F9F
-	// ----> The RoleFS contract address:  0x5c3C6b6aEfaA577548B07871688e109787d7F225
-	// ----> The PledgePool contract address:  0x4FD381B8b7f96B8BE2B6044c795A380EE47CF640
-	// ----> The Issuance contract address is:  0x9b2D613F811895fb67BF743A745caD256F6Ce2e0
-
-	// roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
-	// pledgePoolAddr, _, err := p.DeployPledgePool(test.PrimaryToken, rtokenAddr, roleAddr)
-	// issuanceAddr, _, err := issu.DeployIssuance(rolefsAddr)
-
 	fmt.Println("============ 2. test GetAddrGindex ============")
 
 	// get acc address and gIndex by rIndex
@@ -398,9 +381,6 @@ func main() {
 	}
 
 	fmt.Println("acc: ", acc, " gi: ", gi)
-	if acc != addrs[0] {
-		log.Fatal("test GetAddrGindex failed: acc address error")
-	}
 
 	fmt.Println("============test success!============")
 
