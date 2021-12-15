@@ -333,7 +333,7 @@ func main() {
 			}
 		}
 
-		fmt.Println(">>>> begin register provider")
+		fmt.Println(">>>> begin register provider ")
 		r = callconts.NewR(addrs[4], sks[4], txopts)
 		// isActive, isBanned, roleType, index, gIndex, extra
 		isActive, _, roleType, index, gIndex, _, err := r.GetRoleInfo(roleAddr, addrs[4])
