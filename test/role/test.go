@@ -1,20 +1,25 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
 	"math/big"
 	callconts "memoContract/callcontracts"
 	iface "memoContract/interfaces"
 	"memoContract/test"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
 
 const (
-	Fast bool = true
+	Fast bool = false
 )
 
 var (
@@ -47,13 +52,15 @@ func main() {
 	// ----> The PledgePool contract address:  0xa7BdAFF41d5CEA83172BBc2114e7591Ac42f67Ae
 	// ----> The Issuance contract address is:  0xd6fd05E52F5f3D200b072281CE9543E697E9c2FF
 
-	// fast test use existing contract addresses
+	config := InitConfig("./contracts.ini")
+	// fast test read contract addresses from config file
 	if Fast {
-		roleAddr = common.HexToAddress("0x2A9aBfD351D3f76577Ad8dAEe9103731A176ebf5")
-		rtokenAddr = common.HexToAddress("0x649d035e714F6B5Ede3688921a48dc21E1a0eE18")
-		rolefsAddr = common.HexToAddress("0x952bc95F1A9843ed424a732017a8f565faebf22a")
-		pledgePoolAddr = common.HexToAddress("0xa7BdAFF41d5CEA83172BBc2114e7591Ac42f67Ae")
-		issuanceAddr = common.HexToAddress("0xd6fd05E52F5f3D200b072281CE9543E697E9c2FF")
+		roleAddr = common.HexToAddress(config["role"])
+		rtokenAddr = common.HexToAddress(config["rtoken"])
+		rolefsAddr = common.HexToAddress(config["rolefs"])
+		pledgePoolAddr = common.HexToAddress(config["pledgePool"])
+		issuanceAddr = common.HexToAddress(config["issuance"])
+
 		gIndex = 1
 	} else {
 		_ = roleAddr
@@ -177,6 +184,8 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The RToken contract address: ", rtokenAddr.Hex())
+		// save contract address into config file
+		config["rtoken"] = rtokenAddr.Hex()
 
 		// deploy RoleFS
 		rfs := callconts.NewRFS(adminAddr, test.AdminSk, txopts)
@@ -369,6 +378,11 @@ func main() {
 	fmt.Println("rIndexes: ", rIndexes)
 	fmt.Println("addrs: ", addrs)
 	fmt.Println("gIndex: ", gIndex)
+	fmt.Println("role: ", roleAddr)
+	fmt.Println("rtoken: ", rtokenAddr)
+	fmt.Println("rolefs: ", rolefsAddr)
+	fmt.Println("pledgePool: ", pledgePoolAddr)
+	fmt.Println("issuance: ", issuanceAddr)
 
 	// 获取group信息
 	fmt.Println(">>>> getting group info")
@@ -397,6 +411,11 @@ func main() {
 
 	fmt.Println("============test success!============")
 
+	// if success and not fast test, save new config into config file
+	if !Fast {
+		cfg := fmt.Sprintf("role=%s\nrtoken=%s\nrolefs=%s\npledgePool=%s\nissuance=%s", roleAddr, rtokenAddr, rolefsAddr, pledgePoolAddr, issuanceAddr)
+		SaveConfig(cfg)
+	}
 }
 
 // approve before pledge
@@ -421,5 +440,51 @@ func toPledge(addr, roleAddr, pledgePoolAddr common.Address, sk string, rindex u
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+//读取key=value类型的配置文件
+func InitConfig(path string) map[string]string {
+	config := make(map[string]string)
+
+	f, err := os.Open(path)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	r := bufio.NewReader(f)
+	for {
+		b, _, err := r.ReadLine()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			panic(err)
+		}
+		s := strings.TrimSpace(string(b))
+		index := strings.Index(s, "=")
+		if index < 0 {
+			continue
+		}
+		key := strings.TrimSpace(s[:index])
+		if len(key) == 0 {
+			continue
+		}
+		value := strings.TrimSpace(s[index+1:])
+		if len(value) == 0 {
+			continue
+		}
+		config[key] = value
+	}
+	return config
+}
+
+func SaveConfig(cfg string) error {
+	err := ioutil.WriteFile("contracts.ini", []byte(cfg), 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
 }
