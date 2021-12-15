@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Fast bool = false
+	Fast bool = true
 )
 
 var (
@@ -41,13 +41,19 @@ func main() {
 		gIndex         uint64
 	)
 
+	// ----> The Role contract address:  0x2A9aBfD351D3f76577Ad8dAEe9103731A176ebf5
+	// ----> The RToken contract address:  0x649d035e714F6B5Ede3688921a48dc21E1a0eE18
+	// ----> The RoleFS contract address:  0x952bc95F1A9843ed424a732017a8f565faebf22a
+	// ----> The PledgePool contract address:  0xa7BdAFF41d5CEA83172BBc2114e7591Ac42f67Ae
+	// ----> The Issuance contract address is:  0xd6fd05E52F5f3D200b072281CE9543E697E9c2FF
+
 	// fast test use existing contract addresses
 	if Fast {
-		roleAddr = common.HexToAddress("0x0aE0e81C338E9128Aa630Ece410ee73F0CEEc88c")
-		rtokenAddr = common.HexToAddress("0x1c40028BB314D4Ecd3Ead67104fb5D790Fe52F9F")
-		rolefsAddr = common.HexToAddress("0x5c3C6b6aEfaA577548B07871688e109787d7F225")
-		pledgePoolAddr = common.HexToAddress("0x4FD381B8b7f96B8BE2B6044c795A380EE47CF640")
-		issuanceAddr = common.HexToAddress("0x9b2D613F811895fb67BF743A745caD256F6Ce2e0")
+		roleAddr = common.HexToAddress("0x2A9aBfD351D3f76577Ad8dAEe9103731A176ebf5")
+		rtokenAddr = common.HexToAddress("0x649d035e714F6B5Ede3688921a48dc21E1a0eE18")
+		rolefsAddr = common.HexToAddress("0x952bc95F1A9843ed424a732017a8f565faebf22a")
+		pledgePoolAddr = common.HexToAddress("0xa7BdAFF41d5CEA83172BBc2114e7591Ac42f67Ae")
+		issuanceAddr = common.HexToAddress("0xd6fd05E52F5f3D200b072281CE9543E697E9c2FF")
 		gIndex = 1
 	} else {
 		_ = roleAddr
@@ -381,6 +387,13 @@ func main() {
 	}
 
 	fmt.Println("acc: ", acc, " gi: ", gi)
+
+	if acc.String() != test.Acc3 {
+		log.Fatal("acc address error")
+	}
+	if gi != 1 {
+		log.Fatal("gIndex error")
+	}
 
 	fmt.Println("============test success!============")
 
