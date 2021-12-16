@@ -2,6 +2,8 @@ package callconts
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"log"
@@ -70,16 +72,17 @@ const (
 	KeeperRoleType = 3
 	register       = "role-register"
 	// topic of contract log
-	transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
-	alterOwnerTopic = "0x8c153ecee6895f15da72e646b4029e0ef7cbf971986d8d9cfe48c5563d368e90"
-	addTTopic = "0x7a5e6bb234636aa6f5c8428d056a65a5c9ec9d25638a69ad3bd3e362e64a8de6"
-	approvalTopic = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
-	pledgeTopic = "0x5e91ea8ea1c46300eb761859be01d7b16d44389ef91e03a163a87413cbf55b95"
-	rKeeperTopic = "0xc50f17198ae53c50e1ad2f06d8348c7d6b31952e4bc9f52b15bb075e6f1bed0b"
-	rProviderTopic = "0xf06105db8b89019d932bb3ec85a22bbed723c3616043e02ca9857f3ba37005a5"
-	rUserTopic = "0x7defc6162296f3490e44c1787f4ae9852a8d6a8e67ba0a69c57bd7be5f8a0b1a"
+	transferTopic    = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	alterOwnerTopic  = "0x8c153ecee6895f15da72e646b4029e0ef7cbf971986d8d9cfe48c5563d368e90"
+	addTTopic        = "0x7a5e6bb234636aa6f5c8428d056a65a5c9ec9d25638a69ad3bd3e362e64a8de6"
+	approvalTopic    = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+	pledgeTopic      = "0x5e91ea8ea1c46300eb761859be01d7b16d44389ef91e03a163a87413cbf55b95"
+	rKeeperTopic     = "0xc50f17198ae53c50e1ad2f06d8348c7d6b31952e4bc9f52b15bb075e6f1bed0b"
+	rProviderTopic   = "0xf06105db8b89019d932bb3ec85a22bbed723c3616043e02ca9857f3ba37005a5"
+	rUserTopic       = "0x7defc6162296f3490e44c1787f4ae9852a8d6a8e67ba0a69c57bd7be5f8a0b1a"
 	createGroupTopic = "0xc79ca32352cc5529f3c78b5cb44574fbc979555a04f5b6425ed2595417da2e64"
-	
+	// EthSkLength sk length in ethereum
+	EthSkLength = 66 // 0x
 )
 
 var (
@@ -116,6 +119,7 @@ var (
 	ErrKSignsNE     = errors.New("the account of kSigns is not enough")
 	errAllowanceExc = errors.New("the account's allowance to other account excess balance")
 	errPledgeNE     = errors.New("the pledge money is not enough to pledgeKeeper or pledgeProvider")
+	errHexskFormat  = errors.New("the hexsk'format is wrong")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
@@ -234,17 +238,55 @@ func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
 }
 
 // SignForRegister Used to call Register on behalf of other accounts
-func SignForRegister(caller common.Address, sk *ecdsa.PrivateKey) ([]byte, error) {
+func SignForRegister(caller common.Address, sk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(sk)
+	if err != nil {
+		log.Fatal(err)
+	}
 	//(caller, register)的哈希值
 	label := common.LeftPadBytes([]byte(register), 32)
 	hash := crypto.Keccak256(caller.Bytes(), label)
 
 	//私钥对上述哈希值签名
-	sig, err := crypto.Sign(hash, sk)
+	sig, err := crypto.Sign(hash, skEcdsa)
 	if err != nil {
 		return nil, err
 	}
 
+	return sig, nil
+}
+
+// SignForAddRepair used to call AddReapir
+func SignForAddRepair(sk string, npIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int) ([]byte, error) {
+	ecdsaSk, err := HexSkToEcdsa(sk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// (npIndex, _start, end, _size, nonce, tIndex, sprice)的哈希值
+	tmp := make([]byte, 8)
+	binary.BigEndian.PutUint64(tmp, npIndex)
+	npIndexNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, start)
+	startNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, end)
+	endNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, size)
+	sizeNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, nonce)
+	nonceNew := common.LeftPadBytes(tmp, 32)
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, tIndex)
+	tIndexNew := common.LeftPadBytes(tmp, 32)
+	spriceNew := common.LeftPadBytes(sprice.Bytes(), 32)
+
+	hash := crypto.Keccak256(npIndexNew, startNew, endNew, sizeNew, nonceNew, tIndexNew, spriceNew)
+
+	// 私钥签名
+	sig, err := crypto.Sign(hash, ecdsaSk)
+	if err != nil {
+		return nil, err
+	}
 	return sig, nil
 }
 
@@ -266,4 +308,46 @@ func QueryEthBalance(addr, ethEndPoint string) *big.Int {
 		log.Fatal("hex to bigInt fails")
 	}
 	return a
+}
+
+// HexSkToByte transfer hex string to byte
+func HexSkToByte(hexsk string) ([]byte, error) {
+	var src []byte
+	skLengthNoPrefix := EthSkLength - 2
+	skByteEthLength := skLengthNoPrefix / 2
+
+	switch len(hexsk) {
+	case EthSkLength:
+		if hexsk[:2] == "0x" {
+			src = []byte(hexsk[2:])
+		} else {
+			return nil, errHexskFormat
+		}
+	case skLengthNoPrefix:
+		src = []byte(hexsk)
+	default:
+		return nil, errHexskFormat
+	}
+
+	skByteEth := make([]byte, skByteEthLength)
+
+	_, err := hex.Decode(skByteEth, src)
+	if err != nil {
+		return nil, err
+	}
+
+	return skByteEth, nil
+}
+
+// HexSkToEcdsa transfer hex string to ecdsa type
+func HexSkToEcdsa(hexsk string) (*ecdsa.PrivateKey, error) {
+	skByteEth, err := HexSkToByte(hexsk)
+	if err != nil {
+		return nil, err
+	}
+	skECDSA, err := crypto.ToECDSA(skByteEth)
+	if err != nil {
+		return nil, err
+	}
+	return skECDSA, nil
 }

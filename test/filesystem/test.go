@@ -312,21 +312,41 @@ func main() {
 	}
 	fmt.Println("The order info nonce is ", _nonce, " subNonce is ", subNonce) // 应该都为0
 
-	fmt.Println("============5. begin test GetStoreInfo============")
+	fmt.Println("============5. begin test GetFsProviderSum============")
+	pSum, err := fs.GetFsProviderSum(fsAddr, rIndexes[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+	if pSum != 1 {
+		fmt.Println("The pSum is ", pSum)
+		log.Fatal("The gotten pSum should be 1")
+	}
+
+	fmt.Println("============6. begin test GetFsProvider============")
+	pIndexGotten, err := fs.GetFsProvider(fsAddr, rIndexes[0], 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if pIndexGotten != rIndexes[4] {
+		fmt.Println("The pIndex gotten is ", pIndexGotten)
+		log.Fatal("The pIndex gotten should be ", rIndexes[4])
+	}
+
+	fmt.Println("============7. begin test GetStoreInfo============")
 	_t, _s, _p, err := fs.GetStoreInfo(fsAddr, rIndexes[0], rIndexes[4], 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The store information time is ", _t, " size is ", _s, " price is ", _p) // 应该和上述的time、size、price相同
 
-	fmt.Println("============6. begin test GetChannelInfo============")
+	fmt.Println("============8. begin test GetChannelInfo============")
 	amount, _n, expire, err := fs.GetChannelInfo(fsAddr, rIndexes[0], rIndexes[4], 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The channel info amount is ", amount, " nonce is ", _n, " expire is ", expire)
 
-	fmt.Println("============7. begin test GetSettleInfo============")
+	fmt.Println("============9. begin test GetSettleInfo============")
 	setime, sesize, seprice, maxPay, hasPaid, canPay, lost, lostPaid, managePay, endPaid, linearPaid, err := fs.GetSettleInfo(fsAddr, rIndexes[4], 0)
 	if err != nil {
 		log.Fatal(err)
