@@ -18,10 +18,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 )
 
-const (
-	Fast bool = false
-)
-
 var (
 	ethEndPoint  string
 	qethEndPoint string
@@ -30,7 +26,10 @@ var (
 func main() {
 	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
 	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
+	pFast := flag.Bool("f", false, "flag for fast test")
 	flag.Parse()
+
+	Fast := *pFast
 	ethEndPoint = *eth
 	qethEndPoint = *qeth
 	_ = qethEndPoint
@@ -43,32 +42,29 @@ func main() {
 		rolefsAddr     common.Address
 		pledgePoolAddr common.Address
 		issuanceAddr   common.Address
-		gIndex         uint64
+		gIndex1        uint64
+		gIndex2        uint64
 	)
 
-	// ----> The Role contract address:  0x2A9aBfD351D3f76577Ad8dAEe9103731A176ebf5
-	// ----> The RToken contract address:  0x649d035e714F6B5Ede3688921a48dc21E1a0eE18
-	// ----> The RoleFS contract address:  0x952bc95F1A9843ed424a732017a8f565faebf22a
-	// ----> The PledgePool contract address:  0xa7BdAFF41d5CEA83172BBc2114e7591Ac42f67Ae
-	// ----> The Issuance contract address is:  0xd6fd05E52F5f3D200b072281CE9543E697E9c2FF
-
-	config := InitConfig("./contracts.ini")
-	// fast test read contract addresses from config file
 	if Fast {
+		// read contracts from ini
+		config := InitConfig("./contracts.ini")
+		// fast test read contract addresses from config file
 		roleAddr = common.HexToAddress(config["role"])
 		rtokenAddr = common.HexToAddress(config["rtoken"])
 		rolefsAddr = common.HexToAddress(config["rolefs"])
 		pledgePoolAddr = common.HexToAddress(config["pledgePool"])
 		issuanceAddr = common.HexToAddress(config["issuance"])
 
-		gIndex = 1
+		// group index start from 1
+		gIndex1 = 1
+		gIndex2 = 2
 	} else {
 		_ = roleAddr
 		_ = rtokenAddr
 		_ = rolefsAddr
 		_ = pledgePoolAddr
 		_ = issuanceAddr
-		_ = gIndex
 	}
 
 	// 用于测试的一些参数
@@ -81,6 +77,8 @@ func main() {
 		end           uint64
 		size          uint64
 		sprice        *big.Int
+
+		err error
 	)
 	// fast test don't use them
 	if !Fast {
@@ -117,46 +115,48 @@ func main() {
 		GasLimit: callconts.DefaultGasLimit,
 	}
 
-	fmt.Println(">>>> checking balance of admin, 5 eth at least")
-	// 查看测试账户的ERC20代币余额，不足时自动充值
-	erc20 := callconts.NewERC20(adminAddr, test.AdminSk, txopts)
-	// 确保admin账户的ERC20代币余额充足（至少5 eth）
-	bal, err := erc20.BalanceOf(test.PrimaryToken, adminAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("admin balance in primaryToken is ", bal)
-	if bal.Cmp(big.NewInt(test.MoneyTo*5)) < 0 {
-		// mintToken
-		err = erc20.MintToken(test.PrimaryToken, adminAddr, big.NewInt(test.MoneyTo*5))
+	if !Fast {
+		fmt.Println(">>>> checking balance of admin, 5 eth at least")
+		// 查看测试账户的ERC20代币余额，不足时自动充值
+		erc20 := callconts.NewERC20(adminAddr, test.AdminSk, txopts)
+		// 确保admin账户的ERC20代币余额充足（至少5 eth）
+		bal, err := erc20.BalanceOf(test.PrimaryToken, adminAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
-		bal, err = erc20.BalanceOf(test.PrimaryToken, adminAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("after mint, admin balance in primaryToken is ", bal)
-	}
-
-	fmt.Println(">>>> checking balance of accounts, 1 eth each")
-	// 确保每个测试账户的ERC20代币余额充足（不少于Pledge值，默认1 eth）
-	for i, addr := range addrs {
-		bal, err = erc20.BalanceOf(test.PrimaryToken, addr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("acc", i, " balance in primaryToken is ", bal)
-		if bal.Cmp(pledgeK) < 0 {
-			err = erc20.Transfer(test.PrimaryToken, addr, pledgeK) // admin给测试账户转账，用于测试（充值或质押）
+		fmt.Println("admin balance in primaryToken is ", bal)
+		if bal.Cmp(big.NewInt(test.MoneyTo*5)) < 0 {
+			// mintToken
+			err = erc20.MintToken(test.PrimaryToken, adminAddr, big.NewInt(test.MoneyTo*5))
 			if err != nil {
 				log.Fatal(err)
 			}
+			bal, err = erc20.BalanceOf(test.PrimaryToken, adminAddr)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("after mint, admin balance in primaryToken is ", bal)
+		}
+
+		fmt.Println(">>>> checking balance of accounts, 1 eth each")
+		// 确保每个测试账户的ERC20代币余额充足（不少于Pledge值，默认1 eth）
+		for i, addr := range addrs {
 			bal, err = erc20.BalanceOf(test.PrimaryToken, addr)
 			if err != nil {
 				log.Fatal(err)
 			}
-			fmt.Println("after transfer, acc", i, " balance in primaryToken is ", bal)
+			fmt.Println("acc", i, " balance in primaryToken is ", bal)
+			if bal.Cmp(pledgeK) < 0 {
+				err = erc20.Transfer(test.PrimaryToken, addr, pledgeK) // admin给测试账户转账，用于测试（充值或质押）
+				if err != nil {
+					log.Fatal(err)
+				}
+				bal, err = erc20.BalanceOf(test.PrimaryToken, addr)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println("after transfer, acc", i, " balance in primaryToken is ", bal)
+			}
 		}
 	}
 
@@ -184,8 +184,6 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The RToken contract address: ", rtokenAddr.Hex())
-		// save contract address into config file
-		config["rtoken"] = rtokenAddr.Hex()
 
 		// deploy RoleFS
 		rfs := callconts.NewRFS(adminAddr, test.AdminSk, txopts)
@@ -361,52 +359,248 @@ func main() {
 		}
 	}
 
-	// create group
+	// create groups
 	if Fast {
-		fmt.Println("@@ fast test skip create group")
+		fmt.Println("@@ fast test with existing group index 1,2")
+		gIndex1 = 1
+		gIndex2 = 2
 	} else {
-		fmt.Println(">>>> begin create group")
+		// create group, keeper1 keeper2 in group1, keeper3 in group2
+		fmt.Println(">>>> begin create group 1")
 		// 需要admin先调用CreateGroup,同时将部署FileSys合约
 		r = callconts.NewR(adminAddr, test.AdminSk, txopts)
-		gIndex, err = r.CreateGroup(roleAddr, rolefsAddr, uint64(0), rIndexes[1:3], 2)
+		gIndex1, err = r.CreateGroup(roleAddr, rolefsAddr, uint64(0), rIndexes[1:3], 2)
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		if gIndex1 != 1 {
+			log.Fatal("gIndex1 should be 1")
+		}
+
+		// test create group 2 with inActive, level=2, but only 1 keeper involved
+		fmt.Println(">>>> begin create group 2")
+		r = callconts.NewR(adminAddr, test.AdminSk, txopts)
+		gIndex2, err = r.CreateGroup(roleAddr, rolefsAddr, uint64(0), rIndexes[3:4], 2)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if gIndex2 != 2 {
+			log.Fatal("gIndex2 should be 2")
+		}
 	}
 
-	fmt.Println(">>>> Show Info:")
-	fmt.Println("rIndexes: ", rIndexes)
-	fmt.Println("addrs: ", addrs)
-	fmt.Println("gIndex: ", gIndex)
-	fmt.Println("role: ", roleAddr)
-	fmt.Println("rtoken: ", rtokenAddr)
-	fmt.Println("rolefs: ", rolefsAddr)
-	fmt.Println("pledgePool: ", pledgePoolAddr)
-	fmt.Println("issuance: ", issuanceAddr)
+	// show info
+	{
+		fmt.Println(">>>> Show Info:")
+		fmt.Println("rIndexes: ", rIndexes)
+		fmt.Println("addrs: ", addrs)
+		fmt.Println("gIndex1: ", gIndex1)
+		fmt.Println("gIndex2: ", gIndex2)
+		fmt.Println("role: ", roleAddr)
+		fmt.Println("rtoken: ", rtokenAddr)
+		fmt.Println("rolefs: ", rolefsAddr)
+		fmt.Println("pledgePool: ", pledgePoolAddr)
+		fmt.Println("issuance: ", issuanceAddr)
+	}
 
-	// 获取group信息
-	fmt.Println(">>>> getting group info")
-	isActive, isBanned, isReady, level, _size, price, fsAddr, err := r.GetGroupInfo(roleAddr, gIndex)
+	// test group1
+	fmt.Println(">>>> getting group1 info")
+	isActive, isBanned, isReady, level, _size, price, fsAddr, err := r.GetGroupInfo(roleAddr, gIndex1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The group info- isActive:", isActive, " isBanned: ", isBanned, " isReady:", isReady, " level:", level, " size:", _size, " price:", price, " fsAddr:", fsAddr.Hex())
 
+	if !isActive {
+		log.Fatal("group1 should be active")
+	}
+
+	// test group2
+	fmt.Println(">>>> getting group2 info")
+	isActive, isBanned, isReady, level, _size, price, fsAddr, err = r.GetGroupInfo(roleAddr, gIndex2)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("The group info- isActive:", isActive, " isBanned: ", isBanned, " isReady:", isReady, " level:", level, " size:", _size, " price:", price, " fsAddr:", fsAddr.Hex())
+
+	if isActive {
+		log.Fatal("group2 should be inactive")
+	}
+
 	fmt.Println("============ 2. test GetAddrGindex ============")
 
 	// get acc address and gIndex by rIndex
-	acc, gi, err := r.GetAddrGindex(roleAddr, 3)
+
+	fmt.Println("test role 2")
+	acc, gIndex, err := r.GetAddrGindex(roleAddr, 2)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("acc: ", acc, " gi: ", gi)
+	fmt.Println("acc: ", acc, " gIndex: ", gIndex)
 
-	if acc.String() != test.Acc3 {
+	if acc.String() != test.Acc2 {
 		log.Fatal("acc address error")
 	}
-	if gi != 1 {
+	if gIndex != 1 {
 		log.Fatal("gIndex error")
+	}
+
+	fmt.Println("test role 4")
+	acc, gIndex, err = r.GetAddrGindex(roleAddr, 4)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("acc: ", acc, " gIndex: ", gIndex)
+
+	if acc.String() != test.Acc4 {
+		log.Fatal("acc address error")
+	}
+	if gIndex != 2 {
+		log.Fatal("gIndex error")
+	}
+
+	fmt.Println("============ 3. test GetGroupsNum ============")
+	// test GetGroupsNum
+	gNum, err := r.GetGroupsNum(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("group number:", gNum)
+
+	if gNum != 2 {
+		log.Fatal("GetGroupsNum test failed, group number should be 2")
+	}
+
+	fmt.Println("============ 4. test PledgePool ============")
+	pp, err := r.PledgePool(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("pledge pool:", pp)
+	if pp != pledgePoolAddr {
+		log.Fatal("test PledgePool failed")
+	}
+
+	fmt.Println("============ 5. test Foundation ============")
+	fd, err := r.Foundation(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("foundation:", fd)
+	if fd != test.Foundation {
+		log.Fatal("test Foundation failed")
+	}
+
+	fmt.Println("============ 6. test PledgeK ============")
+	plk, err := r.PledgeK(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("plk:", plk)
+	if plk.Cmp(pledgeK) != 0 {
+		log.Fatal("test PledgeK failed")
+	}
+
+	fmt.Println("============ 7. test PledgeP ============")
+	plp, err := r.PledgeP(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("pk:", plp)
+	if plp.Cmp(pledgeP) != 0 {
+		log.Fatal("test PledgeK failed")
+	}
+
+	fmt.Println("============ 8. test RToken ============")
+	rt, err := r.RToken(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("rt:", rt)
+	if rt != rtokenAddr {
+		log.Fatal("test RToken failed")
+	}
+
+	fmt.Println("============ 9. test Issuance ============")
+	is, err := r.Issuance(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("is:", is)
+	if is != issuanceAddr {
+		log.Fatal("test Issuance failed")
+	}
+
+	fmt.Println("============ 10. test Rolefs ============")
+	rfs, err := r.Rolefs(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("rfs:", rfs)
+	if rfs != rolefsAddr {
+		log.Fatal("test Rolefs failed")
+	}
+
+	fmt.Println("============ 11. test GetAddrsNum ============")
+	an, err := r.GetAddrsNum(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("an:", an)
+	if an != 5 {
+		log.Fatal("test GetAddrsNum failed")
+	}
+
+	fmt.Println("============ 12. test GetAddr ============")
+	ga, err := r.GetAddr(roleAddr, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("ga:", ga)
+	if ga.String() != test.Acc1 {
+		log.Fatal("test GetAddr failed")
+	}
+
+	fmt.Println("============ 13. test GetRoleInfo ============")
+	isActive, isBanned, roleType, index, gIndex, extra, err := r.GetRoleInfo(roleAddr, common.HexToAddress(test.Acc1))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("role info: isActive, isBanned, roleType, index, gIndex, extra")
+	fmt.Println("role info: ", isActive, isBanned, roleType, index, gIndex, extra)
+
+	fmt.Println("============ 14. test GetGroupsNum ============")
+	gn, err := r.GetGroupsNum(roleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("gn:", gn)
+	if gn != 2 {
+		log.Fatal("test GetGroupsNum failed")
+	}
+
+	fmt.Println("============ 15. test GetGKNum ============")
+	gk, err := r.GetGKNum(roleAddr, 0) // bug
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("gk:", gk)
+	if gk != 2 {
+		log.Fatal("test GetGKNum failed")
+	}
+
+	fmt.Println("============ 16. test GetGPNum ============")
+	gp, err := r.GetGPNum(roleAddr, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("gp:", gp)
+	if gp != 2 {
+		log.Fatal("test GetGPNum failed")
 	}
 
 	fmt.Println("============test success!============")
