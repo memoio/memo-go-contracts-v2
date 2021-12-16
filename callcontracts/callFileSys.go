@@ -63,7 +63,7 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 		if err != nil {
 			retryCount++
 			log.Println("deploy FileSys Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -122,6 +122,58 @@ func (fs *ContractModule) GetFsInfo(fsAddr common.Address, uIndex uint64) (bool,
 	}
 }
 
+// GetFsProviderSum get providers sum in fs
+func (fs *ContractModule) GetFsProviderSum(fsAddr common.Address, uIndex uint64) (uint64, error) {
+	var pSum uint64
+	fsIns, err := newFileSys(fsAddr)
+	if err != nil {
+		return pSum, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		pSum, err = fsIns.GetFsPSum(&bind.CallOpts{
+			From: fs.addr,
+		}, uIndex)
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return pSum, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return pSum, nil
+	}
+}
+
+// GetFsProvider get pIndex in fs by array index
+func (fs *ContractModule) GetFsProvider(fsAddr common.Address, uIndex uint64, index uint64) (uint64, error) {
+	var pIndex uint64
+	fsIns, err := newFileSys(fsAddr)
+	if err != nil {
+		return pIndex, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		pIndex, err = fsIns.GetFsPro(&bind.CallOpts{
+			From: fs.addr,
+		}, uIndex, index)
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return pIndex, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return pIndex, nil
+	}
+}
+
 // GetFsInfoAggOrder Get information of aggOrder.
 func (fs *ContractModule) GetFsInfoAggOrder(fsAddr common.Address, uIndex uint64, pIndex uint64) (uint64, uint64, error) {
 	var nonce uint64
@@ -163,9 +215,12 @@ func (fs *ContractModule) GetStoreInfo(fsAddr common.Address, uIndex uint64, pIn
 	retryCount := 0
 	for {
 		retryCount++
-		_time, size, price, err = fsIns.GetStoreInfo(&bind.CallOpts{
-			From: fs.addr,
-		}, uIndex, pIndex, tIndex)
+		_time, size, price, err = fsIns.GetStoreInfo(
+			&bind.CallOpts{From: fs.addr},
+			uIndex,
+			pIndex,
+			tIndex,
+		)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
 				return _time, size, price, err
@@ -191,9 +246,12 @@ func (fs *ContractModule) GetChannelInfo(fsAddr common.Address, uIndex uint64, p
 	retryCount := 0
 	for {
 		retryCount++
-		amount, nonce, expire, err = fsIns.GetChannelInfo(&bind.CallOpts{
-			From: fs.addr,
-		}, uIndex, pIndex, tIndex)
+		amount, nonce, expire, err = fsIns.GetChannelInfo(
+			&bind.CallOpts{From: fs.addr},
+			uIndex,
+			pIndex,
+			tIndex,
+		)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
 				return amount, nonce, expire, err
@@ -235,6 +293,7 @@ func (fs *ContractModule) GetSettleInfo(fsAddr common.Address, pIndex uint64, tI
 }
 
 // GetBalance Get income balance of rindex.
+// rIndex:0 -> foundation
 func (fs *ContractModule) GetBalance(fsAddr common.Address, rIndex uint64, tIndex uint32) (*big.Int, *big.Int, error) {
 	var avail, tmp *big.Int
 

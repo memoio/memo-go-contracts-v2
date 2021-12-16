@@ -56,7 +56,7 @@ func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, ple
 		if err != nil {
 			retryCount++
 			log.Println("deploy Role Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -116,7 +116,7 @@ func (r *ContractModule) SetPI(roleAddr, pledgePoolAddr, issuAddr, rolefsAddr co
 		if err != nil {
 			retryCount++
 			log.Println("setPI Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -174,7 +174,7 @@ func (r *ContractModule) Register(roleAddr, addr common.Address, sign []byte) er
 		if err != nil {
 			retryCount++
 			log.Println("register Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -200,7 +200,7 @@ func (r *ContractModule) Register(roleAddr, addr common.Address, sign []byte) er
 	return nil
 }
 
-// RegisterKeeper called by anyone to register Keeper role
+// RegisterKeeper called by anyone to register Keeper role, befor this, you should pledge in PledgePool
 func (r *ContractModule) RegisterKeeper(roleAddr common.Address, index uint64, blskey []byte, sign []byte) error {
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
@@ -217,6 +217,18 @@ func (r *ContractModule) RegisterKeeper(roleAddr common.Address, index uint64, b
 	}
 	if roleType != 0 { // role already registered
 		return ErrRoleReg
+	}
+	pledge, err := r.GetBalanceInPPool(PledgePoolAddr, index, 0) // tindex:0 表示主代币
+	if err != nil {
+		return err
+	}
+	pledgek, err := r.PledgeK(roleAddr)
+	if err != nil {
+		return err
+	}
+	if pledge.Cmp(pledgek) < 0 {
+		log.Println("the rindex ", index, " addr:", addr.Hex(), " pledgeMoney:", pledge, " is not enough, shouldn't less than ", pledgek)
+		return errPledgeNE
 	}
 
 	log.Println("begin RegisterKeeper in Role contract...")
@@ -237,7 +249,7 @@ func (r *ContractModule) RegisterKeeper(roleAddr common.Address, index uint64, b
 		if err != nil {
 			retryCount++
 			log.Println("registerKeeper Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -263,7 +275,7 @@ func (r *ContractModule) RegisterKeeper(roleAddr common.Address, index uint64, b
 	return nil
 }
 
-// RegisterProvider called by anyone to register Provider role
+// RegisterProvider called by anyone to register Provider role, befor this, you should pledge in PledgePool
 func (r *ContractModule) RegisterProvider(roleAddr common.Address, index uint64, sign []byte) error {
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
@@ -280,6 +292,18 @@ func (r *ContractModule) RegisterProvider(roleAddr common.Address, index uint64,
 	}
 	if roleType != 0 { // role already registered
 		return ErrRoleReg
+	}
+	pledge, err := r.GetBalanceInPPool(PledgePoolAddr, index, 0) // tindex:0 表示主代币
+	if err != nil {
+		return err
+	}
+	pledgep, err := r.PledgeP(roleAddr)
+	if err != nil {
+		return err
+	}
+	if pledge.Cmp(pledgep) < 0 {
+		log.Println("the rindex ", index, " addr:", addr.Hex(), " pledgeMoney:", pledge, " is not enough, shouldn't less than ", pledgep)
+		return errPledgeNE
 	}
 
 	log.Println("begin RegisterProvider in Role contract...")
@@ -300,7 +324,7 @@ func (r *ContractModule) RegisterProvider(roleAddr common.Address, index uint64,
 		if err != nil {
 			retryCount++
 			log.Println("registerProvider Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -382,7 +406,7 @@ func (r *ContractModule) RegisterUser(roleAddr, rTokenAddr common.Address, index
 		if err != nil {
 			retryCount++
 			log.Println("registerUser Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -442,7 +466,7 @@ func (r *ContractModule) RegisterToken(roleAddr common.Address, tokenAddr common
 		if err != nil {
 			retryCount++
 			log.Println("registerToken Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -469,21 +493,21 @@ func (r *ContractModule) RegisterToken(roleAddr common.Address, tokenAddr common
 }
 
 // CreateGroup called by admin to create a group and then deploy FileSys contract and then set FileSys-address to group.
-// founder default is 0
-func (r *ContractModule) CreateGroup(roleAddr, rfsAddr common.Address, founder uint64, kindexes []uint64, level uint16) error {
+// founder default is 0, len(keepers)>=level then group is active
+func (r *ContractModule) CreateGroup(roleAddr, rfsAddr common.Address, founder uint64, kindexes []uint64, level uint16) (uint64, error) {
 	gIndex, err := r.createGroup(roleAddr, kindexes, level)
 	if err != nil {
-		return err
+		return gIndex, err
 	}
 
 	// deploy FileSys
 	fsAddr, _, err := r.DeployFileSys(founder, gIndex, roleAddr, rfsAddr, kindexes)
 	if err != nil {
-		return err
+		return gIndex, err
 	}
 
 	err = r.SetGF(roleAddr, fsAddr, gIndex)
-	return err
+	return gIndex, err
 }
 
 // CreateGroup called by admin to create a group.
@@ -526,7 +550,7 @@ func (r *ContractModule) createGroup(roleAddr common.Address, kindexes []uint64,
 		if err != nil {
 			retryCount++
 			log.Println("CreateGroup Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -592,7 +616,7 @@ func (r *ContractModule) SetGF(roleAddr, fsAddr common.Address, gIndex uint64) e
 		if err != nil {
 			retryCount++
 			log.Println("SetGF Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -672,7 +696,7 @@ func (r *ContractModule) AddKeeperToGroup(roleAddr common.Address, kIndex uint64
 		if err != nil {
 			retryCount++
 			log.Println("AddKeeperToGroup Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -752,7 +776,7 @@ func (r *ContractModule) AddProviderToGroup(roleAddr common.Address, pIndex uint
 		if err != nil {
 			retryCount++
 			log.Println("AddProviderToGroup Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -803,7 +827,7 @@ func (r *ContractModule) SetPledgeMoney(roleAddr common.Address, kpledge *big.In
 		if err != nil {
 			retryCount++
 			log.Println("SetPledgeMoney Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -874,7 +898,7 @@ func (r *ContractModule) Recharge(roleAddr, rTokenAddr common.Address, uIndex ui
 		if err != nil {
 			retryCount++
 			log.Println("Recharge Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -934,7 +958,7 @@ func (r *ContractModule) WithdrawFromFs(roleAddr, rTokenAddr common.Address, rIn
 		if err != nil {
 			retryCount++
 			log.Println("WithdrawFromFs Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -1319,12 +1343,16 @@ func (r *ContractModule) GetAddrGindex(roleAddr common.Address, rIndex uint64) (
 		return addr, gIndex, err
 	}
 
+	if rIndex == 0 {
+		return addr, 0, ErrIndex
+	}
+
 	retryCount := 0
 	for {
 		retryCount++
 		addr, gIndex, err = roleIns.GetAddrGindex(&bind.CallOpts{
 			From: r.addr,
-		}, rIndex)
+		}, rIndex-1)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
 				return addr, gIndex, err

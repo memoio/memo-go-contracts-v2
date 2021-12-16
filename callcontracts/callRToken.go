@@ -20,10 +20,10 @@ func NewRT(addr common.Address, hexSk string, txopts *TxOpts) iface.RTokenInfo {
 	return rt
 }
 
-// IsValid check whether the tokenIndex is valid
-func (rt *ContractModule) IsValid(rtokenAddr common.Address, tIndex uint32) (bool, error) {
+// IsValid check whether the tokenIndex is valid, rTokenAddr indicates RToken contract address, get it by RToken() in callRole.go
+func (rt *ContractModule) IsValid(rTokenAddr common.Address, tIndex uint32) (bool, error) {
 	var isvalid bool
-	rToken, err := role.NewRToken(rtokenAddr, getClient(EndPoint))
+	rToken, err := role.NewRToken(rTokenAddr, getClient(EndPoint))
 	if err != nil {
 		return false, err
 	}
@@ -46,10 +46,10 @@ func (rt *ContractModule) IsValid(rtokenAddr common.Address, tIndex uint32) (boo
 	}
 }
 
-// GetTA get the address of tokenIndex
-func (rt *ContractModule) GetTA(rtokenAddr common.Address, tIndex uint32) (common.Address, error) {
+// GetTA get the address of tokenIndex. Return (0x0, nil) if the tIndex is invalid
+func (rt *ContractModule) GetTA(rTokenAddr common.Address, tIndex uint32) (common.Address, error) {
 	var taddr common.Address
-	rToken, err := role.NewRToken(rtokenAddr, getClient(EndPoint))
+	rToken, err := role.NewRToken(rTokenAddr, getClient(EndPoint))
 	if err != nil {
 		return taddr, err
 	}
@@ -73,10 +73,10 @@ func (rt *ContractModule) GetTA(rtokenAddr common.Address, tIndex uint32) (commo
 }
 
 // GetTI get the tokenIndex by token address and if it is valid
-func (rt *ContractModule) GetTI(rtokenAddr common.Address, taddr common.Address) (uint32, bool, error) {
+func (rt *ContractModule) GetTI(rTokenAddr common.Address, taddr common.Address) (uint32, bool, error) {
 	var tindex uint32
 	var isvalid bool
-	rToken, err := role.NewRToken(rtokenAddr, getClient(EndPoint))
+	rToken, err := role.NewRToken(rTokenAddr, getClient(EndPoint))
 	if err != nil {
 		return tindex, isvalid, err
 	}
@@ -100,9 +100,9 @@ func (rt *ContractModule) GetTI(rtokenAddr common.Address, taddr common.Address)
 }
 
 // GetTNum get the number of tokens that memo supports
-func (rt *ContractModule) GetTNum(rtokenAddr common.Address) (uint32, error) {
+func (rt *ContractModule) GetTNum(rTokenAddr common.Address) (uint32, error) {
 	var tnum uint32
-	rToken, err := role.NewRToken(rtokenAddr, getClient(EndPoint))
+	rToken, err := role.NewRToken(rTokenAddr, getClient(EndPoint))
 	if err != nil {
 		return tnum, err
 	}

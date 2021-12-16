@@ -2,7 +2,10 @@ package callconts
 
 import (
 	"context"
+	"encoding/binary"
+	"encoding/hex"
 	"errors"
+	"fmt"
 	"log"
 	"math/big"
 	"memoContract/contracts/role"
@@ -20,30 +23,33 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
+// the following variables need to be assigned according to the running results in actual applications
 var (
 	// EndPoint is rpc endpoint of geth node
 	EndPoint string
 	//ERC20 contract address
-	ERC20 string
+	ERC20Addr common.Address
 	// Role contract address
-	Role string
+	RoleAddr common.Address
 	// RoleFS contract address
-	RoleFS string
+	RoleFSAddr common.Address
 	// FileSys contract address
-	FileSys string
+	FileSysAddr common.Address
 	// PledgePool contract address
-	PledgePool string
+	PledgePoolAddr common.Address
 	// Issuance contract address
-	Issuance string
+	IssuanceAddr common.Address
 )
 
 const (
 	//InvalidAddr implements invalid contracts-address
-	InvalidAddr               = "0x0000000000000000000000000000000000000000"
-	spaceTimePayGasLimit      = uint64(8000000)
-	spaceTimePayGasPrice      = 2 * defaultGasPrice
-	defaultGasPrice           = 200
-	defaultGasLimit           = uint64(8000000)
+	InvalidAddr          = "0x0000000000000000000000000000000000000000"
+	spaceTimePayGasLimit = uint64(8000000)
+	spaceTimePayGasPrice = 2 * DefaultGasPrice
+	// DefaultGasPrice default gas price in sending transaction
+	DefaultGasPrice = 200
+	// DefaultGasLimit default gas limit in sending transaction
+	DefaultGasLimit           = uint64(8000000)
 	sendTransactionRetryCount = 5
 	checkTxRetryCount         = 8
 	checkTxSleepTime          = 5
@@ -65,41 +71,55 @@ const (
 	// KeeperRoleType indicates keeper's roleType in Role contract
 	KeeperRoleType = 3
 	register       = "role-register"
+	// topic of contract log
+	transferTopic    = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+	alterOwnerTopic  = "0x8c153ecee6895f15da72e646b4029e0ef7cbf971986d8d9cfe48c5563d368e90"
+	addTTopic        = "0x7a5e6bb234636aa6f5c8428d056a65a5c9ec9d25638a69ad3bd3e362e64a8de6"
+	approvalTopic    = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925"
+	pledgeTopic      = "0x5e91ea8ea1c46300eb761859be01d7b16d44389ef91e03a163a87413cbf55b95"
+	rKeeperTopic     = "0xc50f17198ae53c50e1ad2f06d8348c7d6b31952e4bc9f52b15bb075e6f1bed0b"
+	rProviderTopic   = "0xf06105db8b89019d932bb3ec85a22bbed723c3616043e02ca9857f3ba37005a5"
+	rUserTopic       = "0x7defc6162296f3490e44c1787f4ae9852a8d6a8e67ba0a69c57bd7be5f8a0b1a"
+	createGroupTopic = "0xc79ca32352cc5529f3c78b5cb44574fbc979555a04f5b6425ed2595417da2e64"
+	// EthSkLength sk length in ethereum
+	EthSkLength = 66 // 0x
 )
 
 var (
 	// ErrTxFail indicates that the transaction is not packaged or an error occurred during the packaging process
-	ErrTxFail = errors.New("Transaction fails")
+	ErrTxFail = errors.New("transaction fails")
 	// ErrTxExecu indicates that an error occurred during packaging
-	ErrTxExecu = errors.New("Transaction mined but execution failed")
+	ErrTxExecu = errors.New("transaction mined but execution failed")
 	// ErrBalNotE indicates that the account's balance is not enough to do something
-	ErrBalNotE = errors.New("Balance is not enough")
+	ErrBalNotE = errors.New("balance is not enough")
 	// ErrAlloNotE indicates that the account's allowance is not enough to transferfrom
-	ErrAlloNotE = errors.New("Allowance is not enough")
+	ErrAlloNotE = errors.New("allowance is not enough")
 	// ErrInValAddr indicates that the account address is invalid
-	ErrInValAddr = errors.New("Invalid address")
+	ErrInValAddr = errors.New("invalid address")
 	// ErrNoMintRight indicates that the account has not Mint right in erc20 contract
-	ErrNoMintRight = errors.New("The account has not Mint right")
+	ErrNoMintRight = errors.New("the account has not Mint right")
 	// ErrNoPauseRight indicates that the account has not Pause right in erc20 contract
-	ErrNoPauseRight = errors.New("The account has not Pause right")
+	ErrNoPauseRight = errors.New("the account has not Pause right")
 	// ErrNoAdminRight indicates that the account has not Admin right in erc20 contract
-	ErrNoAdminRight      = errors.New("The account has not Admin right")
-	errAccessControlRole = errors.New("The role in accessControl is invalid")
+	ErrNoAdminRight      = errors.New("the account has not Admin right")
+	errAccessControlRole = errors.New("the role in accessControl is invalid")
 	// ErrIndex indicates that the rindex does not meet the requirements
-	ErrIndex = errors.New("The role index is invalid")
+	ErrIndex = errors.New("the role index is invalid")
 	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
-	ErrIsBanned = errors.New("The account is banned in Role contract")
+	ErrIsBanned = errors.New("the account is banned in Role contract")
 	// ErrTIndex tindex invalid
-	ErrTIndex = errors.New("The token index is invalid")
+	ErrTIndex = errors.New("the token index is invalid")
 	// ErrRoleReg has registered
-	ErrRoleReg = errors.New("The account has already registered a role")
+	ErrRoleReg = errors.New("the account has already registered a role")
 	// ErrInvalidG invalid gindex
 	ErrInvalidG = errors.New("invalid group index")
 	// ErrNotSetPP need set PledgePool address in Role contract
 	ErrNotSetPP = errors.New("haven't set pledgePool address in Role contract before call RegisterToken")
 	// ErrKSignsNE ksigns err
-	ErrKSignsNE = errors.New("the account of kSigns is not enough")
+	ErrKSignsNE     = errors.New("the account of kSigns is not enough")
 	errAllowanceExc = errors.New("the account's allowance to other account excess balance")
+	errPledgeNE     = errors.New("the pledge money is not enough to pledgeKeeper or pledgeProvider")
+	errHexskFormat  = errors.New("the hexsk'format is wrong")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
@@ -146,6 +166,7 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 //CheckTx check whether transaction is successful through receipt
 func checkTx(tx *types.Transaction) error {
 	log.Println("Check Tx hash:", tx.Hash().Hex(), "nonce:", tx.Nonce(), "gasPrice:", tx.GasPrice())
+	log.Println("waiting for miner...")
 
 	var receipt *types.Receipt
 	for i := 0; i < 20; i++ {
@@ -189,7 +210,7 @@ func getTransactionReceipt(hash common.Hash) *types.Receipt {
 func rebuild(err error, tx *types.Transaction, auth *bind.TransactOpts) {
 	if err == ErrTxFail && tx != nil {
 		auth.Nonce = big.NewInt(int64(tx.Nonce()))
-		auth.GasPrice = new(big.Int).Add(tx.GasPrice(), big.NewInt(defaultGasPrice))
+		auth.GasPrice = new(big.Int).Add(tx.GasPrice(), big.NewInt(DefaultGasPrice))
 		log.Println("rebuild transaction... nonce is ", auth.Nonce, " gasPrice is ", auth.GasPrice)
 	}
 }
@@ -217,16 +238,116 @@ func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
 }
 
 // SignForRegister Used to call Register on behalf of other accounts
-func SignForRegister(caller common.Address, sk *ecdsa.PrivateKey) ([]byte, error) {
+func SignForRegister(caller common.Address, sk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(sk)
+	if err != nil {
+		log.Fatal(err)
+	}
 	//(caller, register)的哈希值
 	label := common.LeftPadBytes([]byte(register), 32)
 	hash := crypto.Keccak256(caller.Bytes(), label)
 
 	//私钥对上述哈希值签名
-	sig, err := crypto.Sign(hash, sk)
+	sig, err := crypto.Sign(hash, skEcdsa)
 	if err != nil {
 		return nil, err
 	}
 
 	return sig, nil
+}
+
+// SignForAddRepair used to call AddReapir
+func SignForAddRepair(sk string, npIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int) ([]byte, error) {
+	ecdsaSk, err := HexSkToEcdsa(sk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// (npIndex, _start, end, _size, nonce, tIndex, sprice)的哈希值
+	tmp := make([]byte, 8)
+	binary.BigEndian.PutUint64(tmp, npIndex)
+	npIndexNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, start)
+	startNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, end)
+	endNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, size)
+	sizeNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, nonce)
+	nonceNew := common.LeftPadBytes(tmp, 32)
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, tIndex)
+	tIndexNew := common.LeftPadBytes(tmp, 32)
+	spriceNew := common.LeftPadBytes(sprice.Bytes(), 32)
+
+	hash := crypto.Keccak256(npIndexNew, startNew, endNew, sizeNew, nonceNew, tIndexNew, spriceNew)
+
+	// 私钥签名
+	sig, err := crypto.Sign(hash, ecdsaSk)
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
+}
+
+// QueryEthBalance gets eth balance
+func QueryEthBalance(addr, ethEndPoint string) *big.Int {
+	var result string
+	client, err := rpc.Dial(ethEndPoint)
+	if err != nil {
+		log.Fatal("rpc.dial err:", err)
+	}
+	err = client.Call(&result, "eth_getBalance", addr, "latest")
+	if err != nil {
+		log.Fatal("client.call err:", err)
+	}
+	fmt.Println("balance:", result)
+	a := big.NewInt(0)
+	a, success := a.SetString(result[2:], 16)
+	if !success {
+		log.Fatal("hex to bigInt fails")
+	}
+	return a
+}
+
+// HexSkToByte transfer hex string to byte
+func HexSkToByte(hexsk string) ([]byte, error) {
+	var src []byte
+	skLengthNoPrefix := EthSkLength - 2
+	skByteEthLength := skLengthNoPrefix / 2
+
+	switch len(hexsk) {
+	case EthSkLength:
+		if hexsk[:2] == "0x" {
+			src = []byte(hexsk[2:])
+		} else {
+			return nil, errHexskFormat
+		}
+	case skLengthNoPrefix:
+		src = []byte(hexsk)
+	default:
+		return nil, errHexskFormat
+	}
+
+	skByteEth := make([]byte, skByteEthLength)
+
+	_, err := hex.Decode(skByteEth, src)
+	if err != nil {
+		return nil, err
+	}
+
+	return skByteEth, nil
+}
+
+// HexSkToEcdsa transfer hex string to ecdsa type
+func HexSkToEcdsa(hexsk string) (*ecdsa.PrivateKey, error) {
+	skByteEth, err := HexSkToByte(hexsk)
+	if err != nil {
+		return nil, err
+	}
+	skECDSA, err := crypto.ToECDSA(skByteEth)
+	if err != nil {
+		return nil, err
+	}
+	return skECDSA, nil
 }

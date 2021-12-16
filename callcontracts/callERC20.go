@@ -53,7 +53,7 @@ func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc2
 		if err != nil {
 			retryCount++
 			log.Println("deploy ERC20 Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -128,7 +128,7 @@ func (e *ContractModule) Transfer(erc20Addr, recipient common.Address, value *bi
 		if err != nil {
 			retryCount++
 			log.Println("Transfer Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -194,7 +194,7 @@ func (e *ContractModule) Approve(erc20Addr, addr common.Address, value *big.Int)
 		if err != nil {
 			retryCount++
 			log.Println("Approve Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -267,7 +267,7 @@ func (e *ContractModule) TransferFrom(erc20Addr, sender, recipient common.Addres
 		if err != nil {
 			retryCount++
 			log.Println("TransferFrom Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -338,7 +338,7 @@ func (e *ContractModule) IncreaseAllowance(erc20Addr, recipient common.Address, 
 		if err != nil {
 			retryCount++
 			log.Println("IncreaseAllowance Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -393,7 +393,7 @@ func (e *ContractModule) DecreaseAllowance(erc20Addr, recipient common.Address, 
 		if err != nil {
 			retryCount++
 			log.Println("DecreaseAllowance Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -420,13 +420,13 @@ func (e *ContractModule) DecreaseAllowance(erc20Addr, recipient common.Address, 
 }
 
 // MintToken The account represented by the e.hexsk mint token to target. Called by who has MINTER_ROLE.
-func (e *ContractModule) MintToken(erc20Addr, acAddr, target common.Address, mintValue *big.Int) error {
+func (e *ContractModule) MintToken(erc20Addr, target common.Address, mintValue *big.Int) error {
 	erc20Ins, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
 
-	hasMinterRole, err := e.HasRole(acAddr, uint8(1), e.addr)
+	hasMinterRole, err := e.HasRole(erc20Addr, uint8(1), e.addr)
 	if err != nil {
 		return err
 	}
@@ -456,7 +456,7 @@ func (e *ContractModule) MintToken(erc20Addr, acAddr, target common.Address, min
 		if err != nil {
 			retryCount++
 			log.Println("MintToken Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -483,13 +483,13 @@ func (e *ContractModule) MintToken(erc20Addr, acAddr, target common.Address, min
 }
 
 // Burn The account represented by the e.hexsk burn it's balance. Called by who has DEFAULT_ADMIN_ROLE.
-func (e *ContractModule) Burn(acAddr, erc20Addr common.Address, burnValue *big.Int) error {
+func (e *ContractModule) Burn(erc20Addr common.Address, burnValue *big.Int) error {
 	erc20Ins, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
 
-	hasAdminRole, err := e.HasRole(acAddr, uint8(0), e.addr)
+	hasAdminRole, err := e.HasRole(erc20Addr, uint8(0), e.addr)
 	if err != nil {
 		return err
 	}
@@ -523,7 +523,7 @@ func (e *ContractModule) Burn(acAddr, erc20Addr common.Address, burnValue *big.I
 		if err != nil {
 			retryCount++
 			log.Println("Burn Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
@@ -550,13 +550,13 @@ func (e *ContractModule) Burn(acAddr, erc20Addr common.Address, burnValue *big.I
 }
 
 // AirDrop The account represented by the e.hexsk airdrop to targets. Called by who has DEFAULT_ADMIN_ROLE.
-func (e *ContractModule) AirDrop(acAddr, erc20Addr common.Address, targets []common.Address, value *big.Int) error {
+func (e *ContractModule) AirDrop(erc20Addr common.Address, targets []common.Address, value *big.Int) error {
 	erc20Ins, err := newERC20(erc20Addr)
 	if err != nil {
 		return err
 	}
 
-	hasAdminRole, err := e.HasRole(acAddr, uint8(0), e.addr)
+	hasAdminRole, err := e.HasRole(erc20Addr, uint8(0), e.addr)
 	if err != nil {
 		return err
 	}
@@ -592,7 +592,7 @@ func (e *ContractModule) AirDrop(acAddr, erc20Addr common.Address, targets []com
 		if err != nil {
 			retryCount++
 			log.Println("AirDrop Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}

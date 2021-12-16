@@ -53,7 +53,7 @@ func (own *ContractModule) AlterOwner(roleAddr common.Address, newOwnerAddr comm
 		if err != nil {
 			retryCount++
 			log.Println("alterOwner Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(defaultGasPrice)) > 0 {
+			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
 				log.Println("previously pending transaction has successfully executed")
 				break
 			}
