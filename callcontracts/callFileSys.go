@@ -89,40 +89,36 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 	return fsAddr, fsIns, nil
 }
 
-// GetFsInfo Get information of filesystem.
+// GetFsInfo Get information of filesystem. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetFsInfo(fsAddr common.Address, uIndex uint64) (bool, uint32, error) {
-	var result struct {
-		IsActive   bool
-		TokenIndex uint32
-	}
-	result.IsActive = false
-	result.TokenIndex = 0
+	var isActive bool
+	var tokenIndex uint32
 
 	fsIns, err := newFileSys(fsAddr)
 	if err != nil {
-		return result.IsActive, result.TokenIndex, err
+		return isActive, tokenIndex, err
 	}
 
 	retryCount := 0
 	for {
 		retryCount++
 		// multiple return values are returned as a structure because named return values are used in the contract function
-		result, err = fsIns.GetFsInfo(&bind.CallOpts{
+		isActive, tokenIndex, err = fsIns.GetFsInfo(&bind.CallOpts{
 			From: fs.addr,
 		}, uIndex)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
-				return result.IsActive, result.TokenIndex, err
+				return isActive, tokenIndex, err
 			}
 			time.Sleep(retryGetInfoSleepTime)
 			continue
 		}
 
-		return result.IsActive, result.TokenIndex, nil
+		return isActive, tokenIndex, nil
 	}
 }
 
-// GetFsProviderSum get providers sum in fs
+// GetFsProviderSum get providers sum in fs. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetFsProviderSum(fsAddr common.Address, uIndex uint64) (uint64, error) {
 	var pSum uint64
 	fsIns, err := newFileSys(fsAddr)
@@ -148,7 +144,7 @@ func (fs *ContractModule) GetFsProviderSum(fsAddr common.Address, uIndex uint64)
 	}
 }
 
-// GetFsProvider get pIndex in fs by array index
+// GetFsProvider get pIndex in fs by array index. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetFsProvider(fsAddr common.Address, uIndex uint64, index uint64) (uint64, error) {
 	var pIndex uint64
 	fsIns, err := newFileSys(fsAddr)
@@ -174,7 +170,7 @@ func (fs *ContractModule) GetFsProvider(fsAddr common.Address, uIndex uint64, in
 	}
 }
 
-// GetFsInfoAggOrder Get information of aggOrder.
+// GetFsInfoAggOrder Get information of aggOrder. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetFsInfoAggOrder(fsAddr common.Address, uIndex uint64, pIndex uint64) (uint64, uint64, error) {
 	var nonce uint64
 	var subNonce uint64
@@ -202,7 +198,7 @@ func (fs *ContractModule) GetFsInfoAggOrder(fsAddr common.Address, uIndex uint64
 	}
 }
 
-// GetStoreInfo Get information of storage order.
+// GetStoreInfo Get information of storage order. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetStoreInfo(fsAddr common.Address, uIndex uint64, pIndex uint64, tIndex uint32) (uint64, uint64, *big.Int, error) {
 	var _time, size uint64
 	var price *big.Int
@@ -233,7 +229,7 @@ func (fs *ContractModule) GetStoreInfo(fsAddr common.Address, uIndex uint64, pIn
 	}
 }
 
-// GetChannelInfo Get information of channel.
+// GetChannelInfo Get information of channel. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetChannelInfo(fsAddr common.Address, uIndex uint64, pIndex uint64, tIndex uint32) (*big.Int, uint64, uint64, error) {
 	var nonce, expire uint64
 	var amount *big.Int

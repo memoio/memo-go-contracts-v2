@@ -256,8 +256,8 @@ func SignForRegister(caller common.Address, sk string) ([]byte, error) {
 	return sig, nil
 }
 
-// SignForAddRepair used to call AddReapir
-func SignForAddRepair(sk string, npIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int) ([]byte, error) {
+// SignForRepair used to call AddReapir or SubRepair
+func SignForRepair(sk string, npIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, label string) ([]byte, error) {
 	ecdsaSk, err := HexSkToEcdsa(sk)
 	if err != nil {
 		log.Fatal(err)
@@ -279,8 +279,9 @@ func SignForAddRepair(sk string, npIndex, start, end, size, nonce uint64, tIndex
 	binary.BigEndian.PutUint32(b, tIndex)
 	tIndexNew := common.LeftPadBytes(tmp, 32)
 	spriceNew := common.LeftPadBytes(sprice.Bytes(), 32)
+	labelNew := common.LeftPadBytes([]byte(label), 32)
 
-	hash := crypto.Keccak256(npIndexNew, startNew, endNew, sizeNew, nonceNew, tIndexNew, spriceNew)
+	hash := crypto.Keccak256(npIndexNew, startNew, endNew, sizeNew, nonceNew, tIndexNew, spriceNew, labelNew)
 
 	// 私钥签名
 	sig, err := crypto.Sign(hash, ecdsaSk)

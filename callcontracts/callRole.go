@@ -1375,6 +1375,7 @@ func (r *ContractModule) GetGKNum(roleAddr common.Address, gIndex uint64) (uint6
 	}
 
 	retryCount := 0
+	gIndex--
 	for {
 		retryCount++
 		gkNum, err = roleIns.GetGKNum(&bind.CallOpts{
@@ -1402,6 +1403,7 @@ func (r *ContractModule) GetGPNum(roleAddr common.Address, gIndex uint64) (uint6
 	}
 
 	retryCount := 0
+	gIndex--
 	for {
 		retryCount++
 		gpNum, err = roleIns.GetGPNum(&bind.CallOpts{

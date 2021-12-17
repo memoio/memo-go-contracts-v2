@@ -194,7 +194,7 @@ func (rfs *ContractModule) AddOrder(roleFS, roleAddr, rTokenAddr common.Address,
 		return err
 	}
 	// check ksigns's length
-	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func (rfs *ContractModule) SubOrder(roleFS, roleAddr, rTokenAddr common.Address,
 		return err
 	}
 	// check ksigns's length
-	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex)
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func (rfs *ContractModule) SubOrder(roleFS, roleAddr, rTokenAddr common.Address,
 		// generally caused by too low gasprice
 		rebuild(err, tx, auth)
 
-		tx, err = roleFSIns.AddOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
+		tx, err = roleFSIns.SubOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
 		if err != nil {
 			retryCount++
 			log.Println("SubOrder Err:", err)
@@ -325,7 +325,7 @@ func (rfs *ContractModule) AddRepair(roleFS, roleAddr, rTokenAddr common.Address
 		return err
 	}
 	// check ksigns's length
-	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex)
 	if err != nil {
 		return err
 	}
@@ -391,7 +391,7 @@ func (rfs *ContractModule) SubRepair(roleFS, roleAddr, rTokenAddr common.Address
 	}
 
 	// check ksigns's length
-	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex)
 	if err != nil {
 		return err
 	}
@@ -466,7 +466,7 @@ func (rfs *ContractModule) ProWithdraw(roleFS, roleAddr, rTokenAddr common.Addre
 	}
 
 	// check ksigns's length
-	gkNum, err := rfs.GetGKNum(roleAddr, gIndex-1)
+	gkNum, err := rfs.GetGKNum(roleAddr, gIndex)
 	if err != nil {
 		return err
 	}
