@@ -257,7 +257,7 @@ func main() {
 	}
 
 	fmt.Println("============ 13. test GetGKNum ============")
-	gk, err := rAdmin.GetGKNum(roleAddr, 0) // bug
+	gk, err := rAdmin.GetGKNum(roleAddr, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -267,7 +267,7 @@ func main() {
 	}
 
 	fmt.Println("============ 14. test GetGPNum ============")
-	gp, err := rAdmin.GetGPNum(roleAddr, 0)
+	gp, err := rAdmin.GetGPNum(roleAddr, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -347,23 +347,38 @@ func main() {
 	}
 	fmt.Println("pledgeP after set: ", newPP)
 
+	if new(big.Int).Sub(newPK, oldPK).Cmp(oneEth) != 0 {
+		log.Fatal("test set PledgeK failed")
+	}
+
+	if new(big.Int).Sub(newPP, oldPP).Cmp(oneEth) != 0 {
+		log.Fatal("test set PledgeP failed")
+	}
+
 	fmt.Println("============ 19. test Recharge ============")
 
 	// to assure balance is enough
 	CheckERC20Balance()
 
-	// query old balance of user in fs
-	fs := callconts.NewFileSys(adminAddr, test.AdminSk, txopts)
-	fmt.Println("fsAddr1:", fsAddr1)
-	oldBal, tmp, err := fs.GetBalance(fsAddr1, 1, 0)
+	// check old balance of user in erc20
+	userAddr := common.HexToAddress(test.Acc1)
+	erc20 := callconts.NewERC20(userAddr, test.Sk1, txopts)
+
+	oldBalErc20, err := erc20.BalanceOf(test.PrimaryToken, userAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(">>>> oldBal:", oldBal, " tmp:", tmp)
+	fmt.Println(">>>> old balance in erc20 is: ", oldBalErc20)
 
-	// recharge前先approve
-	userAddr := common.HexToAddress(test.Acc1)
-	erc20 := callconts.NewERC20(userAddr, test.Sk1, txopts)
+	// check old balance of user in fs
+	fs := callconts.NewFileSys(adminAddr, test.AdminSk, txopts)
+	oldBalFs, tmp, err := fs.GetBalance(fsAddr1, 1, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(">>>> old balance in fs is: ", oldBalFs, " tmp:", tmp)
+
+	// user approve before recharge
 	err = erc20.Approve(test.PrimaryToken, fsAddr1, oneEth)
 	if err != nil {
 		log.Fatal(err)
@@ -403,15 +418,26 @@ func main() {
 		log.Fatal("test Recharge failed")
 	}
 
-	// query new balance of user in fs
-	newBal, tmp, err := fs.GetBalance(fsAddr1, 1, 0)
+	// check new balance of user in erc20
+	newBalErc20, err := erc20.BalanceOf(test.PrimaryToken, userAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(">>>> newBal:", newBal, " tmp:", tmp)
+	fmt.Println(">>>> new balance in erc20 is: ", newBalErc20)
 
-	if new(big.Int).Sub(newBal, oldBal).Cmp(oneEth) != 0 {
-		log.Fatal("test Recharge failed")
+	// check new balance of user in fs
+	newBalFs, tmp, err := fs.GetBalance(fsAddr1, 1, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(">>>> new balance in fs is: ", newBalFs, " tmp:", tmp)
+
+	// test
+	if new(big.Int).Sub(oldBalErc20, newBalErc20).Cmp(oneEth) != 0 {
+		log.Fatal("test Recharge failed, erc20 balance error")
+	}
+	if new(big.Int).Sub(newBalFs, oldBalFs).Cmp(oneEth) != 0 {
+		log.Fatal("test Recharge failed, fs balance error")
 	}
 
 	fmt.Println("============ 20. test WithdrawFromFs ============")
@@ -419,13 +445,20 @@ func main() {
 	// to assure balance is enough
 	CheckERC20Balance()
 
-	// query user balance before withdraw
-	fs = callconts.NewFileSys(adminAddr, test.AdminSk, txopts)
-	oldBal, tmp, err = fs.GetBalance(fsAddr1, 1, 0)
+	// check old balance of user in erc20
+	oldBalErc20, err = erc20.BalanceOf(test.PrimaryToken, userAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(">>>> oldBal:", oldBal, " tmp:", tmp)
+	fmt.Println(">>>> old balance in erc20 is: ", oldBalErc20)
+
+	// query user balance before withdraw
+	fs = callconts.NewFileSys(adminAddr, test.AdminSk, txopts)
+	oldBalFs, tmp, err = fs.GetBalance(fsAddr1, 1, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(">>>> old balance in erc20 is: ", oldBalFs, " tmp:", tmp)
 
 	// withdraw
 	userAddr = common.HexToAddress(test.Acc1)
@@ -435,14 +468,25 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// query user balance after withdraw
-	newBal, tmp, err = fs.GetBalance(fsAddr1, 1, 0)
+	// check new balance of user in erc20
+	newBalErc20, err = erc20.BalanceOf(test.PrimaryToken, userAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(">>>> newBal:", newBal, " tmp:", tmp)
+	fmt.Println(">>>> new balance in erc20 is: ", newBalErc20)
 
-	if new(big.Int).Sub(oldBal, newBal).Cmp(oneEth) != 0 {
+	// query new balance in fs after withdraw
+	newBalFs, tmp, err = fs.GetBalance(fsAddr1, 1, 0)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(">>>> old balance in erc20 is: ", newBalFs, " tmp:", tmp)
+
+	// test
+	if new(big.Int).Sub(newBalErc20, oldBalErc20).Cmp(oneEth) != 0 {
+		log.Fatal("test Withdraw failed, erc20 balance error")
+	}
+	if new(big.Int).Sub(oldBalFs, newBalFs).Cmp(oneEth) != 0 {
 		log.Fatal("test WithdrawFromFs failed")
 	}
 
@@ -529,6 +573,9 @@ func SaveConfig(cfg string) error {
 
 // check accounts' eth balance, used for sending tx, recharge if not enough
 func CheckEthBalance() {
+
+	fmt.Println(">>>> checking eth balance")
+
 	ethBal := callconts.QueryEthBalance(test.AdminAddr, ethEndPoint)
 	fmt.Printf("admin balance: %x in Ethereum\n", ethBal)
 	for i, acc := range addrs {
