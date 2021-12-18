@@ -313,7 +313,7 @@ func (rfs *ContractModule) SubOrder(roleFS, roleAddr, rTokenAddr common.Address,
 }
 
 // AddRepair called by keeper. Add the repair order in the FileSys.
-// hash(pIndex, _start, end, _size, nonce, tIndex, sPrice), signed by newProvider
+// hash(pIndex, _start, end, _size, nonce, tIndex, sPrice, "a"), signed by newProvider
 func (rfs *ContractModule) AddRepair(roleFS, roleAddr, rTokenAddr common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {
@@ -378,7 +378,7 @@ func (rfs *ContractModule) AddRepair(roleFS, roleAddr, rTokenAddr common.Address
 }
 
 // SubRepair called by keeper. Reduce the repair order in the FileSys.
-// hash(pIndex, _start, end, _size, nonce, tIndex, sPrice), signed by newProvider
+// hash(pIndex, _start, end, _size, nonce, tIndex, sPrice, "s"), signed by newProvider
 func (rfs *ContractModule) SubRepair(roleFS, roleAddr, rTokenAddr common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
 	roleFSIns, err := newRoleFS(roleFS)
 	if err != nil {

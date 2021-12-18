@@ -29,10 +29,10 @@ func main() {
 	adminAddr := common.HexToAddress(test.AdminAddr)
 	//acc1Addr := common.HexToAddress(test.Acc1) // 用于注册User
 	acc2Addr := common.HexToAddress(test.Acc2) // 用于注册keeper
-	acc3Addr := common.HexToAddress(test.Acc5) // 用于注册provider
-	acc4Addr := common.HexToAddress(test.Acc4) // 用于注册provider
+	//acc3Addr := common.HexToAddress(test.Acc5) // 用于注册provider
+	//acc4Addr := common.HexToAddress(test.Acc4) // 用于注册provider
 	//accs := []common.Address{acc1Addr, acc2Addr, acc3Addr, acc4Addr}
-	pledgeK := big.NewInt(1e6)
+	//pledgeK := big.NewInt(1e6)
 	start := uint64(time.Now().Unix())
 	end := start + 10
 	size := uint64(10)
@@ -40,7 +40,7 @@ func main() {
 	sprice := big.NewInt(10)
 
 	uIndex := uint64(2)
-	gIndex := uint64(1)
+	//gIndex := uint64(1)
 	//kIndex := uint64(1)
 	pIndex := uint64(3)
 
@@ -161,7 +161,7 @@ func main() {
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
-	// callconts.PledgePoolAddr = pledgePoolAddr
+	callconts.PledgePoolAddr = pledgePoolAddr
 	// err = r.RegisterKeeper(roleAddr, kIndex, []byte("test"), nil)
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -230,7 +230,7 @@ func main() {
 	// 	log.Fatal("user avail should be ", pledgeK)
 	// }
 	// // provider注册、质押、申请角色、加入group
-	r := callconts.NewR(acc3Addr, test.Sk5, txopts)
+	//r := callconts.NewR(acc3Addr, test.Sk5, txopts)
 	// err = r.Register(roleAddr, acc3Addr, nil)
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -254,7 +254,7 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 	// admin为RoleFS赋予Minter_Role权限
-	erc20 := callconts.NewERC20(adminAddr, test.AdminSk, txopts)
+	//erc20 := callconts.NewERC20(adminAddr, test.AdminSk, txopts)
 	// err = erc20.SetUpRole(test.PrimaryToken, callconts.MinterRole, rolefsAddr)
 	// if err != nil {
 	// 	log.Fatal(err)
@@ -365,93 +365,101 @@ func main() {
 	// }
 	// size:10, price:10, totalPay:100,上面测试通过的话，这里就不需要再重复测试了
 
-	fmt.Println("============4. begin test SubOrder============")
-	//此处出错
-	err = rfs.SubOrder(rolefsAddr, roleAddr, rTokenAddr, uIndex, pIndex, start+5, end, size-5, nonce, 0, sprice.Sub(sprice, big.NewInt(5)), nil, nil, [][]byte{[]byte("test")})
-	if err != nil {
-		log.Fatal(err)
-	}
-	// 这里不重复测试了，仅抽取部分信息进行测试
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(fsAddr, pIndex, 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("after SubOrder: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid) // TODO:judge
-	// if _endPaid.Cmp(big.NewInt(1)) != 0 {
-	// 	log.Fatal("endPaid should be 1")
+	// fmt.Println("============4. begin test SubOrder============")
+	// //此处出错
+	// err = rfs.SubOrder(rolefsAddr, roleAddr, rTokenAddr, uIndex, pIndex, start+5, end, size-5, nonce, 0, sprice.Sub(sprice, big.NewInt(5)), nil, nil, [][]byte{[]byte("test")})
+	// if err != nil {
+	// 	log.Fatal(err)
 	// }
+	// // 这里不重复测试了，仅抽取部分信息进行测试
+	// _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(fsAddr, pIndex, 0)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("after SubOrder: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid) // TODO:judge
+	// // after SubOrder:  1639710082 5 5 100 0 550980 0 0 4 0 0
+	// // if _endPaid.Cmp(big.NewInt(1)) != 0 {
+	// // 	log.Fatal("endPaid should be 1")
+	// // }
 
-	fmt.Println("============5. begin test ProWithdraw============")
-	pay := big.NewInt(20)
-	lost := big.NewInt(10)
-	err = rfs.ProWithdraw(rolefsAddr, roleAddr, rTokenAddr, pIndex, 0, pay, lost, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// 获取settlement信息，并判断正确性
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(fsAddr, pIndex, 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("after ProWithdraw: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid) // TODO:judge
-	// if _lost.Cmp(lost) != 0 || _hasPaid.Cmp(pay) != 0 {
-	// 	log.Fatal()
+	// fmt.Println("============5. begin test ProWithdraw============")
+	// pay := big.NewInt(20)
+	// lost := big.NewInt(10)
+	// err = rfs.ProWithdraw(rolefsAddr, roleAddr, rTokenAddr, pIndex, 0, pay, lost, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
 	// }
-	// 获取balance信息
-	avail, tmp, err := fs.GetBalance(fsAddr, pIndex, 0)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("after ProWithdraw, provider avail is ", avail, " tmp is ", tmp) // TODO:judge
-	// 获取provider在tIndex上的代币余额
-	bal, err := erc20.BalanceOf(test.PrimaryToken, acc3Addr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("after ProWithdraw, provider balance is ", bal) // TODO:judeg
-	// if bal.Cmp(pay)!=0{
-	// 	log.Fatal("balance should be ", pay)
+	// // 获取settlement信息，并判断正确性
+	// _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(fsAddr, pIndex, 0)
+	// if err != nil {
+	// 	log.Fatal(err)
 	// }
+	// fmt.Println("after ProWithdraw: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid) // TODO:judge
+	// // after ProWithdraw:  1639710110 5 5 100 20 551120 10 0 4 0 0
+	// // if _lost.Cmp(lost) != 0 || _hasPaid.Cmp(pay) != 0 {
+	// // 	log.Fatal()
+	// // }
+	// // 获取balance信息
+	// avail, tmp, err := fs.GetBalance(fsAddr, pIndex, 0)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("after ProWithdraw, provider avail is ", avail, " tmp is ", tmp) // TODO:judge
+	// // after ProWithdraw, provider avail is  0  tmp is  70
+	// // 获取provider在tIndex上的代币余额
+	// bal, err := erc20.BalanceOf(test.PrimaryToken, acc3Addr)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("after ProWithdraw, provider balance is ", bal) // TODO:judeg
+	// // after ProWithdraw, provider balance is  1000000000000000020
+	// // if bal.Cmp(pay)!=0{
+	// // 	log.Fatal("balance should be ", pay)
+	// // }
 
 	fmt.Println("============6. begin test AddRepair============")
 	// 调用AddRepair前，需要先调用ProWithdraw、指定lost值
 	// 新注册一个provider
-	r = callconts.NewR(acc4Addr, test.Sk4, txopts)
-	err = r.Register(roleAddr, acc4Addr, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	p2Index, err := r.GetRoleIndex(roleAddr, acc4Addr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("p2Index ", p2Index)
-	pp := callconts.NewPledgePool(acc4Addr, test.Sk4, txopts)
-	err = pp.Pledge(pledgePoolAddr, test.PrimaryToken, roleAddr, p2Index, pledgeK, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = r.RegisterProvider(roleAddr, p2Index, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = r.AddProviderToGroup(roleAddr, p2Index, gIndex, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//r = callconts.NewR(acc4Addr, test.Sk4, txopts)
+	// err = r.Register(roleAddr, acc4Addr, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// p2Index, err := r.GetRoleIndex(roleAddr, acc4Addr)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Println("p2Index ", p2Index)
+	p2Index := uint64(4)
+	// pp := callconts.NewPledgePool(acc4Addr, test.Sk4, txopts)
+	// err = pp.Pledge(pledgePoolAddr, test.PrimaryToken, roleAddr, p2Index, pledgeK, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// err = r.RegisterProvider(roleAddr, p2Index, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// err = r.AddProviderToGroup(roleAddr, p2Index, gIndex, nil)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 	// 先构造签名信息
 	//bytes32 h = keccak256(abi.encodePacked(pIndex, _start, end, _size, nonce, tIndex, sprice));
-	npSig, err := callconts.SignForRepair(test.Sk4, p2Index, start+9, end, size, nonce, 0, sprice, "a") // new provider sign，此处需要确保sprice*(end-start)<=lost
+	npSig, err := callconts.SignForRepair(test.Sk4, pIndex, start+9, end, size, nonce, 0, big.NewInt(5), "a") // new provider sign，此处需要确保sprice*(end-start)<=lost
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("params:", pIndex, start+9, end, size, nonce, 0, big.NewInt(5), "a")
+	fmt.Println("npSign:", npSig)
 	// 调用AddRepair
-	err = rfs.AddRepair(rolefsAddr, roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, sprice, npSig, nil)
+	time.Sleep(2 * time.Second)
+	err = rfs.AddRepair(rolefsAddr, roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, big.NewInt(5), npSig, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 获取settlement信息，并判断正确性
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(fsAddr, pIndex, 0)
+	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(fsAddr, pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -460,7 +468,7 @@ func main() {
 	// 	log.Fatal()
 	// }
 	// 获取balance信息
-	avail, tmp, err = fs.GetBalance(fsAddr, p2Index, 0)
+	avail, tmp, err := fs.GetBalance(fsAddr, p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
