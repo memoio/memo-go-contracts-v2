@@ -256,32 +256,51 @@ func SignForRegister(caller common.Address, sk string) ([]byte, error) {
 	return sig, nil
 }
 
-// SignForRepair used to call AddReapir or SubRepair
-func SignForRepair(sk string, npIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, label string) ([]byte, error) {
+// SignForRepair used to call AddRepair or SubRepair, when subRepair, label is "s"; when addRepair, label is "a"
+func SignForRepair(sk string, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, label string) ([]byte, error) {
 	ecdsaSk, err := HexSkToEcdsa(sk)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// (npIndex, _start, end, _size, nonce, tIndex, sprice)的哈希值
+	// (npIndex, _start, end, _size, nonce, tIndex, sprice, label)的哈希值
+	by := make([]byte, 77)
 	tmp := make([]byte, 8)
-	binary.BigEndian.PutUint64(tmp, npIndex)
-	npIndexNew := common.LeftPadBytes(tmp, 32)
+	binary.BigEndian.PutUint64(tmp, pIndex)
+	for i, b := range tmp {
+		by[i] = byte(b)
+	}
 	binary.BigEndian.PutUint64(tmp, start)
-	startNew := common.LeftPadBytes(tmp, 32)
+	for i, b := range tmp {
+		by[i+8] = byte(b)
+	}
 	binary.BigEndian.PutUint64(tmp, end)
-	endNew := common.LeftPadBytes(tmp, 32)
+	for i, b := range tmp {
+		by[i+16] = byte(b)
+	}
 	binary.BigEndian.PutUint64(tmp, size)
-	sizeNew := common.LeftPadBytes(tmp, 32)
+	for i, b := range tmp {
+		by[i+24] = byte(b)
+	}
 	binary.BigEndian.PutUint64(tmp, nonce)
-	nonceNew := common.LeftPadBytes(tmp, 32)
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, tIndex)
-	tIndexNew := common.LeftPadBytes(tmp, 32)
+	for i, b := range tmp {
+		by[i+32] = byte(b)
+	}
+	t := make([]byte, 4)
+	binary.BigEndian.PutUint32(t, tIndex)
+	for i, b := range tmp {
+		by[i+40] = byte(b)
+	}
 	spriceNew := common.LeftPadBytes(sprice.Bytes(), 32)
-	labelNew := common.LeftPadBytes([]byte(label), 32)
+	for i, b := range spriceNew {
+		by[i+44] = byte(b)
+	}
+	labelNew := []byte(label)
+	by[76] = byte(labelNew[0])
 
-	hash := crypto.Keccak256(npIndexNew, startNew, endNew, sizeNew, nonceNew, tIndexNew, spriceNew, labelNew)
+	hash := crypto.Keccak256(by)
+
+	fmt.Println("hash:", hash)
 
 	// 私钥签名
 	sig, err := crypto.Sign(hash, ecdsaSk)
