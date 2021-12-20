@@ -41,7 +41,7 @@ type RoleInfo interface {
 	RegisterToken(common.Address, common.Address) error
 
 	// called by owner
-	CreateGroup(common.Address, common.Address, uint64, []uint64, uint16) (uint64,error)
+	CreateGroup(common.Address, common.Address, uint64, []uint64, uint16) (uint64, error)
 
 	// called by owner to set fsAddress for group after CreateGroup and deployFileSys
 	SetGF(common.Address, common.Address, uint64) error
@@ -94,13 +94,16 @@ type RoleInfo interface {
 	GetGKNum(common.Address, uint64) (uint64, error)
 
 	// get the number of providers in the group
-	GetGPNum(common.Address, uint64) (uint64, error)
+	GetGUPNum(common.Address, uint64) (uint64, uint64, error)
 
 	// get keeper role index by group array index and keeper array index
 	GetGroupK(common.Address, uint64, uint64) (uint64, error)
 
 	// get provider role index by group array index and provider array index
 	GetGroupP(common.Address, uint64, uint64) (uint64, error)
+
+	// get user role index by group array index and provider array index
+	GetGroupU(common.Address, uint64, uint64) (uint64, error)
 }
 
 // RoleFSInfo contains operations related to memo roles and filesystem-payment

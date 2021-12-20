@@ -28,17 +28,25 @@ var (
 	// EndPoint is rpc endpoint of geth node
 	EndPoint string
 	//ERC20 contract address
-	ERC20Addr common.Address
+	ERC20Addr = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 	// Role contract address
-	RoleAddr common.Address
+	RoleAddr = common.HexToAddress("0x98EbFc25a2f9a722C916280e4B6b6F31EdE727FC")
 	// RoleFS contract address
-	RoleFSAddr common.Address
+	RoleFSAddr = common.HexToAddress("0x17f437f782C3A834661d880b075844eA109024e6")
+	// RToken contract address
+	RTokenAddr = common.HexToAddress("0x09761905f83Ea1a3b5901E43a5bdfE7bBF09B73D")
 	// FileSys contract address
-	FileSysAddr common.Address
+	FileSysAddr = common.HexToAddress("0x0Ec93b801F69bbf96763feFD071Cce10dbdF4472")
 	// PledgePool contract address
-	PledgePoolAddr common.Address
+	PledgePoolAddr = common.HexToAddress("0xcB155b73c75AF830012D3B195b2473Ec849832E3")
 	// Issuance contract address
-	IssuanceAddr common.Address
+	IssuanceAddr = common.HexToAddress("0x82CbBD2B3B88c644e20Ab4BF542FB7Ca0d4186b7")
+
+	AdminAddr  = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
+	AdminSk    = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
+	Foundation = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
+
+	GIndex = uint64(1)
 )
 
 const (
