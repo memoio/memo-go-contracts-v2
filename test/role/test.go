@@ -273,11 +273,11 @@ func main() {
 	}
 
 	fmt.Println("============ 14. test GetGPNum ============")
-	gp, err := rAdmin.GetGPNum(roleAddr, 1)
+	gu, gp, err := rAdmin.GetGUPNum(roleAddr, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("gp:", gp)
+	fmt.Println("gu:", gu, "gp:", gp)
 
 	// add a provider only when no provider in group
 	// add role index 5 into group 1 as a provider
