@@ -231,16 +231,17 @@ func main() {
 		if an != 5 {
 			log.Fatal("test GetAddrsNum failed")
 		}
+	}
 
-		fmt.Println("============ 10. test GetAddr ============")
-		ga, err := rAdmin.GetAddr(roleAddr, 1)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("ga:", ga)
-		if ga.String() != test.Acc1 {
-			log.Fatal("test GetAddr failed")
-		}
+	fmt.Println("============ 10. test GetAddr ============")
+
+	ga, err := rAdmin.GetAddr(roleAddr, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("ga:", ga)
+	if ga.String() != test.Acc1 {
+		log.Fatal("test GetAddr failed")
 	}
 
 	fmt.Println("============ 11. test GetRoleInfo ============")
