@@ -21,10 +21,20 @@ const (
 	Sk4       = "c46a4316171ee0070b4f7c8e08229c63d9f5e683b2ca895d38f2e25e0a27ea4f"
 	Acc5      = "0xe23627B7c85A55afA2dF7689A10e7a880723ab8D"
 	Sk5       = "457a3b8a46f0990b8a75eaa1bf7a157813dd0908a106b216a1af8de6e3a2881f"
+	Acc6      = "0xff055f0a5df3e1e52d1110e072316e9f90a56d7c"
+	Sk6       = "26c330ac5d67890ee770ec58763579f2e7e0f891bf3244304dab49b2c737ecae"
+	Acc7      = "0xa1776d1aa3b039e0fc91a05bceb2ef42785e7598"
+	Sk7       = "1e2b78621a49ade3e1eb70c691802cd37bee078a0f10f690870c5e5b3dee8c3b"
+	Acc8      = "0x1ca59b8200e96ba6c7718ba1278b66e141383a49"
+	Sk8       = "b80a63a52061dc9c1624edd76945b295d16487a68accf7d55c56c2ed11bc2bbe"
+	Acc9      = "0x97041772c3bd9b97af8615fcf04812db9f81ee74"
+	Sk9       = "561904230d600c7b9b9842a57aff2b8a754693ce927d27c9f2e00b251a4a0480"
+	Acc10     = "0x4242c00fea991f432ae2ffb7ae88b8b353739a13"
+	Sk10      = "ed319477dc5cad5478954ac9751cfa094193451c0de161dedd75b515c12e9cf4"
 )
 
 var (
 	Foundation   = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
 	PrimaryToken = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
-	RTokenAddr = common.HexToAddress("0x7a424f9aF3A69e19fe2A839Cf564d620B6C984d7")
+	RTokenAddr   = common.HexToAddress("0x7a424f9aF3A69e19fe2A839Cf564d620B6C984d7")
 )

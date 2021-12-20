@@ -244,7 +244,8 @@ func SignForRegister(caller common.Address, sk string) ([]byte, error) {
 		log.Fatal(err)
 	}
 	//(caller, register)的哈希值
-	label := common.LeftPadBytes([]byte(register), 32)
+	//label := common.LeftPadBytes([]byte(register), 32)
+	label := []byte(register)
 	hash := crypto.Keccak256(caller.Bytes(), label)
 
 	//私钥对上述哈希值签名
@@ -254,6 +255,31 @@ func SignForRegister(caller common.Address, sk string) ([]byte, error) {
 	}
 
 	return sig, nil
+}
+
+// todo
+func SignForRegisterKeeper(caller common.Address, sk string) ([]byte, error) {
+	return nil, nil
+}
+
+// todo
+func SignForRegisterProvider(caller common.Address, sk string) ([]byte, error) {
+	return nil, nil
+}
+
+// todo
+func SignForRegisterUser(caller common.Address, sk string) ([]byte, error) {
+	return nil, nil
+}
+
+// todo
+func SignForAddProviderToGroup(caller common.Address, sk string) ([]byte, error) {
+	return nil, nil
+}
+
+// todo
+func SignForWithdrawFromFs(caller common.Address, sk string) ([]byte, error) {
+	return nil, nil
 }
 
 // SignForRepair used to call AddRepair or SubRepair, when subRepair, label is "s"; when addRepair, label is "a"
