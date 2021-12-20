@@ -37,7 +37,7 @@ var (
 	rtokenAddr     common.Address
 	rolefsAddr     common.Address
 	pledgePoolAddr common.Address
-	issuanceAddr   common.Address
+	issuAddr       common.Address
 
 	// pledge values
 	pledgeK *big.Int
@@ -204,7 +204,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("is:", is)
-	if is != issuanceAddr {
+	if is != issuAddr {
 		log.Fatal("test Issuance failed")
 	}
 
@@ -219,23 +219,28 @@ func main() {
 	}
 
 	fmt.Println("============ 9. test GetAddrsNum ============")
-	an, err := rAdmin.GetAddrsNum(roleAddr)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("an:", an)
-	if an != 5 {
-		log.Fatal("test GetAddrsNum failed")
-	}
+	//
+	if fast {
+		fmt.Println("@@ skipped for fast testing")
+	} else {
+		an, err := rAdmin.GetAddrsNum(roleAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("an:", an)
+		if an != 5 {
+			log.Fatal("test GetAddrsNum failed")
+		}
 
-	fmt.Println("============ 10. test GetAddr ============")
-	ga, err := rAdmin.GetAddr(roleAddr, 1)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("ga:", ga)
-	if ga.String() != test.Acc1 {
-		log.Fatal("test GetAddr failed")
+		fmt.Println("============ 10. test GetAddr ============")
+		ga, err := rAdmin.GetAddr(roleAddr, 1)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("ga:", ga)
+		if ga.String() != test.Acc1 {
+			log.Fatal("test GetAddr failed")
+		}
 	}
 
 	fmt.Println("============ 11. test GetRoleInfo ============")
@@ -490,11 +495,45 @@ func main() {
 		log.Fatal("test WithdrawFromFs failed")
 	}
 
+	fmt.Println("============ 21. test SignForRegister ============")
+
+	fmt.Println(">>>> test call register by other account")
+
+	if fast {
+		fmt.Println("@@ skipped for fast testing")
+	} else {
+		// signed by acc's sk
+		sig, err := callconts.SignForRegister(adminAddr, test.Sk6)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// other account call register for regist acc6
+		rOther := callconts.NewR(adminAddr, test.AdminSk, txopts)
+		err = rOther.Register(roleAddr, common.HexToAddress(test.Acc6), sig)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// get role info
+		fmt.Println("call GetRoleIndex")
+		rAcc = callconts.NewR(common.HexToAddress(test.Acc6), test.Sk6, txopts)
+		rIndex, err := rAcc.GetRoleIndex(roleAddr, common.HexToAddress(test.Acc6))
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("rIndex:", rIndex)
+		// this is the 6th registered account
+		if rIndex != 6 {
+			log.Fatal("test SignForRegister failed, rIndex error")
+		}
+	}
+
 	fmt.Println("============test success!============")
 
 	// if success and not fast test, save new config into config file
 	if !fast {
-		cfg := fmt.Sprintf("role=%s\nrtoken=%s\nrolefs=%s\npledgePool=%s\nissuance=%s", roleAddr, rtokenAddr, rolefsAddr, pledgePoolAddr, issuanceAddr)
+		cfg := fmt.Sprintf("role=%s\nrtoken=%s\nrolefs=%s\npledgePool=%s\nissuance=%s", roleAddr, rtokenAddr, rolefsAddr, pledgePoolAddr, issuAddr)
 		SaveConfig(cfg)
 	}
 }
@@ -647,7 +686,7 @@ func PrePaire() (err error) {
 		rtokenAddr = common.HexToAddress(config["rtoken"])
 		rolefsAddr = common.HexToAddress(config["rolefs"])
 		pledgePoolAddr = common.HexToAddress(config["pledgePool"])
-		issuanceAddr = common.HexToAddress(config["issuance"])
+		issuAddr = common.HexToAddress(config["issuance"])
 	}
 
 	// deploy: Role、RoleFS、PledgePool、CreateGroup(FileSys)
@@ -740,6 +779,27 @@ func PrePaire() (err error) {
 		fmt.Println("min pledge for applying provider: ", pledgep)
 	}
 
+	// deploy Issuance
+	if fast {
+		fmt.Println("@@ fast test skip deploy Issuance")
+	} else {
+		fmt.Println(">>>> begin deploy Issuance")
+
+		issu := callconts.NewIssu(adminAddr, test.AdminSk, txopts)
+
+		issuAddr, _, err = issu.DeployIssuance(rolefsAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("----> The Issuance contract address is: ", issuAddr.Hex()) // 0xB15FEDB8017845331b460786fb5129C1Da06f6B1
+
+		// 给Role合约指定所有相关合约地址
+		err = rAdmin.SetPI(roleAddr, pledgePoolAddr, issuAddr, rolefsAddr)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	// keeper and provider pledge
 	if fast {
 		fmt.Println("@@ fast test skip Pledge, use existing")
@@ -770,28 +830,7 @@ func PrePaire() (err error) {
 		}
 	}
 
-	// deploy Issuance
-	if fast {
-		fmt.Println("@@ fast test skip deploy Issuance")
-	} else {
-		fmt.Println(">>>> begin deploy Issuance")
-
-		issu := callconts.NewIssu(adminAddr, test.AdminSk, txopts)
-
-		issuanceAddr, _, err = issu.DeployIssuance(rolefsAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("----> The Issuance contract address is: ", issuanceAddr.Hex()) // 0xB15FEDB8017845331b460786fb5129C1Da06f6B1
-
-		// 给Role合约指定所有相关合约地址
-		err = rAdmin.SetPI(roleAddr, pledgePoolAddr, issuanceAddr, rolefsAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	// register keepers and provider role
+	// keepers and provider register role
 	if fast {
 		fmt.Println("@@ fast test skip register roles, use existing roles")
 	} else {
@@ -910,7 +949,7 @@ func PrePaire() (err error) {
 		fmt.Println("rtoken: ", rtokenAddr)
 		fmt.Println("rolefs: ", rolefsAddr)
 		fmt.Println("pledgePool: ", pledgePoolAddr)
-		fmt.Println("issuance: ", issuanceAddr)
+		fmt.Println("issuance: ", issuAddr)
 	}
 
 	var (

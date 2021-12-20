@@ -4,6 +4,7 @@
 package callconts
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 	"memoContract/contracts/role"
@@ -170,6 +171,10 @@ func (r *ContractModule) Register(roleAddr, addr common.Address, sign []byte) er
 		// generally caused by too low gasprice
 		rebuild(err, tx, auth)
 
+		fmt.Println("call register with param:")
+		fmt.Printf("auth: %v\n", auth)
+		fmt.Printf("addr: %x\n", addr)
+		fmt.Printf("sign: %x\n", sign)
 		tx, err = roleIns.Register(auth, addr, sign)
 		if err != nil {
 			retryCount++
