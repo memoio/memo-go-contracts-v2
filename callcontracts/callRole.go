@@ -1394,31 +1394,31 @@ func (r *ContractModule) GetGKNum(roleAddr common.Address, gIndex uint64) (uint6
 	}
 }
 
-// GetGPNum get the number of providers in the group.
-func (r *ContractModule) GetGPNum(roleAddr common.Address, gIndex uint64) (uint64, error) {
-	var gpNum uint64
+// GetGUPNum get the number of user、providers in the group.
+func (r *ContractModule) GetGUPNum(roleAddr common.Address, gIndex uint64) (uint64, uint64, error) {
+	var gpNum, guNum uint64
 
 	roleIns, err := newRole(roleAddr)
 	if err != nil {
-		return gpNum, err
+		return guNum, gpNum, err
 	}
 
 	retryCount := 0
 	gIndex--
 	for {
 		retryCount++
-		gpNum, err = roleIns.GetGPNum(&bind.CallOpts{
+		guNum, gpNum, err = roleIns.GetGUPNum(&bind.CallOpts{
 			From: r.addr,
 		}, gIndex)
 		if err != nil {
 			if retryCount > sendTransactionRetryCount {
-				return gpNum, err
+				return guNum, gpNum, err
 			}
 			time.Sleep(retryGetInfoSleepTime)
 			continue
 		}
 
-		return gpNum, nil
+		return guNum, gpNum, nil
 	}
 }
 
@@ -1475,5 +1475,33 @@ func (r *ContractModule) GetGroupP(roleAddr common.Address, gIndex uint64, index
 		}
 
 		return pIndex, nil
+	}
+}
+
+// GetGroupU get user role index by gIndex and user array index.
+func (r *ContractModule) GetGroupU(roleAddr common.Address, gIndex uint64, index uint64) (uint64, error) {
+	var uIndex uint64
+
+	roleIns, err := newRole(roleAddr)
+	if err != nil {
+		return uIndex, err
+	}
+
+	retryCount := 0
+	gIndex-- // get group info by array index actually in contract, which is gIndex minus 1
+	for {
+		retryCount++
+		uIndex, err = roleIns.GetGU(&bind.CallOpts{
+			From: r.addr,
+		}, gIndex, index)
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return uIndex, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return uIndex, nil
 	}
 }
