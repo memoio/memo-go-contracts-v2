@@ -40,7 +40,7 @@ func main() {
 	}
 
 	fmt.Println("============1. begin test deploy Issuance contract============")
-	issu := callconts.NewIssu(adminAddr, test.AdminSk, txopts)
+	issu := callconts.NewIssu(rolefsAddr, adminAddr, test.AdminSk, txopts)
 	issuAddr, _, err := issu.DeployIssuance(rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -48,49 +48,50 @@ func main() {
 	fmt.Println("The Issuance contract address is ", issuAddr.Hex())
 
 	fmt.Println("============2. begin test MintLevel============")
-	mintLevel, err := issu.MintLevel(issuAddr)
+	issu = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts)
+	mintLevel, err := issu.MintLevel()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The mintLevel is ", mintLevel)
 
 	fmt.Println("============3. begin test LastMint============")
-	lastMint, err := issu.LastMint(issuAddr)
+	lastMint, err := issu.LastMint()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The lastMint is ", lastMint)
 
 	fmt.Println("============4. begin test Price============")
-	price, err := issu.Price(issuAddr)
+	price, err := issu.Price()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The price is ", price)
 
 	fmt.Println("============5. begin test Size============")
-	size, err := issu.Size(issuAddr)
+	size, err := issu.Size()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The size is ", size)
 
 	fmt.Println("============6. begin test SpaceTime============")
-	spaceTime, err := issu.SpaceTime(issuAddr)
+	spaceTime, err := issu.SpaceTime()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The spaceTime is ", spaceTime)
 
 	fmt.Println("============7. begin test TotalPay============")
-	totalPay, err := issu.TotalPay(issuAddr)
+	totalPay, err := issu.TotalPay()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The totalPay is ", totalPay)
 
 	fmt.Println("============8. begin test TotalPaid============")
-	totalPaid, err := issu.TotalPaid(issuAddr)
+	totalPaid, err := issu.TotalPaid()
 	if err != nil {
 		log.Fatal(err)
 	}

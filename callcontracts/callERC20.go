@@ -14,11 +14,12 @@ import (
 )
 
 // NewERC20 new a instance of ContractModule
-func NewERC20(addr common.Address, hexSk string, txopts *TxOpts) iface.ERC20Info {
+func NewERC20(erc20Addr, addr common.Address, hexSk string, txopts *TxOpts) iface.ERC20Info {
 	e := &ContractModule{
-		addr:   addr,
-		hexSk:  hexSk,
-		txopts: txopts,
+		addr:            addr,
+		hexSk:           hexSk,
+		txopts:          txopts,
+		contractAddress: erc20Addr,
 	}
 
 	return e
@@ -89,8 +90,8 @@ func newERC20(erc20Addr common.Address) (*erc20.ERC20, error) {
 }
 
 // Transfer the account represented by the e.hexsk transfers the specified amount to recipient.
-func (e *ContractModule) Transfer(erc20Addr, recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -100,7 +101,7 @@ func (e *ContractModule) Transfer(erc20Addr, recipient common.Address, value *bi
 	}
 
 	// need to determine whether the account balance is enough to transfer.
-	bal, err := e.BalanceOf(erc20Addr, e.addr)
+	bal, err := e.BalanceOf(e.addr)
 	if err != nil {
 		return err
 	}
@@ -155,8 +156,8 @@ func (e *ContractModule) Transfer(erc20Addr, recipient common.Address, value *bi
 }
 
 // Approve The account represented by the e.hexsk authorizes the balance of the specified amount to addr.
-func (e *ContractModule) Approve(erc20Addr, addr common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -166,7 +167,7 @@ func (e *ContractModule) Approve(erc20Addr, addr common.Address, value *big.Int)
 	}
 
 	// need to determine whether the account balance is enough to approve.
-	bal, err := e.BalanceOf(erc20Addr, e.addr)
+	bal, err := e.BalanceOf(e.addr)
 	if err != nil {
 		return err
 	}
@@ -221,14 +222,14 @@ func (e *ContractModule) Approve(erc20Addr, addr common.Address, value *big.Int)
 }
 
 // TransferFrom The account represented by the e.hexsk transfer value of the specified amount from sender to recipient.
-func (e *ContractModule) TransferFrom(erc20Addr, sender, recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// need to determine whether the account allowance is enough to TransferFrom.
-	allo, err := e.Allowance(erc20Addr, sender, e.addr)
+	allo, err := e.Allowance(sender, e.addr)
 	if err != nil {
 		return err
 	}
@@ -239,7 +240,7 @@ func (e *ContractModule) TransferFrom(erc20Addr, sender, recipient common.Addres
 	}
 
 	// need to determine whether the sender balance is enough to transfer.
-	bal, err := e.BalanceOf(erc20Addr, sender)
+	bal, err := e.BalanceOf(sender)
 	if err != nil {
 		return err
 	}
@@ -294,8 +295,8 @@ func (e *ContractModule) TransferFrom(erc20Addr, sender, recipient common.Addres
 }
 
 // IncreaseAllowance The account represented by the e.hexsk increase the allowance for recipient.
-func (e *ContractModule) IncreaseAllowance(erc20Addr, recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -305,11 +306,11 @@ func (e *ContractModule) IncreaseAllowance(erc20Addr, recipient common.Address, 
 	}
 
 	// the given allowance shouldn't exceeds the balance
-	bal, err := e.BalanceOf(erc20Addr, e.addr)
+	bal, err := e.BalanceOf(e.addr)
 	if err != nil {
 		return err
 	}
-	allo, err := e.Allowance(erc20Addr, e.addr, recipient)
+	allo, err := e.Allowance(e.addr, recipient)
 	if err != nil {
 		return err
 	}
@@ -365,8 +366,8 @@ func (e *ContractModule) IncreaseAllowance(erc20Addr, recipient common.Address, 
 }
 
 // DecreaseAllowance The account represented by the e.hexsk decrease the allowance for recipient.
-func (e *ContractModule) DecreaseAllowance(erc20Addr, recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -420,13 +421,13 @@ func (e *ContractModule) DecreaseAllowance(erc20Addr, recipient common.Address, 
 }
 
 // MintToken The account represented by the e.hexsk mint token to target. Called by who has MINTER_ROLE.
-func (e *ContractModule) MintToken(erc20Addr, target common.Address, mintValue *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	hasMinterRole, err := e.HasRole(erc20Addr, uint8(1), e.addr)
+	hasMinterRole, err := e.HasRole(uint8(1), e.addr)
 	if err != nil {
 		return err
 	}
@@ -483,13 +484,13 @@ func (e *ContractModule) MintToken(erc20Addr, target common.Address, mintValue *
 }
 
 // Burn The account represented by the e.hexsk burn it's balance. Called by who has DEFAULT_ADMIN_ROLE.
-func (e *ContractModule) Burn(erc20Addr common.Address, burnValue *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) Burn(burnValue *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	hasAdminRole, err := e.HasRole(erc20Addr, uint8(0), e.addr)
+	hasAdminRole, err := e.HasRole(uint8(0), e.addr)
 	if err != nil {
 		return err
 	}
@@ -497,7 +498,7 @@ func (e *ContractModule) Burn(erc20Addr common.Address, burnValue *big.Int) erro
 		return ErrNoAdminRight
 	}
 
-	bal, err := e.BalanceOf(erc20Addr, e.addr)
+	bal, err := e.BalanceOf(e.addr)
 	if err != nil {
 		return err
 	}
@@ -550,13 +551,13 @@ func (e *ContractModule) Burn(erc20Addr common.Address, burnValue *big.Int) erro
 }
 
 // AirDrop The account represented by the e.hexsk airdrop to targets. Called by who has DEFAULT_ADMIN_ROLE.
-func (e *ContractModule) AirDrop(erc20Addr common.Address, targets []common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(erc20Addr)
+func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error {
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	hasAdminRole, err := e.HasRole(erc20Addr, uint8(0), e.addr)
+	hasAdminRole, err := e.HasRole(uint8(0), e.addr)
 	if err != nil {
 		return err
 	}
@@ -619,10 +620,10 @@ func (e *ContractModule) AirDrop(erc20Addr common.Address, targets []common.Addr
 }
 
 // GetName get the name of erc20 token.
-func (e *ContractModule) GetName(erc20Addr common.Address) (string, error) {
+func (e *ContractModule) GetName() (string, error) {
 	var name string
 
-	erc20Ins, err := newERC20(erc20Addr)
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return name, err
 	}
@@ -646,10 +647,10 @@ func (e *ContractModule) GetName(erc20Addr common.Address) (string, error) {
 }
 
 // GetSymbol get the symbol of erc20 token.
-func (e *ContractModule) GetSymbol(erc20Addr common.Address) (string, error) {
+func (e *ContractModule) GetSymbol() (string, error) {
 	var name string
 
-	erc20Ins, err := newERC20(erc20Addr)
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return name, err
 	}
@@ -673,10 +674,10 @@ func (e *ContractModule) GetSymbol(erc20Addr common.Address) (string, error) {
 }
 
 // GetDecimals get the decimals of erc20 token. For example, it's 18 in eth.
-func (e *ContractModule) GetDecimals(erc20Addr common.Address) (uint8, error) {
+func (e *ContractModule) GetDecimals() (uint8, error) {
 	var decimals uint8
 
-	erc20Ins, err := newERC20(erc20Addr)
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return decimals, err
 	}
@@ -700,10 +701,10 @@ func (e *ContractModule) GetDecimals(erc20Addr common.Address) (uint8, error) {
 }
 
 // GetTotalSupply get the total supply of erc20 token.
-func (e *ContractModule) GetTotalSupply(erc20Addr common.Address) (*big.Int, error) {
+func (e *ContractModule) GetTotalSupply() (*big.Int, error) {
 	var totalSupply *big.Int
 
-	erc20Ins, err := newERC20(erc20Addr)
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return totalSupply, err
 	}
@@ -727,10 +728,10 @@ func (e *ContractModule) GetTotalSupply(erc20Addr common.Address) (*big.Int, err
 }
 
 // BalanceOf get the balance of addr in erc20 token.
-func (e *ContractModule) BalanceOf(erc20Addr, addr common.Address) (*big.Int, error) {
+func (e *ContractModule) BalanceOf(addr common.Address) (*big.Int, error) {
 	var balance *big.Int
 
-	erc20Ins, err := newERC20(erc20Addr)
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return balance, err
 	}
@@ -754,10 +755,10 @@ func (e *ContractModule) BalanceOf(erc20Addr, addr common.Address) (*big.Int, er
 }
 
 // Allowance get the allowance of sender to addr.
-func (e *ContractModule) Allowance(erc20Addr, sender, addr common.Address) (*big.Int, error) {
+func (e *ContractModule) Allowance(sender, addr common.Address) (*big.Int, error) {
 	var allowance *big.Int
 
-	erc20Ins, err := newERC20(erc20Addr)
+	erc20Ins, err := newERC20(e.contractAddress)
 	if err != nil {
 		return allowance, err
 	}

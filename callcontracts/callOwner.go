@@ -12,21 +12,21 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// NewOwn new a instance of ContractModule
-func NewOwn(addr common.Address, hexSk string, txopts *TxOpts) iface.OwnerInfo {
+// NewOwn new a instance of ContractModule. roleAddr: Role contract address
+func NewOwn(roleAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.OwnerInfo {
 	own := &ContractModule{
-		addr:   addr,
-		hexSk:  hexSk,
-		txopts: txopts,
+		addr:            addr,
+		hexSk:           hexSk,
+		txopts:          txopts,
+		contractAddress: roleAddr,
 	}
 
 	return own
 }
 
 // AlterOwner called by admin, to alter Role-contract's owner
-// 'roleAddr' indicates the Role contract address
-func (own *ContractModule) AlterOwner(roleAddr common.Address, newOwnerAddr common.Address) error {
-	roleIns, err := newRole(roleAddr)
+func (own *ContractModule) AlterOwner(newOwnerAddr common.Address) error {
+	roleIns, err := newRole(own.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -80,11 +80,11 @@ func (own *ContractModule) AlterOwner(roleAddr common.Address, newOwnerAddr comm
 }
 
 // GetOwner get the owner-address of Role contract
-// 'roleAddr' indicates the Role contract address
-func (own *ContractModule) GetOwner(roleAddr common.Address) (common.Address, error) {
+// 'own.contractAddress' indicates the Role contract address
+func (own *ContractModule) GetOwner() (common.Address, error) {
 	var ownAddr common.Address
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(own.contractAddress)
 	if err != nil {
 		return ownAddr, err
 	}

@@ -13,12 +13,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// NewFileSys new a instance of ContractModule
-func NewFileSys(addr common.Address, hexSk string, txopts *TxOpts) iface.FileSysInfo {
+// NewFileSys new a instance of ContractModule, fsAddr:FileSys contract address
+func NewFileSys(fsAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.FileSysInfo {
 	fs := &ContractModule{
-		addr:   addr,
-		hexSk:  hexSk,
-		txopts: txopts,
+		addr:            addr,
+		hexSk:           hexSk,
+		txopts:          txopts,
+		contractAddress: fsAddr,
 	}
 
 	return fs
@@ -90,11 +91,11 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 }
 
 // GetFsInfo Get information of filesystem. return repairFs info when uIndex is 0
-func (fs *ContractModule) GetFsInfo(fsAddr common.Address, uIndex uint64) (bool, uint32, error) {
+func (fs *ContractModule) GetFsInfo(uIndex uint64) (bool, uint32, error) {
 	var isActive bool
 	var tokenIndex uint32
 
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return isActive, tokenIndex, err
 	}
@@ -119,9 +120,9 @@ func (fs *ContractModule) GetFsInfo(fsAddr common.Address, uIndex uint64) (bool,
 }
 
 // GetFsProviderSum get providers sum in fs. return repairFs info when uIndex is 0
-func (fs *ContractModule) GetFsProviderSum(fsAddr common.Address, uIndex uint64) (uint64, error) {
+func (fs *ContractModule) GetFsProviderSum(uIndex uint64) (uint64, error) {
 	var pSum uint64
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return pSum, err
 	}
@@ -145,9 +146,9 @@ func (fs *ContractModule) GetFsProviderSum(fsAddr common.Address, uIndex uint64)
 }
 
 // GetFsProvider get pIndex in fs by array index. return repairFs info when uIndex is 0
-func (fs *ContractModule) GetFsProvider(fsAddr common.Address, uIndex uint64, index uint64) (uint64, error) {
+func (fs *ContractModule) GetFsProvider(uIndex uint64, index uint64) (uint64, error) {
 	var pIndex uint64
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return pIndex, err
 	}
@@ -171,11 +172,11 @@ func (fs *ContractModule) GetFsProvider(fsAddr common.Address, uIndex uint64, in
 }
 
 // GetFsInfoAggOrder Get information of aggOrder. return repairFs info when uIndex is 0
-func (fs *ContractModule) GetFsInfoAggOrder(fsAddr common.Address, uIndex uint64, pIndex uint64) (uint64, uint64, error) {
+func (fs *ContractModule) GetFsInfoAggOrder(uIndex uint64, pIndex uint64) (uint64, uint64, error) {
 	var nonce uint64
 	var subNonce uint64
 
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return nonce, subNonce, err
 	}
@@ -199,11 +200,11 @@ func (fs *ContractModule) GetFsInfoAggOrder(fsAddr common.Address, uIndex uint64
 }
 
 // GetStoreInfo Get information of storage order. return repairFs info when uIndex is 0
-func (fs *ContractModule) GetStoreInfo(fsAddr common.Address, uIndex uint64, pIndex uint64, tIndex uint32) (uint64, uint64, *big.Int, error) {
+func (fs *ContractModule) GetStoreInfo(uIndex uint64, pIndex uint64, tIndex uint32) (uint64, uint64, *big.Int, error) {
 	var _time, size uint64
 	var price *big.Int
 
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return _time, size, price, err
 	}
@@ -230,11 +231,11 @@ func (fs *ContractModule) GetStoreInfo(fsAddr common.Address, uIndex uint64, pIn
 }
 
 // GetChannelInfo Get information of channel. return repairFs info when uIndex is 0
-func (fs *ContractModule) GetChannelInfo(fsAddr common.Address, uIndex uint64, pIndex uint64, tIndex uint32) (*big.Int, uint64, uint64, error) {
+func (fs *ContractModule) GetChannelInfo(uIndex uint64, pIndex uint64, tIndex uint32) (*big.Int, uint64, uint64, error) {
 	var nonce, expire uint64
 	var amount *big.Int
 
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return amount, nonce, expire, err
 	}
@@ -261,11 +262,11 @@ func (fs *ContractModule) GetChannelInfo(fsAddr common.Address, uIndex uint64, p
 }
 
 // GetSettleInfo Get information of settlement.
-func (fs *ContractModule) GetSettleInfo(fsAddr common.Address, pIndex uint64, tIndex uint32) (uint64, uint64, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, error) {
+func (fs *ContractModule) GetSettleInfo(pIndex uint64, tIndex uint32) (uint64, uint64, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *big.Int, error) {
 	var _time, size uint64
 	var price, maxPay, hasPaid, canPay, lost, lostPaid, managePay, endPaid, linearPaid *big.Int
 
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return _time, size, price, maxPay, hasPaid, canPay, lost, lostPaid, managePay, endPaid, linearPaid, err
 	}
@@ -290,10 +291,10 @@ func (fs *ContractModule) GetSettleInfo(fsAddr common.Address, pIndex uint64, tI
 
 // GetBalance Get income balance of rindex.
 // rIndex:0 -> foundation
-func (fs *ContractModule) GetBalance(fsAddr common.Address, rIndex uint64, tIndex uint32) (*big.Int, *big.Int, error) {
+func (fs *ContractModule) GetBalance(rIndex uint64, tIndex uint32) (*big.Int, *big.Int, error) {
 	var avail, tmp *big.Int
 
-	fsIns, err := newFileSys(fsAddr)
+	fsIns, err := newFileSys(fs.contractAddress)
 	if err != nil {
 		return avail, tmp, err
 	}

@@ -26,7 +26,7 @@ import (
 // the following variables need to be assigned according to the running results in actual applications
 var (
 	// EndPoint is rpc endpoint of geth node
-	EndPoint string
+	EndPoint = "http://119.147.213.220:8191"
 	//ERC20 contract address
 	ERC20Addr = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 	// Role contract address
@@ -113,6 +113,8 @@ var (
 	errAccessControlRole = errors.New("the role in accessControl is invalid")
 	// ErrIndex indicates that the rindex does not meet the requirements
 	ErrIndex = errors.New("the role index is invalid")
+	// ErrIndexZero shouldn't be zero
+	ErrIndexZero = errors.New("the roleIndex or groupIndex should not be 0")
 	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
 	ErrIsBanned = errors.New("the account is banned in Role contract")
 	// ErrTIndex tindex invalid
@@ -140,9 +142,10 @@ type TxOpts struct {
 // ContractModule  The basic information of node used for contract.
 // Address and private key need to correspond.
 type ContractModule struct {
-	addr   common.Address //local address
-	hexSk  string         //local privateKey
-	txopts *TxOpts
+	addr            common.Address //local address
+	hexSk           string         //local privateKey
+	txopts          *TxOpts
+	contractAddress common.Address
 }
 
 // getClient get rpc-client based the endPoint

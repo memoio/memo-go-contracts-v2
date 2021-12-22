@@ -40,22 +40,23 @@ func main() {
 
 	fmt.Println("============1. begin test deploy RToken contract ============")
 	// 注意：RToken合约是由Role合约部署的.在Role合约被admin部署时，Role合约通过create2创建RToken合约
-	r := callconts.NewR(adminAddr, test.AdminSk, txopts)
+	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts)
 	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeKP, pledgeKP)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The Role contract address is ", roleAddr)
-	rTokenAddr, err := r.RToken(roleAddr)
+	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	rTokenAddr, err := r.RToken()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The RToken contract address is ", rTokenAddr.Hex())
 
 	fmt.Println("============2. begin test GetTA ============")
-	rt := callconts.NewRT(adminAddr, test.AdminSk, txopts)
+	rt := callconts.NewRT(rTokenAddr, adminAddr, test.AdminSk, txopts)
 	// RToken合约在被部署时，primaryToken地址就被记录到了RToken合约中，并且其tokenIndex为0
-	tAddr, err := rt.GetTA(rTokenAddr, 0)
+	tAddr, err := rt.GetTA(0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -64,7 +65,7 @@ func main() {
 		log.Fatal("gotten primaryToken address is wrong")
 	}
 	// 使用无效的tokenIndex进行测试
-	tAddr, err = rt.GetTA(rTokenAddr, 1)
+	tAddr, err = rt.GetTA(1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,14 +74,14 @@ func main() {
 	}
 
 	fmt.Println("============3. begin test IsValid ============")
-	isValid, err := rt.IsValid(rTokenAddr, 0)
+	isValid, err := rt.IsValid(0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if !isValid {
 		log.Fatal("the tokenIndex 0 should be valid")
 	}
-	isValid, err = rt.IsValid(rTokenAddr, 1)
+	isValid, err = rt.IsValid(1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,7 +90,7 @@ func main() {
 	}
 
 	fmt.Println("============4. begin test GetTI ============")
-	tIndex, isValid, err := rt.GetTI(rTokenAddr, test.PrimaryToken)
+	tIndex, isValid, err := rt.GetTI(test.PrimaryToken)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,7 +101,7 @@ func main() {
 		log.Fatal("primaryToken should be valid")
 	}
 	// 错误场景测试
-	tIndex, isValid, err = rt.GetTI(rTokenAddr, adminAddr)
+	tIndex, isValid, err = rt.GetTI(adminAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -109,7 +110,7 @@ func main() {
 	}
 
 	fmt.Println("============5. begin test GetTNum ============")
-	tNum, err := rt.GetTNum(rTokenAddr)
+	tNum, err := rt.GetTNum()
 	if err != nil {
 		log.Fatal(err)
 	}

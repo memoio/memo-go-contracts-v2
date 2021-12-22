@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
 	"encoding/hex"
 	"errors"
@@ -18,9 +17,41 @@ import (
 
 var errHexskFormat = errors.New("the hexsk'format is wrong")
 
+// for test
 func main() {
 	fmt.Println("welcome to test contract!")
 
+	// commands := []*cli.Command{
+	// 	cmd.AdminCmd,
+	// }
+
+	// app := &cli.App{
+	// 	Name:     "test-contract",
+	// 	Usage:    "test memo contract!",
+	// 	Commands: commands,
+	// }
+
+	// app.Setup()
+
+	// if err := app.Run(os.Args); err != nil {
+	// 	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+	// 	os.Exit(1)
+	// }
+
+	txopts := &callconts.TxOpts{
+		Nonce:    nil,
+		GasPrice: big.NewInt(callconts.DefaultGasPrice),
+		GasLimit: callconts.DefaultGasLimit,
+	}
+	r := callconts.NewR(callconts.AdminAddr, callconts.AdminSk, txopts)
+	rTokenAddr, err := r.RToken(callconts.RoleAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(rTokenAddr.Hex())
+}
+
+func testHash() {
 	encodePackedHex := "00000000000000030000000061bc37780000000061bc3779000000000000000a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000561"
 	fmt.Println("len:", len(encodePackedHex))
 
@@ -30,7 +61,7 @@ func main() {
 	fmt.Println("sol-hash:", solh)
 	fmt.Println("sol-hash:", bytesToHex(solh))
 
-	h, err := GetHash(3, 1639724920, 1639724921, 10, 0, 0, big.NewInt(5), "a")
+	h, err := getHash(3, 1639724920, 1639724921, 10, 0, 0, big.NewInt(5), "a")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -57,7 +88,7 @@ func bytesToHex(b []byte) string {
 	return s
 }
 
-func GetHash(pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, label string) ([]byte, error) {
+func getHash(pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, label string) ([]byte, error) {
 	by := make([]byte, 77)
 	tmp := make([]byte, 8)
 	binary.BigEndian.PutUint64(tmp, pIndex)
@@ -95,8 +126,4 @@ func GetHash(pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.
 	hash := crypto.Keccak256(by)
 
 	return hash, nil
-}
-
-func bytesCombine(b ...[]byte) []byte {
-	return bytes.Join(b, []byte(""))
 }

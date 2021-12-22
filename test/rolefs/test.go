@@ -71,8 +71,8 @@ func main() {
 	}
 
 	// 查询在erc20代币上的余额
-	erc20 := callconts.NewERC20(adminAddr, test.AdminSk, txopts)
-	bal, err := erc20.BalanceOf(test.PrimaryToken, adminAddr)
+	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+	bal, err := erc20.BalanceOf(adminAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -80,28 +80,28 @@ func main() {
 	// 余额不足，自动充值
 	if bal.Cmp(big.NewInt(test.MoneyTo)) < 0 {
 		// mintToken
-		err = erc20.MintToken(test.PrimaryToken, adminAddr, big.NewInt(test.MoneyTo))
+		err = erc20.MintToken(adminAddr, big.NewInt(test.MoneyTo))
 		if err != nil {
 			log.Fatal(err)
 		}
-		bal, err = erc20.BalanceOf(test.PrimaryToken, adminAddr)
+		bal, err = erc20.BalanceOf(adminAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("after mint, admin balance in primaryToken is ", bal)
 	}
 	for i, acc := range accs {
-		bal, err = erc20.BalanceOf(test.PrimaryToken, acc)
+		bal, err = erc20.BalanceOf(acc)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("acc", i, " balance in primaryToken is ", bal)
 		if bal.Cmp(pledgeK) < 0 {
-			err = erc20.Transfer(test.PrimaryToken, acc, pledgeK)
+			err = erc20.Transfer(acc, pledgeK)
 			if err != nil {
 				log.Fatal(err)
 			}
-			bal, err = erc20.BalanceOf(test.PrimaryToken, acc)
+			bal, err = erc20.BalanceOf(acc)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -109,7 +109,7 @@ func main() {
 		}
 	}
 
-	rfs := callconts.NewRFS(adminAddr, test.AdminSk, txopts)
+	rfs := callconts.NewRFS(adminAddr, adminAddr, test.AdminSk, txopts)
 
 	fmt.Println("============1. begin test deploy RoleFS contract============")
 	rolefsAddr, _, err := rfs.DeployRoleFS()
@@ -117,105 +117,108 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("RoleFS contract Address:", rolefsAddr.Hex())
+	rfs = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts)
 
 	// 部署RoleFS合约之后，需要调用SetAddr函数赋予合约需要的状态变量信息
 	fmt.Println("============2. begin test SetAddr============")
 	// 部署Role合约
-	r := callconts.NewR(adminAddr, test.AdminSk, txopts)
+	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts)
 	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeK)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The Role contract address is ", roleAddr.Hex())
+	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
 	// 获得RToken合约地址
-	rTokenAddr, err := r.RToken(roleAddr)
+	rTokenAddr, err := r.RToken()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The RToken contract address is ", rTokenAddr.Hex())
 	// 部署PledgePool合约
-	pp := callconts.NewPledgePool(adminAddr, test.AdminSk, txopts)
+	pp := callconts.NewPledgePool(adminAddr, adminAddr, test.AdminSk, txopts)
 	pledgePoolAddr, _, err := pp.DeployPledgePool(test.PrimaryToken, rTokenAddr, roleAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The PledgePool contract address is ", pledgePoolAddr.Hex())
+	pp = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts)
 	// 部署Issuance合约
-	issu := callconts.NewIssu(adminAddr, test.AdminSk, txopts)
+	issu := callconts.NewIssu(adminAddr, adminAddr, test.AdminSk, txopts)
 	issuanceAddr, _, err := issu.DeployIssuance(rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The Issuance contract address is ", issuanceAddr.Hex())
+	issu = callconts.NewIssu(issuanceAddr, adminAddr, test.AdminSk, txopts)
 	// setPI
-	err = r.SetPI(roleAddr, pledgePoolAddr, issuanceAddr, rolefsAddr)
+	err = r.SetPI(pledgePoolAddr, issuanceAddr, rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// keeper注册、质押、申请角色
-	r = callconts.NewR(acc2Addr, test.Sk2, txopts)
-	err = r.Register(roleAddr, acc2Addr, nil)
+	r = callconts.NewR(roleAddr, acc2Addr, test.Sk2, txopts)
+	err = r.Register(acc2Addr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	kIndex, err := r.GetRoleIndex(roleAddr, acc2Addr)
+	kIndex, err := r.GetRoleIndex(acc2Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("kIndex ", kIndex)
-	pp = callconts.NewPledgePool(acc2Addr, test.Sk2, txopts)
-	err = pp.Pledge(pledgePoolAddr, test.PrimaryToken, roleAddr, kIndex, pledgeK, nil)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc2Addr, test.Sk2, txopts)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	callconts.PledgePoolAddr = pledgePoolAddr
-	err = r.RegisterKeeper(roleAddr, kIndex, []byte("test"), nil)
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// createGroup, and deploy FileSys contract
-	r = callconts.NewR(adminAddr, test.AdminSk, txopts)
-	gIndex, err := r.CreateGroup(roleAddr, rolefsAddr, 0, []uint64{kIndex}, 1)
+	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	gIndex, err := r.CreateGroup(rolefsAddr, 0, []uint64{kIndex}, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("gIndex ", gIndex)
 	// 获取FileSys合约地址
-	_, _, _, _, _, _, fsAddr, err := r.GetGroupInfo(roleAddr, gIndex)
+	_, _, _, _, _, _, fsAddr, err := r.GetGroupInfo(gIndex)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The FileSys contract address is ", fsAddr.Hex())
 	// 给RoleFS合约赋予状态变量值
-	err = rfs.SetAddr(rolefsAddr, issuanceAddr, roleAddr, fsAddr, rTokenAddr)
+	err = rfs.SetAddr(issuanceAddr, roleAddr, fsAddr, rTokenAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("============3. begin test AddOrder============")
 	// user注册、充值
-	r = callconts.NewR(acc1Addr, test.Sk1, txopts)
-	err = r.Register(roleAddr, acc1Addr, nil)
+	r = callconts.NewR(roleAddr, acc1Addr, test.Sk1, txopts)
+	err = r.Register(acc1Addr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	uIndex, err := r.GetRoleIndex(roleAddr, acc1Addr)
+	uIndex, err := r.GetRoleIndex(acc1Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("uIndex ", uIndex)
-	err = r.RegisterUser(roleAddr, rTokenAddr, uIndex, gIndex, 0, []byte("test"), nil)
+	err = r.RegisterUser(rTokenAddr, uIndex, gIndex, 0, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// user approve
-	erc20 = callconts.NewERC20(acc1Addr, test.Sk1, txopts)
-	err = erc20.Approve(test.PrimaryToken, fsAddr, pledgeK)
+	erc20 = callconts.NewERC20(test.PrimaryToken, acc1Addr, test.Sk1, txopts)
+	err = erc20.Approve(fsAddr, pledgeK)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 查询该User对FileSys合约的allowance
-	allo, err := erc20.Allowance(test.PrimaryToken, acc1Addr, fsAddr)
+	allo, err := erc20.Allowance(acc1Addr, fsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -224,13 +227,13 @@ func main() {
 		log.Fatal("allowance should be ", pledgeK)
 	}
 	// user往FileSys中充值pledgeK，用于存储服务付费
-	err = r.Recharge(roleAddr, rTokenAddr, uIndex, 0, pledgeK, nil)
+	err = r.Recharge(rTokenAddr, uIndex, 0, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// user获取其在FileSys中的balance
-	fs := callconts.NewFileSys(adminAddr, test.AdminSk, txopts)
-	avail, _, err := fs.GetBalance(fsAddr, uIndex, 0)
+	fs := callconts.NewFileSys(fsAddr, adminAddr, test.AdminSk, txopts)
+	avail, _, err := fs.GetBalance(uIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -239,43 +242,43 @@ func main() {
 		log.Fatal("user avail should not less than ", pledgeK)
 	}
 	// provider注册、质押、申请角色、加入group
-	r = callconts.NewR(acc3Addr, test.Sk3, txopts)
-	err = r.Register(roleAddr, acc3Addr, nil)
+	r = callconts.NewR(roleAddr, acc3Addr, test.Sk3, txopts)
+	err = r.Register(acc3Addr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	pIndex, err := r.GetRoleIndex(roleAddr, acc3Addr)
+	pIndex, err := r.GetRoleIndex(acc3Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("pIndex ", pIndex)
-	pp = callconts.NewPledgePool(acc3Addr, test.Sk3, txopts)
-	err = pp.Pledge(pledgePoolAddr, test.PrimaryToken, roleAddr, pIndex, pledgeK, nil)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc3Addr, test.Sk3, txopts)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, pIndex, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = r.RegisterProvider(roleAddr, pIndex, nil)
+	err = r.RegisterProvider(pledgePoolAddr, pIndex, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = r.AddProviderToGroup(roleAddr, pIndex, gIndex, nil)
+	err = r.AddProviderToGroup(pIndex, gIndex, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	//admin为RoleFS赋予Minter_Role权限
-	erc20 = callconts.NewERC20(adminAddr, test.AdminSk, txopts)
-	err = erc20.SetUpRole(test.PrimaryToken, callconts.MinterRole, rolefsAddr)
+	erc20 = callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+	err = erc20.SetUpRole(callconts.MinterRole, rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// keeper调用addOrder
-	rfs = callconts.NewRFS(acc2Addr, test.Sk2, txopts)
-	err = rfs.AddOrder(rolefsAddr, roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, nil, nil, [][]byte{[]byte("test")})
+	rfs = callconts.NewRFS(rolefsAddr, acc2Addr, test.Sk2, txopts)
+	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, nil, nil, [][]byte{[]byte("test")})
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 获取addOrder后fs的信息并测试正确性
-	pSum, err := fs.GetFsProviderSum(fsAddr, uIndex)
+	pSum, err := fs.GetFsProviderSum(uIndex)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -283,7 +286,7 @@ func main() {
 		fmt.Println("pSum ", pSum)
 		log.Fatal("The pSum should be 1")
 	}
-	pIndexGotten, err := fs.GetFsProvider(fsAddr, uIndex, 0)
+	pIndexGotten, err := fs.GetFsProvider(uIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -292,7 +295,7 @@ func main() {
 		log.Fatal("The pIndex gotten should be ", pIndex)
 	}
 	// 获取addOrder后channel的信息并测试正确性
-	_amount, _nonce, _expire, err := fs.GetChannelInfo(fsAddr, uIndex, pIndex, 0)
+	_amount, _nonce, _expire, err := fs.GetChannelInfo(uIndex, pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -301,7 +304,7 @@ func main() {
 		log.Fatal("result error")
 	}
 	// 获取addOrder后store的信息并测试正确性
-	_time, _size, _price, err := fs.GetStoreInfo(fsAddr, uIndex, pIndex, 0)
+	_time, _size, _price, err := fs.GetStoreInfo(uIndex, pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -310,7 +313,7 @@ func main() {
 		log.Fatal("price in storeInfo after addOrder should be ", sprice, ", size in storeInfo should be ", size)
 	}
 	// 获取addOrder后proInfo中的Settlement的信息，并测试正确性
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(fsAddr, pIndex, 0)
+	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -319,7 +322,7 @@ func main() {
 		log.Fatal("time should be ", start, " price should be ", sprice, " size should be ", size, " maxPay should be ", 100, " managePay should be ", 4)
 	}
 	// 获取addOrder后proInfo中的aggOrder的信息，并测试正确性
-	_nonce, _subNonce, err := fs.GetFsInfoAggOrder(fsAddr, uIndex, pIndex)
+	_nonce, _subNonce, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -328,7 +331,7 @@ func main() {
 		log.Fatal("nonce in aggOrder should be ", 1)
 	}
 	// 获取addOrder后foundation的balance，并测试正确性
-	_availF, _tmpF, err := fs.GetBalance(fsAddr, 0, 0) // 查询基金会在FileSys中的balance
+	_availF, _tmpF, err := fs.GetBalance(0, 0) // 查询基金会在FileSys中的balance
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -337,7 +340,7 @@ func main() {
 		log.Fatal("availF should be ", 1, " tmpF should be ", _tmpF)
 	}
 	// 获取addOrder后user的balance，并测试正确性
-	_avail, _tmp, err := fs.GetBalance(fsAddr, uIndex, 0)
+	_avail, _tmp, err := fs.GetBalance(uIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -346,7 +349,7 @@ func main() {
 		log.Fatal("the new avail should be 105 less than avail")
 	}
 	// 获取addOrder后Role合约里的group信息，并测试正确性
-	_isActive, _isBanned, _isReady, _level, sizeG, priceG, _fsAddr, err := r.GetGroupInfo(roleAddr, gIndex)
+	_isActive, _isBanned, _isReady, _level, sizeG, priceG, _fsAddr, err := r.GetGroupInfo(gIndex)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -355,7 +358,7 @@ func main() {
 		log.Fatal("the sizeG should be ", size, " priceG should be ", sprice)
 	}
 	// 获取addOrder后代币发行的相关情况，并测试正确性(初次addOrder，mintToken值为0)
-	mintLevel, err := issu.MintLevel(issuanceAddr)
+	mintLevel, err := issu.MintLevel()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -363,7 +366,7 @@ func main() {
 	if mintLevel.Cmp(zero) != 0 {
 		log.Fatal("mintLevel should be 0")
 	}
-	st, err := issu.SpaceTime(issuanceAddr)
+	st, err := issu.SpaceTime()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -374,12 +377,12 @@ func main() {
 	//size:10, price:10, totalPay:100,上面测试通过的话，这里就不需要再重复测试了
 
 	fmt.Println("============4. begin test SubOrder============")
-	err = rfs.SubOrder(rolefsAddr, roleAddr, rTokenAddr, uIndex, pIndex, start+5, end, size-5, nonce, 0, sprice.Sub(sprice, big.NewInt(5)), nil, nil, [][]byte{[]byte("test")})
+	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, end, size-5, nonce, 0, sprice.Sub(sprice, big.NewInt(5)), nil, nil, [][]byte{[]byte("test")})
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 这里不重复测试了，仅抽取部分信息进行测试
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(fsAddr, pIndex, 0)
+	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -392,12 +395,12 @@ func main() {
 	fmt.Println("============5. begin test ProWithdraw============")
 	pay := big.NewInt(20)
 	lost := big.NewInt(10)
-	err = rfs.ProWithdraw(rolefsAddr, roleAddr, rTokenAddr, pIndex, 0, pay, lost, nil)
+	err = rfs.ProWithdraw(roleAddr, rTokenAddr, pIndex, 0, pay, lost, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 获取settlement信息，并判断正确性
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(fsAddr, pIndex, 0)
+	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -407,7 +410,7 @@ func main() {
 		log.Fatal("result wrong")
 	}
 	// 获取balance信息
-	_avail, _tmp, err = fs.GetBalance(fsAddr, pIndex, 0)
+	_avail, _tmp, err = fs.GetBalance(pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -416,7 +419,7 @@ func main() {
 		log.Fatal("result wrong")
 	}
 	// 获取provider在tIndex上的代币余额
-	bal, err = erc20.BalanceOf(test.PrimaryToken, acc3Addr)
+	bal, err = erc20.BalanceOf(acc3Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -424,7 +427,7 @@ func main() {
 
 	fmt.Println("============6. begin test AddRepair============")
 	// 获取Issuance中的totalPaid
-	_totalPaid, err := issu.TotalPaid(issuanceAddr)
+	_totalPaid, err := issu.TotalPaid()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -434,18 +437,18 @@ func main() {
 	}
 	// 调用AddRepair前，需要先调用ProWithdraw、指定lost值
 	// 新注册一个provider
-	r = callconts.NewR(acc4Addr, test.Sk4, txopts)
-	err = r.Register(roleAddr, acc4Addr, nil)
+	r = callconts.NewR(roleAddr, acc4Addr, test.Sk4, txopts)
+	err = r.Register(acc4Addr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	p2Index, err := r.GetRoleIndex(roleAddr, acc4Addr)
+	p2Index, err := r.GetRoleIndex(acc4Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("p2Index ", p2Index)
-	pp = callconts.NewPledgePool(acc4Addr, test.Sk4, txopts)
-	err = pp.Pledge(pledgePoolAddr, test.PrimaryToken, roleAddr, p2Index, pledgeK, nil)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc4Addr, test.Sk4, txopts)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, p2Index, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -454,7 +457,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = r.AddProviderToGroup(roleAddr, p2Index, gIndex, nil)
+	err = r.AddProviderToGroup(p2Index, gIndex, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -468,12 +471,12 @@ func main() {
 	fmt.Println("npSign:", npSig)
 	// 调用AddRepair
 	time.Sleep(2 * time.Second)
-	err = rfs.AddRepair(rolefsAddr, roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, big.NewInt(5), npSig, nil)
+	err = rfs.AddRepair(roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, big.NewInt(5), npSig, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 获取settlement信息，并判断正确性
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(fsAddr, p2Index, 0)
+	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -482,7 +485,7 @@ func main() {
 		log.Fatal("result wrong")
 	}
 	// 获取balance信息
-	_avail, _tmp, err = fs.GetBalance(fsAddr, p2Index, 0)
+	_avail, _tmp, err = fs.GetBalance(p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -491,7 +494,7 @@ func main() {
 		log.Fatal("result wrong")
 	}
 	// 获取repairFs信息
-	pSum, err = fs.GetFsProviderSum(fsAddr, 0)
+	pSum, err = fs.GetFsProviderSum(0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -499,7 +502,7 @@ func main() {
 	if pSum != 1 {
 		log.Fatal("pSum should be 1")
 	}
-	_nonce, _subNonce, err = fs.GetFsInfoAggOrder(fsAddr, 0, p2Index)
+	_nonce, _subNonce, err = fs.GetFsInfoAggOrder(0, p2Index)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -507,7 +510,7 @@ func main() {
 	if _nonce != 1 || _subNonce != 0 {
 		log.Fatal("result wrong")
 	}
-	_time, _size, _price, err = fs.GetStoreInfo(fsAddr, 0, p2Index, 0)
+	_time, _size, _price, err = fs.GetStoreInfo(0, p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -515,7 +518,7 @@ func main() {
 	if _time != 0 || _size != size || _price.Cmp(big.NewInt(5)) != 0 {
 		log.Fatal("result wrong")
 	}
-	_amount, _nonce, _expire, err = fs.GetChannelInfo(fsAddr, 0, p2Index, 0)
+	_amount, _nonce, _expire, err = fs.GetChannelInfo(0, p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -532,18 +535,18 @@ func main() {
 		log.Fatal(err)
 	}
 	// 调用SubRepair
-	err = rfs.SubRepair(rolefsAddr, roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, big.NewInt(5), npSig, nil)
+	err = rfs.SubRepair(roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, big.NewInt(5), npSig, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 获取settlement信息，并判断正确性
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(fsAddr, p2Index, 0)
+	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("after SubRepair: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid)
 	// 获取balance信息
-	_avail, _tmp, err = fs.GetBalance(fsAddr, p2Index, 0)
+	_avail, _tmp, err = fs.GetBalance(p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -552,7 +555,7 @@ func main() {
 		log.Fatal("result wrong")
 	}
 	// 获取repairFs信息
-	pSum, err = fs.GetFsProviderSum(fsAddr, 0)
+	pSum, err = fs.GetFsProviderSum(0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -560,7 +563,7 @@ func main() {
 	if pSum != 1 {
 		log.Fatal("pSum should be 1")
 	}
-	_nonce, _subNonce, err = fs.GetFsInfoAggOrder(fsAddr, 0, p2Index)
+	_nonce, _subNonce, err = fs.GetFsInfoAggOrder(0, p2Index)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -568,7 +571,7 @@ func main() {
 	if _nonce != 1 || _subNonce != 1 {
 		log.Fatal("result wrong")
 	}
-	_time, _size, _price, err = fs.GetStoreInfo(fsAddr, 0, p2Index, 0)
+	_time, _size, _price, err = fs.GetStoreInfo(0, p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -576,7 +579,7 @@ func main() {
 	if _time != 0 || _size != 0 || _price.Cmp(zero) != 0 {
 		log.Fatal("result wrong")
 	}
-	_amount, _nonce, _expire, err = fs.GetChannelInfo(fsAddr, 0, p2Index, 0)
+	_amount, _nonce, _expire, err = fs.GetChannelInfo(0, p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
