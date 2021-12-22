@@ -4,6 +4,7 @@
 package callconts
 
 import (
+	"fmt"
 	"log"
 	"math/big"
 	"memoContract/contracts/role"
@@ -1449,6 +1450,15 @@ func (r *ContractModule) GetGroupK(gIndex uint64, index uint64) (uint64, error) 
 		return kIndex, err
 	}
 
+	gkNum, err := r.GetGKNum(gIndex)
+	if err != nil {
+		return kIndex, err
+	}
+	if index >= gkNum {
+		fmt.Println("the array range is", gkNum)
+		return kIndex, ErrOARange
+	}
+
 	retryCount := 0
 	if gIndex == 0 {
 		return kIndex, ErrIndexZero
@@ -1480,6 +1490,15 @@ func (r *ContractModule) GetGroupP(gIndex uint64, index uint64) (uint64, error) 
 		return pIndex, err
 	}
 
+	_, gpNum, err := r.GetGUPNum(gIndex)
+	if err != nil {
+		return pIndex, err
+	}
+	if index >= gpNum {
+		fmt.Println("the array range is", gpNum)
+		return pIndex, ErrOARange
+	}
+
 	retryCount := 0
 	if gIndex == 0 {
 		return pIndex, ErrIndexZero
@@ -1509,6 +1528,15 @@ func (r *ContractModule) GetGroupU(gIndex uint64, index uint64) (uint64, error) 
 	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return uIndex, err
+	}
+
+	guNum, _, err := r.GetGUPNum(gIndex)
+	if err != nil {
+		return uIndex, err
+	}
+	if index >= guNum {
+		fmt.Println("the array range is", guNum)
+		return uIndex, ErrOARange
 	}
 
 	retryCount := 0
