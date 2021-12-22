@@ -26,7 +26,8 @@ import (
 // the following variables need to be assigned according to the running results in actual applications
 var (
 	// EndPoint is rpc endpoint of geth node
-	EndPoint = "http://119.147.213.220:8191"
+	EndPoint  = "http://119.147.213.220:8191"
+	QEndPoint = "http://119.147.213.220:8194"
 	//ERC20 contract address
 	ERC20Addr = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 	// Role contract address
@@ -115,6 +116,7 @@ var (
 	ErrIndex = errors.New("the role index is invalid")
 	// ErrIndexZero shouldn't be zero
 	ErrIndexZero = errors.New("the roleIndex or groupIndex should not be 0")
+	ErrOARange   = errors.New("the index out of array range")
 	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
 	ErrIsBanned = errors.New("the account is banned in Role contract")
 	// ErrTIndex tindex invalid

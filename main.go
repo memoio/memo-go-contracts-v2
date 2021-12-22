@@ -7,12 +7,15 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"os"
 
 	callconts "memoContract/callcontracts"
+	"memoContract/cmd"
 	test "memoContract/test"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/urfave/cli/v2"
 )
 
 var errHexskFormat = errors.New("the hexsk'format is wrong")
@@ -21,34 +24,24 @@ var errHexskFormat = errors.New("the hexsk'format is wrong")
 func main() {
 	fmt.Println("welcome to test contract!")
 
-	// commands := []*cli.Command{
-	// 	cmd.AdminCmd,
-	// }
-
-	// app := &cli.App{
-	// 	Name:     "test-contract",
-	// 	Usage:    "test memo contract!",
-	// 	Commands: commands,
-	// }
-
-	// app.Setup()
-
-	// if err := app.Run(os.Args); err != nil {
-	// 	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
-	// 	os.Exit(1)
-	// }
-
-	txopts := &callconts.TxOpts{
-		Nonce:    nil,
-		GasPrice: big.NewInt(callconts.DefaultGasPrice),
-		GasLimit: callconts.DefaultGasLimit,
+	commands := []*cli.Command{
+		cmd.AdminCmd,
+		cmd.MoneyCmd,
 	}
-	r := callconts.NewR(callconts.AdminAddr, callconts.AdminSk, txopts)
-	rTokenAddr, err := r.RToken(callconts.RoleAddr)
-	if err != nil {
-		log.Fatal(err)
+
+	app := &cli.App{
+		Name:                 "test-contract",
+		Usage:                "test memo contract!",
+		EnableBashCompletion: true,
+		Commands:             commands,
 	}
-	fmt.Println(rTokenAddr.Hex())
+
+	app.Setup()
+
+	if err := app.Run(os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
+		os.Exit(1)
+	}
 }
 
 func testHash() {
