@@ -17,12 +17,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// NewPledgePool new an instance of ContractModule
-func NewPledgePool(addr common.Address, hexSk string, txopts *TxOpts) iface.PledgePoolInfo {
+// NewPledgePool new an instance of ContractModule. 'pledgePoolAddr' indicates PledgePool contract address.
+func NewPledgePool(pledgePoolAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.PledgePoolInfo {
 	p := &ContractModule{
-		addr:   addr,
-		hexSk:  hexSk,
-		txopts: txopts,
+		addr:            addr,
+		hexSk:           hexSk,
+		txopts:          txopts,
+		contractAddress: pledgePoolAddr,
 	}
 
 	return p
@@ -95,35 +96,37 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 // Pledge money.
 // Called by the account itself or by another account on its behalf.
 // 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是value）,如果是账户本身调用，则会由代码自动approve
-func (p *ContractModule) Pledge(pledgepAddr, erc20Addr, roleAddr common.Address, rindex uint64, value *big.Int, sign []byte) error {
-	pledgepIns, err := newPledgePool(pledgepAddr)
+func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint64, value *big.Int, sign []byte) error {
+	pledgepIns, err := newPledgePool(p.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	addr, err := p.GetAddr(roleAddr, rindex)
+	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts)
+	addr, err := r.GetAddr(rindex)
 	if err != nil {
 		return err
 	}
 
 	// check the rindex is not being banned
-	_, isBanned, _, _, _, _, err := p.GetRoleInfo(roleAddr, addr)
+	_, isBanned, _, _, _, _, err := r.GetRoleInfo(addr)
 	if isBanned {
 		return ErrIsBanned
 	}
 
 	// check whether the allowance[addr][pledgePoolAddr] is not less than value, if not, will approve automatically by code.
-	allo, err := p.Allowance(erc20Addr, addr, pledgepAddr)
+	e := NewERC20(erc20Addr, p.addr, p.hexSk, p.txopts)
+	allo, err := e.Allowance(addr, p.contractAddress)
 	if err != nil {
 		return err
 	}
 	if allo.Cmp(value) < 0 {
 		tmp := big.NewInt(0)
 		tmp.Sub(value, allo)
-		log.Println("The allowance of ", addr.Hex(), " to ", pledgepAddr.Hex(), " is not enough, also need to add allowance", tmp)
+		log.Println("The allowance of ", addr.Hex(), " to ", p.contractAddress.Hex(), " is not enough, also need to add allowance", tmp)
 		// if called by the account itself， then call IncreaseAllowance directly.
 		if sign == nil && p.addr.Hex() == addr.Hex() {
-			err = p.IncreaseAllowance(erc20Addr, pledgepAddr, tmp)
+			err = e.IncreaseAllowance(p.contractAddress, tmp)
 			if err != nil {
 				return err
 			}
@@ -178,23 +181,25 @@ func (p *ContractModule) Pledge(pledgepAddr, erc20Addr, roleAddr common.Address,
 
 // Withdraw Called by the account itself or by another account on its behalf.
 // withdraw its balance from PledgePool.
-func (p *ContractModule) Withdraw(pledgepAddr, roleAddr, rTokenAddr common.Address, rindex uint64, tindex uint32, value *big.Int, sign []byte) error {
-	pledgepIns, err := newPledgePool(pledgepAddr)
+func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex uint64, tindex uint32, value *big.Int, sign []byte) error {
+	pledgepIns, err := newPledgePool(p.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check if rindex is banned
-	addr, err := p.GetAddr(roleAddr, rindex)
+	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts)
+	addr, err := r.GetAddr(rindex)
 	if err != nil {
 		return err
 	}
-	_, isBanned, _, _, _, _, err := p.GetRoleInfo(roleAddr, addr)
+	_, isBanned, _, _, _, _, err := r.GetRoleInfo(addr)
 	if isBanned {
 		return ErrIsBanned
 	}
 	// check if tindex is valid
-	isValid, err := p.IsValid(rTokenAddr, tindex)
+	rt := NewRT(rTokenAddr, p.addr, p.hexSk, p.txopts)
+	isValid, err := rt.IsValid(tindex)
 	if !isValid {
 		return ErrTIndex
 	}
@@ -244,10 +249,10 @@ func (p *ContractModule) Withdraw(pledgepAddr, roleAddr, rTokenAddr common.Addre
 }
 
 // GetPledge Get all pledge amount in specified token.
-func (p *ContractModule) GetPledge(pledgepAddr common.Address, tindex uint32) (*big.Int, error) {
+func (p *ContractModule) GetPledge(tindex uint32) (*big.Int, error) {
 	var amount *big.Int
 
-	pledgepIns, err := newPledgePool(pledgepAddr)
+	pledgepIns, err := newPledgePool(p.contractAddress)
 	if err != nil {
 		return amount, err
 	}
@@ -271,10 +276,10 @@ func (p *ContractModule) GetPledge(pledgepAddr common.Address, tindex uint32) (*
 }
 
 // GetBalanceInPPool Get balance of the account related rindex in specified token.
-func (p *ContractModule) GetBalanceInPPool(pledgepAddr common.Address, rindex uint64, tindex uint32) (*big.Int, error) {
+func (p *ContractModule) GetBalanceInPPool(rindex uint64, tindex uint32) (*big.Int, error) {
 	var amount *big.Int
 
-	pledgepIns, err := newPledgePool(pledgepAddr)
+	pledgepIns, err := newPledgePool(p.contractAddress)
 	if err != nil {
 		return amount, err
 	}
@@ -298,10 +303,10 @@ func (p *ContractModule) GetBalanceInPPool(pledgepAddr common.Address, rindex ui
 }
 
 // TotalPledge Get all pledge amount in specified token.
-func (p *ContractModule) TotalPledge(pledgepAddr common.Address) (*big.Int, error) {
+func (p *ContractModule) TotalPledge() (*big.Int, error) {
 	var amount *big.Int
 
-	pledgepIns, err := newPledgePool(pledgepAddr)
+	pledgepIns, err := newPledgePool(p.contractAddress)
 	if err != nil {
 		return amount, err
 	}

@@ -13,13 +13,13 @@ import (
 
 // SetUpRole Called by who has DEFAULT_ADMIN_ROLE. Set role to addr.
 // role: DEFAULT_ADMIN_ROLE(0)、MINTER_ROLE(1)、PAUSER_ROLE(2)
-func (ac *ContractModule) SetUpRole(erc20Addr common.Address, role uint8, addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) SetUpRole(role uint8, addr common.Address) error {
+	acIns, err := newERC20(ac.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	hasAdmin, err := ac.HasRole(erc20Addr, uint8(0), ac.addr)
+	hasAdmin, err := ac.HasRole(uint8(0), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -80,13 +80,13 @@ func (ac *ContractModule) SetUpRole(erc20Addr common.Address, role uint8, addr c
 }
 
 // RevokeRole Called by who has DEFAULT_ADMIN_ROLE. Revoke other account's role.
-func (ac *ContractModule) RevokeRole(erc20Addr common.Address, role uint8, addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) RevokeRole(role uint8, addr common.Address) error {
+	acIns, err := newERC20(ac.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	hasAdmin, err := ac.HasRole(erc20Addr, uint8(0), ac.addr)
+	hasAdmin, err := ac.HasRole(uint8(0), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -147,8 +147,8 @@ func (ac *ContractModule) RevokeRole(erc20Addr common.Address, role uint8, addr 
 }
 
 // RenounceRole Account renounce its role .
-func (ac *ContractModule) RenounceRole(erc20Addr common.Address, role uint8) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) RenounceRole(role uint8) error {
+	acIns, err := newERC20(ac.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -198,13 +198,13 @@ func (ac *ContractModule) RenounceRole(erc20Addr common.Address, role uint8) err
 }
 
 // Pause Set to true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE.
-func (ac *ContractModule) Pause(erc20Addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) Pause() error {
+	acIns, err := newERC20(ac.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	hasPause, err := ac.HasRole(erc20Addr, uint8(2), ac.addr)
+	hasPause, err := ac.HasRole(uint8(2), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -257,13 +257,13 @@ func (ac *ContractModule) Pause(erc20Addr common.Address) error {
 }
 
 // Unpause Set to false to allow transfer operation in erc20. Called by who has PAUSER_ROLE.
-func (ac *ContractModule) Unpause(erc20Addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) Unpause() error {
+	acIns, err := newERC20(ac.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	hasPause, err := ac.HasRole(erc20Addr, uint8(2), ac.addr)
+	hasPause, err := ac.HasRole(uint8(2), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -316,10 +316,10 @@ func (ac *ContractModule) Unpause(erc20Addr common.Address) error {
 }
 
 // HasRole Check whether the account has the right.
-func (ac *ContractModule) HasRole(erc20Addr common.Address, role uint8, addr common.Address) (bool, error) {
+func (ac *ContractModule) HasRole(role uint8, addr common.Address) (bool, error) {
 	var has bool
 
-	acIns, err := newERC20(erc20Addr)
+	acIns, err := newERC20(ac.contractAddress)
 	if err != nil {
 		return has, err
 	}
@@ -343,10 +343,10 @@ func (ac *ContractModule) HasRole(erc20Addr common.Address, role uint8, addr com
 }
 
 // GetPaused Check whether the account has the right.
-func (ac *ContractModule) GetPaused(erc20Addr common.Address) (bool, error) {
+func (ac *ContractModule) GetPaused() (bool, error) {
 	var isPaused bool
 
-	acIns, err := newERC20(erc20Addr)
+	acIns, err := newERC20(ac.contractAddress)
 	if err != nil {
 		return isPaused, err
 	}

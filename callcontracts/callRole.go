@@ -16,12 +16,13 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// NewR new a instance of ContractModule
-func NewR(addr common.Address, hexSk string, txopts *TxOpts) iface.RoleInfo {
+// NewR new a instance of ContractModule. 'roleAddr' indicates Role contract address
+func NewR(roleAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.RoleInfo {
 	r := &ContractModule{
-		addr:   addr,
-		hexSk:  hexSk,
-		txopts: txopts,
+		addr:            addr,
+		hexSk:           hexSk,
+		txopts:          txopts,
+		contractAddress: roleAddr,
 	}
 
 	return r
@@ -92,8 +93,8 @@ func newRole(roleAddr common.Address) (*role.Role, error) {
 }
 
 // SetPI callled by admin, set pledgePool-address、 issuance-address and rolefs-address
-func (r *ContractModule) SetPI(roleAddr, pledgePoolAddr, issuAddr, rolefsAddr common.Address) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Address) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -143,14 +144,14 @@ func (r *ContractModule) SetPI(roleAddr, pledgePoolAddr, issuAddr, rolefsAddr co
 }
 
 // Register called by anyone to get index
-func (r *ContractModule) Register(roleAddr, addr common.Address, sign []byte) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) Register(addr common.Address, sign []byte) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check if addr has registered
-	_, _, _, index, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	_, _, _, index, _, _, err := r.GetRoleInfo(addr)
 	if index > 0 { // has registered already
 		log.Println("Has registered, index is ", index)
 		return nil
@@ -201,28 +202,29 @@ func (r *ContractModule) Register(roleAddr, addr common.Address, sign []byte) er
 }
 
 // RegisterKeeper called by anyone to register Keeper role, befor this, you should pledge in PledgePool
-func (r *ContractModule) RegisterKeeper(roleAddr common.Address, index uint64, blskey []byte, sign []byte) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uint64, blskey []byte, sign []byte) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	addr, err := r.GetAddr(roleAddr, index)
+	addr, err := r.GetAddr(index)
 	if err != nil {
 		return err
 	}
-	_, _, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	_, _, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
 	if roleType != 0 { // role already registered
 		return ErrRoleReg
 	}
-	pledge, err := r.GetBalanceInPPool(PledgePoolAddr, index, 0) // tindex:0 表示主代币
+	pp := NewPledgePool(pledgePoolAddr, r.addr, r.hexSk, r.txopts)
+	pledge, err := pp.GetBalanceInPPool(index, 0) // tindex:0 表示主代币
 	if err != nil {
 		return err
 	}
-	pledgek, err := r.PledgeK(roleAddr)
+	pledgek, err := r.PledgeK()
 	if err != nil {
 		return err
 	}
@@ -276,28 +278,29 @@ func (r *ContractModule) RegisterKeeper(roleAddr common.Address, index uint64, b
 }
 
 // RegisterProvider called by anyone to register Provider role, befor this, you should pledge in PledgePool
-func (r *ContractModule) RegisterProvider(roleAddr common.Address, index uint64, sign []byte) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index uint64, sign []byte) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
-	addr, err := r.GetAddr(roleAddr, index)
+	addr, err := r.GetAddr(index)
 	if err != nil {
 		return err
 	}
-	_, _, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	_, _, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
 	if roleType != 0 { // role already registered
 		return ErrRoleReg
 	}
-	pledge, err := r.GetBalanceInPPool(PledgePoolAddr, index, 0) // tindex:0 表示主代币
+	pp := NewPledgePool(pledgePoolAddr, r.addr, r.hexSk, r.txopts)
+	pledge, err := pp.GetBalanceInPPool(index, 0) // tindex:0 表示主代币
 	if err != nil {
 		return err
 	}
-	pledgep, err := r.PledgeP(roleAddr)
+	pledgep, err := r.PledgeP()
 	if err != nil {
 		return err
 	}
@@ -351,18 +354,18 @@ func (r *ContractModule) RegisterProvider(roleAddr common.Address, index uint64,
 }
 
 // RegisterUser called by anyone to register User role
-func (r *ContractModule) RegisterUser(roleAddr, rTokenAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check index
-	addr, err := r.GetAddr(roleAddr, index)
+	addr, err := r.GetAddr(index)
 	if err != nil {
 		return err
 	}
-	_, _, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	_, _, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
@@ -371,7 +374,7 @@ func (r *ContractModule) RegisterUser(roleAddr, rTokenAddr common.Address, index
 	}
 
 	// check gindex
-	isActive, isBanned, _, _, _, _, _, err := r.GetGroupInfo(roleAddr, gindex)
+	isActive, isBanned, _, _, _, _, _, err := r.GetGroupInfo(gindex)
 	if err != nil {
 		return err
 	}
@@ -380,7 +383,8 @@ func (r *ContractModule) RegisterUser(roleAddr, rTokenAddr common.Address, index
 	}
 
 	// check tindex
-	isValid, err := r.IsValid(rTokenAddr, tindex)
+	rt := NewRT(rTokenAddr, r.addr, r.hexSk, r.txopts)
+	isValid, err := rt.IsValid(tindex)
 	if err != nil {
 		return err
 	}
@@ -433,14 +437,14 @@ func (r *ContractModule) RegisterUser(roleAddr, rTokenAddr common.Address, index
 }
 
 // RegisterToken called by admin to register token. Once token is registered, it is supported by memo.
-func (r *ContractModule) RegisterToken(roleAddr common.Address, tokenAddr common.Address) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) RegisterToken(tokenAddr common.Address) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check whether pledgePool address in Role contract is valid
-	pledgePool, err := r.PledgePool(roleAddr)
+	pledgePool, err := r.PledgePool()
 	if err != nil {
 		return err
 	}
@@ -494,27 +498,27 @@ func (r *ContractModule) RegisterToken(roleAddr common.Address, tokenAddr common
 
 // CreateGroup called by admin to create a group and then deploy FileSys contract and then set FileSys-address to group.
 // founder default is 0, len(keepers)>=level then group is active
-func (r *ContractModule) CreateGroup(roleAddr, rfsAddr common.Address, founder uint64, kindexes []uint64, level uint16) (uint64, error) {
-	gIndex, err := r.createGroup(roleAddr, kindexes, level)
+func (r *ContractModule) CreateGroup(rfsAddr common.Address, founder uint64, kindexes []uint64, level uint16) (uint64, error) {
+	gIndex, err := r.createGroup(kindexes, level)
 	if err != nil {
 		return gIndex, err
 	}
 
 	// deploy FileSys
-	fsAddr, _, err := r.DeployFileSys(founder, gIndex, roleAddr, rfsAddr, kindexes)
+	fsAddr, _, err := r.DeployFileSys(founder, gIndex, r.contractAddress, rfsAddr, kindexes)
 	if err != nil {
 		return gIndex, err
 	}
 
-	err = r.SetGF(roleAddr, fsAddr, gIndex)
+	err = r.SetGF(fsAddr, gIndex)
 	return gIndex, err
 }
 
 // CreateGroup called by admin to create a group.
-func (r *ContractModule) createGroup(roleAddr common.Address, kindexes []uint64, level uint16) (uint64, error) {
+func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, error) {
 	tx := &types.Transaction{}
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return 0, err
 	}
@@ -522,8 +526,8 @@ func (r *ContractModule) createGroup(roleAddr common.Address, kindexes []uint64,
 	// check kindexes
 	var tmpAddr common.Address
 	for _, kindex := range kindexes {
-		tmpAddr, err = r.GetAddr(roleAddr, kindex)
-		isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, tmpAddr)
+		tmpAddr, err = r.GetAddr(kindex)
+		isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(tmpAddr)
 		if err != nil {
 			return 0, err
 		}
@@ -584,14 +588,14 @@ func (r *ContractModule) createGroup(roleAddr common.Address, kindexes []uint64,
 }
 
 // SetGF called by admin to set fsAddress for group after CreateGroup and deployFileSys.
-func (r *ContractModule) SetGF(roleAddr, fsAddr common.Address, gIndex uint64) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) SetGF(fsAddr common.Address, gIndex uint64) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check gIndex
-	num, err := r.GetGroupsNum(roleAddr)
+	num, err := r.GetGroupsNum()
 	if err != nil {
 		return err
 	}
@@ -644,14 +648,14 @@ func (r *ContractModule) SetGF(roleAddr, fsAddr common.Address, gIndex uint64) e
 }
 
 // AddKeeperToGroup called by admin.
-func (r *ContractModule) AddKeeperToGroup(roleAddr common.Address, kIndex uint64, gIndex uint64) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check gIndex
-	num, err := r.GetGroupsNum(roleAddr)
+	num, err := r.GetGroupsNum()
 	if err != nil {
 		return err
 	}
@@ -659,18 +663,18 @@ func (r *ContractModule) AddKeeperToGroup(roleAddr common.Address, kIndex uint64
 		log.Println("gIndex shouldn't be zero or more than groupsNum", num)
 		return ErrInvalidG
 	}
-	_, isBanned, _, _, _, _, _, err := r.GetGroupInfo(roleAddr, gIndex)
+	_, isBanned, _, _, _, _, _, err := r.GetGroupInfo(gIndex)
 	if isBanned {
 		log.Println("the group represented by gIndex is banned")
 		return ErrInvalidG
 	}
 
 	// check kIndex
-	addr, err := r.GetAddr(roleAddr, kIndex)
+	addr, err := r.GetAddr(kIndex)
 	if err != nil {
 		return err
 	}
-	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
@@ -724,18 +728,18 @@ func (r *ContractModule) AddKeeperToGroup(roleAddr common.Address, kIndex uint64
 }
 
 // AddProviderToGroup called by provider or called by others.
-func (r *ContractModule) AddProviderToGroup(roleAddr common.Address, pIndex uint64, gIndex uint64, sign []byte) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign []byte) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check pIndex
-	addr, err := r.GetAddr(roleAddr, pIndex)
+	addr, err := r.GetAddr(pIndex)
 	if err != nil {
 		return err
 	}
-	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
@@ -745,7 +749,7 @@ func (r *ContractModule) AddProviderToGroup(roleAddr common.Address, pIndex uint
 	}
 
 	// check gIndex
-	num, err := r.GetGroupsNum(roleAddr)
+	num, err := r.GetGroupsNum()
 	if err != nil {
 		return err
 	}
@@ -753,7 +757,7 @@ func (r *ContractModule) AddProviderToGroup(roleAddr common.Address, pIndex uint
 		log.Println("gIndex shouldn't be zero or more than groupsNum", num)
 		return ErrInvalidG
 	}
-	_, isBanned, _, _, _, _, _, err = r.GetGroupInfo(roleAddr, gIndex)
+	_, isBanned, _, _, _, _, _, err = r.GetGroupInfo(gIndex)
 	if isBanned {
 		log.Println("the group represented by gIndex is banned")
 		return ErrInvalidG
@@ -804,8 +808,8 @@ func (r *ContractModule) AddProviderToGroup(roleAddr common.Address, pIndex uint
 }
 
 // SetPledgeMoney called by admin to set the amount that the keeper and provider needs to pledge.
-func (r *ContractModule) SetPledgeMoney(roleAddr common.Address, kpledge *big.Int, ppledge *big.Int) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
@@ -855,25 +859,26 @@ func (r *ContractModule) SetPledgeMoney(roleAddr common.Address, kpledge *big.In
 }
 
 // Recharge called by user or called by others.
-func (r *ContractModule) Recharge(roleAddr, rTokenAddr common.Address, uIndex uint64, tIndex uint32, money *big.Int, sign []byte) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tIndex uint32, money *big.Int, sign []byte) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// uIndex need to be user
-	addr, err := r.GetAddr(roleAddr, uIndex)
+	addr, err := r.GetAddr(uIndex)
 	if err != nil {
 		return err
 	}
-	_, isBanned, roleType, _, _, _, err := r.GetRoleInfo(roleAddr, addr)
+	_, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if isBanned || roleType != UserRoleType {
 		log.Println("The uIndex", uIndex, " isBanned:", isBanned, " roleType:", roleType)
 		return ErrIndex
 	}
 
 	// check tindex
-	isValid, err := r.IsValid(rTokenAddr, tIndex)
+	rt := NewRT(rTokenAddr, r.addr, r.hexSk, r.txopts)
+	isValid, err := rt.IsValid(tIndex)
 	if err != nil {
 		return err
 	}
@@ -926,14 +931,15 @@ func (r *ContractModule) Recharge(roleAddr, rTokenAddr common.Address, uIndex ui
 }
 
 // WithdrawFromFs called by memo-role or called by others.
-func (r *ContractModule) WithdrawFromFs(roleAddr, rTokenAddr common.Address, rIndex uint64, tIndex uint32, amount *big.Int, sign []byte) error {
-	roleIns, err := newRole(roleAddr)
+func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64, tIndex uint32, amount *big.Int, sign []byte) error {
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return err
 	}
 
 	// check tindex
-	isValid, err := r.IsValid(rTokenAddr, tIndex)
+	rt := NewRT(rTokenAddr, r.addr, r.hexSk, r.txopts)
+	isValid, err := rt.IsValid(tIndex)
 	if err != nil {
 		return err
 	}
@@ -986,9 +992,9 @@ func (r *ContractModule) WithdrawFromFs(roleAddr, rTokenAddr common.Address, rIn
 }
 
 // PledgePool get pledgepool
-func (r *ContractModule) PledgePool(roleAddr common.Address) (common.Address, error) {
+func (r *ContractModule) PledgePool() (common.Address, error) {
 	var pp common.Address
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return pp, err
 	}
@@ -1012,9 +1018,9 @@ func (r *ContractModule) PledgePool(roleAddr common.Address) (common.Address, er
 }
 
 // Foundation get foundation address
-func (r *ContractModule) Foundation(roleAddr common.Address) (common.Address, error) {
+func (r *ContractModule) Foundation() (common.Address, error) {
 	var f common.Address
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return f, err
 	}
@@ -1038,9 +1044,9 @@ func (r *ContractModule) Foundation(roleAddr common.Address) (common.Address, er
 }
 
 // PledgeK get the pledgeAmount that the account need to pledge when it register Keeper
-func (r *ContractModule) PledgeK(roleAddr common.Address) (*big.Int, error) {
+func (r *ContractModule) PledgeK() (*big.Int, error) {
 	pk := big.NewInt(0)
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return pk, err
 	}
@@ -1064,9 +1070,9 @@ func (r *ContractModule) PledgeK(roleAddr common.Address) (*big.Int, error) {
 }
 
 // PledgeP get the pledgeAmount that the account need to pledge when it register Provider
-func (r *ContractModule) PledgeP(roleAddr common.Address) (*big.Int, error) {
+func (r *ContractModule) PledgeP() (*big.Int, error) {
 	pp := big.NewInt(0)
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return pp, err
 	}
@@ -1090,9 +1096,9 @@ func (r *ContractModule) PledgeP(roleAddr common.Address) (*big.Int, error) {
 }
 
 // RToken get RToken contract address
-func (r *ContractModule) RToken(roleAddr common.Address) (common.Address, error) {
+func (r *ContractModule) RToken() (common.Address, error) {
 	var rt common.Address
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return rt, err
 	}
@@ -1116,9 +1122,9 @@ func (r *ContractModule) RToken(roleAddr common.Address) (common.Address, error)
 }
 
 // Issuance get Issuance contract address
-func (r *ContractModule) Issuance(roleAddr common.Address) (common.Address, error) {
+func (r *ContractModule) Issuance() (common.Address, error) {
 	var is common.Address
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return is, err
 	}
@@ -1142,9 +1148,9 @@ func (r *ContractModule) Issuance(roleAddr common.Address) (common.Address, erro
 }
 
 // Rolefs get RoleFS contract address
-func (r *ContractModule) Rolefs(roleAddr common.Address) (common.Address, error) {
+func (r *ContractModule) Rolefs() (common.Address, error) {
 	var rfs common.Address
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return rfs, err
 	}
@@ -1168,9 +1174,9 @@ func (r *ContractModule) Rolefs(roleAddr common.Address) (common.Address, error)
 }
 
 // GetAddrsNum get the number of registered addresses.
-func (r *ContractModule) GetAddrsNum(roleAddr common.Address) (uint64, error) {
+func (r *ContractModule) GetAddrsNum() (uint64, error) {
 	var anum uint64
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return anum, err
 	}
@@ -1194,14 +1200,17 @@ func (r *ContractModule) GetAddrsNum(roleAddr common.Address) (uint64, error) {
 }
 
 // GetAddr get address by role index.
-func (r *ContractModule) GetAddr(roleAddr common.Address, rIndex uint64) (common.Address, error) {
+func (r *ContractModule) GetAddr(rIndex uint64) (common.Address, error) {
 	var addr common.Address
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return addr, err
 	}
 
 	retryCount := 0
+	if rIndex == 0 {
+		return addr, ErrIndexZero
+	}
 	rIndex-- // get address by array index actually in contract, which is rIndex minus 1
 	for {
 		retryCount++
@@ -1221,9 +1230,9 @@ func (r *ContractModule) GetAddr(roleAddr common.Address, rIndex uint64) (common
 }
 
 // GetRoleIndex get the account role index by address.
-func (r *ContractModule) GetRoleIndex(roleAddr common.Address, addr common.Address) (uint64, error) {
+func (r *ContractModule) GetRoleIndex(addr common.Address) (uint64, error) {
 	var rIndex uint64
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return rIndex, err
 	}
@@ -1247,13 +1256,13 @@ func (r *ContractModule) GetRoleIndex(roleAddr common.Address, addr common.Addre
 }
 
 // GetRoleInfo get account information by address.
-func (r *ContractModule) GetRoleInfo(roleAddr common.Address, addr common.Address) (bool, bool, uint8, uint64, uint64, []byte, error) {
+func (r *ContractModule) GetRoleInfo(addr common.Address) (bool, bool, uint8, uint64, uint64, []byte, error) {
 	var isActive, isBanned bool
 	var roleType uint8
 	var index, gIndex uint64
 	var extra []byte
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return isActive, isBanned, roleType, index, gIndex, extra, err
 	}
@@ -1277,10 +1286,10 @@ func (r *ContractModule) GetRoleInfo(roleAddr common.Address, addr common.Addres
 }
 
 // GetGroupsNum get the number of groups.
-func (r *ContractModule) GetGroupsNum(roleAddr common.Address) (uint64, error) {
+func (r *ContractModule) GetGroupsNum() (uint64, error) {
 	var gnum uint64
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return gnum, err
 	}
@@ -1304,18 +1313,21 @@ func (r *ContractModule) GetGroupsNum(roleAddr common.Address) (uint64, error) {
 }
 
 // GetGroupInfo get group information by gIndex.
-func (r *ContractModule) GetGroupInfo(roleAddr common.Address, gIndex uint64) (bool, bool, bool, uint16, *big.Int, *big.Int, common.Address, error) {
+func (r *ContractModule) GetGroupInfo(gIndex uint64) (bool, bool, bool, uint16, *big.Int, *big.Int, common.Address, error) {
 	var isActive, isBanned, isReady bool
 	var level uint16
 	var size, price *big.Int
 	var fsAddr common.Address
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return isActive, isBanned, isReady, level, size, price, fsAddr, err
 	}
 
 	retryCount := 0
+	if gIndex == 0 {
+		return isActive, isBanned, isReady, level, size, price, fsAddr, ErrIndexZero
+	}
 	gIndex-- // get group info by array index actually in contract, which is gIndex minus 1
 	for {
 		retryCount++
@@ -1335,11 +1347,11 @@ func (r *ContractModule) GetGroupInfo(roleAddr common.Address, gIndex uint64) (b
 }
 
 // GetAddrGindex get account's address and its gIndex by rIndex.
-func (r *ContractModule) GetAddrGindex(roleAddr common.Address, rIndex uint64) (common.Address, uint64, error) {
+func (r *ContractModule) GetAddrGindex(rIndex uint64) (common.Address, uint64, error) {
 	var addr common.Address
 	var gIndex uint64
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return addr, gIndex, err
 	}
@@ -1367,15 +1379,18 @@ func (r *ContractModule) GetAddrGindex(roleAddr common.Address, rIndex uint64) (
 }
 
 // GetGKNum get the number of keepers in the group.
-func (r *ContractModule) GetGKNum(roleAddr common.Address, gIndex uint64) (uint64, error) {
+func (r *ContractModule) GetGKNum(gIndex uint64) (uint64, error) {
 	var gkNum uint64
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return gkNum, err
 	}
 
 	retryCount := 0
+	if gIndex == 0 {
+		return gkNum, ErrIndexZero
+	}
 	gIndex--
 	for {
 		retryCount++
@@ -1395,15 +1410,18 @@ func (r *ContractModule) GetGKNum(roleAddr common.Address, gIndex uint64) (uint6
 }
 
 // GetGUPNum get the number of user、providers in the group.
-func (r *ContractModule) GetGUPNum(roleAddr common.Address, gIndex uint64) (uint64, uint64, error) {
+func (r *ContractModule) GetGUPNum(gIndex uint64) (uint64, uint64, error) {
 	var gpNum, guNum uint64
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return guNum, gpNum, err
 	}
 
 	retryCount := 0
+	if gIndex == 0 {
+		return guNum, gpNum, ErrIndexZero
+	}
 	gIndex--
 	for {
 		retryCount++
@@ -1423,15 +1441,18 @@ func (r *ContractModule) GetGUPNum(roleAddr common.Address, gIndex uint64) (uint
 }
 
 // GetGroupK get keeper role index by gIndex and keeper array index.
-func (r *ContractModule) GetGroupK(roleAddr common.Address, gIndex uint64, index uint64) (uint64, error) {
+func (r *ContractModule) GetGroupK(gIndex uint64, index uint64) (uint64, error) {
 	var kIndex uint64
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return kIndex, err
 	}
 
 	retryCount := 0
+	if gIndex == 0 {
+		return kIndex, ErrIndexZero
+	}
 	gIndex-- // get group info by array index actually in contract, which is gIndex minus 1
 	for {
 		retryCount++
@@ -1451,15 +1472,18 @@ func (r *ContractModule) GetGroupK(roleAddr common.Address, gIndex uint64, index
 }
 
 // GetGroupP get provider role index by gIndex and provider array index.
-func (r *ContractModule) GetGroupP(roleAddr common.Address, gIndex uint64, index uint64) (uint64, error) {
+func (r *ContractModule) GetGroupP(gIndex uint64, index uint64) (uint64, error) {
 	var pIndex uint64
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return pIndex, err
 	}
 
 	retryCount := 0
+	if gIndex == 0 {
+		return pIndex, ErrIndexZero
+	}
 	gIndex-- // get group info by array index actually in contract, which is gIndex minus 1
 	for {
 		retryCount++
@@ -1479,15 +1503,18 @@ func (r *ContractModule) GetGroupP(roleAddr common.Address, gIndex uint64, index
 }
 
 // GetGroupU get user role index by gIndex and user array index.
-func (r *ContractModule) GetGroupU(roleAddr common.Address, gIndex uint64, index uint64) (uint64, error) {
+func (r *ContractModule) GetGroupU(gIndex uint64, index uint64) (uint64, error) {
 	var uIndex uint64
 
-	roleIns, err := newRole(roleAddr)
+	roleIns, err := newRole(r.contractAddress)
 	if err != nil {
 		return uIndex, err
 	}
 
 	retryCount := 0
+	if gIndex == 0 {
+		return uIndex, ErrIndexZero
+	}
 	gIndex-- // get group info by array index actually in contract, which is gIndex minus 1
 	for {
 		retryCount++
