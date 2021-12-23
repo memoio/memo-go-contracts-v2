@@ -31,17 +31,17 @@ var (
 	//ERC20 contract address
 	ERC20Addr = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 	// Role contract address
-	RoleAddr = common.HexToAddress("0x98EbFc25a2f9a722C916280e4B6b6F31EdE727FC")
+	RoleAddr = common.HexToAddress("0xFbC6db9ae0f847F99907DA27068254e3482578d9")
 	// RoleFS contract address
-	RoleFSAddr = common.HexToAddress("0x17f437f782C3A834661d880b075844eA109024e6")
+	RoleFSAddr = common.HexToAddress("0xCA3Ad5b308f1d00f4Dbb0eB7ff4EB8FDE079d138")
 	// RToken contract address
-	RTokenAddr = common.HexToAddress("0x09761905f83Ea1a3b5901E43a5bdfE7bBF09B73D")
+	RTokenAddr = common.HexToAddress("0xEA490b38Fb5F872169D917e052D799942440a916")
 	// FileSys contract address
-	FileSysAddr = common.HexToAddress("0x0Ec93b801F69bbf96763feFD071Cce10dbdF4472")
+	FileSysAddr = common.HexToAddress("0x139743cD6F0B5CA710F35552411971787D53d5FD")
 	// PledgePool contract address
-	PledgePoolAddr = common.HexToAddress("0xcB155b73c75AF830012D3B195b2473Ec849832E3")
+	PledgePoolAddr = common.HexToAddress("0xEF42eC9Cd7c140ec37D4470A62e95b57aDf24371")
 	// Issuance contract address
-	IssuanceAddr = common.HexToAddress("0x82CbBD2B3B88c644e20Ab4BF542FB7Ca0d4186b7")
+	IssuanceAddr = common.HexToAddress("0x9AE34571c1c7a1165FA87942972Ba75F032846B6")
 
 	AdminAddr  = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 	AdminSk    = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
