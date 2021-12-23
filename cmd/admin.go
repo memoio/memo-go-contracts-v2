@@ -26,6 +26,8 @@ var AdminCmd = &cli.Command{
 	Subcommands: []*cli.Command{
 		deployERC20Cmd,
 		mintCmd,
+		// burnCmd,
+		// airDropCmd,
 	},
 }
 
@@ -95,3 +97,7 @@ var mintCmd = &cli.Command{
 		return nil
 	},
 }
+
+// var burnCmd = &cli.Command{
+// 	Name:
+// }
