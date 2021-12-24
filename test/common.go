@@ -110,7 +110,7 @@ func TransferTo(value *big.Int, addr common.Address, eth, qeth string) error {
 		}
 
 		qCount := 0
-		for qCount < 10 {
+		for ; qCount < 10; qCount++ {
 			balance := callconts.QueryEthBalance(addr.Hex(), qeth)
 			if balance.Cmp(value) >= 0 {
 				break

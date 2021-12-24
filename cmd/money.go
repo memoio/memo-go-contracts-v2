@@ -16,7 +16,7 @@ var transferEth = big.NewInt(2e18)
 
 // MoneyCmd is about transfer eth or ERC20-token, and get balance
 var MoneyCmd = &cli.Command{
-	Name:  "transfer",
+	Name:  "money",
 	Usage: "transfer eth or ERC20-token",
 	Flags: []cli.Flag{
 		&cli.StringFlag{

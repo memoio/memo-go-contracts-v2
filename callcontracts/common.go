@@ -118,7 +118,8 @@ var (
 	ErrIndex = errors.New("the role index is invalid")
 	// ErrIndexZero shouldn't be zero
 	ErrIndexZero = errors.New("the roleIndex or groupIndex should not be 0")
-	ErrOARange   = errors.New("the index out of array range")
+	// ErrOARange index out of range
+	ErrOARange = errors.New("the index out of array range")
 	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
 	ErrIsBanned = errors.New("the account is banned in Role contract")
 	// ErrTIndex tindex invalid
