@@ -189,8 +189,11 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 		}
 
 		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
+		if err != nil {
+			rebuild(err, tx, auth)
+		}
 
+		log.Println("call Approve in erc20.")
 		tx, err = erc20Ins.Approve(auth, addr, value)
 		if err != nil {
 			retryCount++
@@ -206,6 +209,7 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 			continue
 		}
 
+		log.Println("tx sent ok, checking tx..")
 		err = checkTx(tx)
 		if err != nil {
 			checkRetryCount++
