@@ -80,6 +80,8 @@ const (
 	// KeeperRoleType indicates keeper's roleType in Role contract
 	KeeperRoleType = 3
 	register       = "role-register"
+	labelKeeper    = "keeper"
+	labelProvider  = "provider"
 	// topic of contract log
 	transferTopic    = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	alterOwnerTopic  = "0x8c153ecee6895f15da72e646b4029e0ef7cbf971986d8d9cfe48c5563d368e90"
@@ -168,7 +170,11 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 		return auth, err
 	}
 
-	auth = bind.NewKeyedTransactor(sk)
+	chainID := new(big.Int).SetUint64(35896)
+	auth, err = bind.NewKeyedTransactorWithChainID(sk, chainID)
+	if err != nil {
+		return nil, errors.New("new keyed transaction failed")
+	}
 	auth.GasPrice = txopts.GasPrice
 	auth.Value = moneyToContract //放进合约里的钱
 	auth.Nonce = txopts.Nonce
@@ -182,16 +188,19 @@ func checkTx(tx *types.Transaction) error {
 	log.Println("waiting for miner...")
 
 	var receipt *types.Receipt
-	for i := 0; i < 20; i++ {
+	for i := 0; i < 10; i++ {
+		log.Println("getting txReceipt..")
 		receipt = getTransactionReceipt(tx.Hash())
 		if receipt != nil {
 			break
 		}
 		t := checkTxSleepTime * (i + 1)
+		log.Printf("waiting %v sec.\n", t)
 		time.Sleep(time.Duration(t) * time.Second)
 	}
 
 	if receipt == nil { //245s获取不到交易信息，判定交易失败
+		log.Println("get tx receipt failed(nil)")
 		return ErrTxFail
 	}
 
@@ -217,6 +226,9 @@ func getTransactionReceipt(hash common.Hash) *types.Receipt {
 		log.Fatal("rpc.Dial err", err)
 	}
 	receipt, err := client.TransactionReceipt(context.Background(), hash)
+	if err != nil {
+		log.Fatal("get tx receipt err: ", err)
+	}
 	return receipt
 }
 
@@ -251,8 +263,9 @@ func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
 }
 
 // SignForRegister Used to call Register on behalf of other accounts
-func SignForRegister(caller common.Address, sk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(sk)
+// hash(caller, register)
+func SignForRegister(caller common.Address, regAccSK string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(regAccSK)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -270,29 +283,178 @@ func SignForRegister(caller common.Address, sk string) ([]byte, error) {
 	return sig, nil
 }
 
-// todo
-func SignForRegisterKeeper(caller common.Address, sk string) ([]byte, error) {
-	return nil, nil
+// hash(caller,_blsKey,"keeper")
+func SignForRegisterKeeper(caller common.Address, _blsKey []byte, regAccSk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(regAccSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//hash(caller,_blsKey,"keeper")
+	label := []byte(labelKeeper)
+	hash := crypto.Keccak256(caller.Bytes(), _blsKey, label)
+
+	//sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
 }
 
-// todo
-func SignForRegisterProvider(caller common.Address, sk string) ([]byte, error) {
-	return nil, nil
+// hash(caller,"provider")
+func SignForRegisterProvider(caller common.Address, regAccSk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(regAccSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//hash(caller,"provider")
+	label := []byte(labelProvider)
+	hash := crypto.Keccak256(caller.Bytes(), label)
+
+	//sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
 }
 
-// todo
-func SignForRegisterUser(caller common.Address, sk string) ([]byte, error) {
-	return nil, nil
+// hash(caller,gIndex,payToken,blsKey)
+func SignForRegisterUser(caller common.Address, gIndex uint64, payToken uint32, _blsKey []byte, regAccSk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(regAccSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//hash(caller,gIndex,payToken,blsKey)
+	b := make([]byte, 0)
+	tmp8 := make([]byte, 8)
+	tmp4 := make([]byte, 4)
+	// append caller
+	b = append(b, caller.Bytes()...)
+	// append gIndex
+	binary.BigEndian.PutUint64(tmp8, gIndex)
+	b = append(b, tmp8...)
+	// append payToken
+	binary.BigEndian.PutUint32(tmp4, payToken)
+	b = append(b, tmp4...)
+	// append blsKey
+	b = append(b, _blsKey...)
+
+	fmt.Printf("b: %x\n", b)
+
+	hash := crypto.Keccak256(b)
+
+	//sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
 }
 
-// todo
-func SignForAddProviderToGroup(caller common.Address, sk string) ([]byte, error) {
-	return nil, nil
+// hash(caller,gIndex)
+func SignForAddProviderToGroup(caller common.Address, gIndex uint64, accSk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(accSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//hash(caller,gIndex,payToken,blsKey)
+	b := make([]byte, 0)
+	tmp8 := make([]byte, 8)
+	// append caller
+	b = append(b, caller.Bytes()...)
+	// append gIndex
+	binary.BigEndian.PutUint64(tmp8, gIndex)
+	b = append(b, tmp8...)
+
+	fmt.Printf("b: %x\n", b)
+
+	hash := crypto.Keccak256(b)
+
+	//sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
 }
 
-// todo
-func SignForWithdrawFromFs(caller common.Address, sk string) ([]byte, error) {
-	return nil, nil
+// hash(caller, uIndex, tIndex, money)
+func SignForRecharge(caller common.Address, uIndex uint64, tIndex uint32, money *big.Int, accSk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(accSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// hash(caller, uIndex, tIndex, money)
+	b := make([]byte, 0)
+	tmp8 := make([]byte, 8)
+	tmp4 := make([]byte, 4)
+
+	// append caller
+	b = append(b, caller.Bytes()...)
+	// append uIndex
+	binary.BigEndian.PutUint64(tmp8, uIndex)
+	b = append(b, tmp8...)
+	// append tIndex
+	binary.BigEndian.PutUint32(tmp4, tIndex)
+	b = append(b, tmp4...)
+	// append money
+	m := common.LeftPadBytes(money.Bytes(), 32)
+	b = append(b, m...)
+
+	fmt.Printf("b: %x\n", b)
+
+	hash := crypto.Keccak256(b)
+
+	//sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
+}
+
+// hash(caller, tIndex, amount)
+func SignForWithdrawFromFs(caller common.Address, tIndex uint32, amount *big.Int, accSk string) ([]byte, error) {
+	skEcdsa, err := HexSkToEcdsa(accSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// hash(caller, tIndex, amount)
+	b := make([]byte, 0)
+	tmp4 := make([]byte, 4)
+
+	// append caller
+	b = append(b, caller.Bytes()...)
+	// append tIndex
+	binary.BigEndian.PutUint32(tmp4, tIndex)
+	b = append(b, tmp4...)
+	// append amount
+	m := common.LeftPadBytes(amount.Bytes(), 32)
+	b = append(b, m...)
+
+	fmt.Printf("b: %x\n", b)
+
+	hash := crypto.Keccak256(b)
+
+	//sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
 }
 
 // SignForRepair used to call AddRepair or SubRepair, when subRepair, label is "s"; when addRepair, label is "a"
