@@ -665,6 +665,9 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 		return ErrInvalidG
 	}
 	_, isBanned, _, _, _, _, _, err := r.GetGroupInfo(gIndex)
+	if err != nil {
+		return err
+	}
 	if isBanned {
 		log.Println("the group represented by gIndex is banned")
 		return ErrInvalidG
@@ -759,6 +762,9 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 		return ErrInvalidG
 	}
 	_, isBanned, _, _, _, _, _, err = r.GetGroupInfo(gIndex)
+	if err != nil {
+		return err
+	}
 	if isBanned {
 		log.Println("the group represented by gIndex is banned")
 		return ErrInvalidG
@@ -872,6 +878,9 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 		return err
 	}
 	_, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
+	if err != nil {
+		return err
+	}
 	if isBanned || roleType != UserRoleType {
 		log.Println("The uIndex", uIndex, " isBanned:", isBanned, " roleType:", roleType)
 		return ErrIndex

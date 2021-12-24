@@ -170,7 +170,11 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 		return auth, err
 	}
 
-	auth = bind.NewKeyedTransactor(sk)
+	chainID := new(big.Int).SetUint64(35896)
+	auth, err = bind.NewKeyedTransactorWithChainID(sk, chainID)
+	if err != nil {
+		return nil, errors.New("new keyed transaction failed")
+	}
 	auth.GasPrice = txopts.GasPrice
 	auth.Value = moneyToContract //放进合约里的钱
 	auth.Nonce = txopts.Nonce
@@ -184,7 +188,7 @@ func checkTx(tx *types.Transaction) error {
 	log.Println("waiting for miner...")
 
 	var receipt *types.Receipt
-	for i := 0; i < 3; i++ {
+	for i := 0; i < 10; i++ {
 		log.Println("getting txReceipt..")
 		receipt = getTransactionReceipt(tx.Hash())
 		if receipt != nil {
@@ -222,6 +226,9 @@ func getTransactionReceipt(hash common.Hash) *types.Receipt {
 		log.Fatal("rpc.Dial err", err)
 	}
 	receipt, err := client.TransactionReceipt(context.Background(), hash)
+	if err != nil {
+		log.Fatal("get tx receipt err: ", err)
+	}
 	return receipt
 }
 

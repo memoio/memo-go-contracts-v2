@@ -94,6 +94,9 @@ func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleTyp
 		return 0, err
 	}
 	isActive, isBanned, roleType, _, ugIndex, _, err := r.GetRoleInfo(uaddr)
+	if err != nil {
+		return 0, err
+	}
 	if roleType != uRoleType || !isActive || isBanned {
 		log.Println("uIndex ", uIndex, " roleType:", roleType, " isBanned:", isBanned, " isActive:", isActive)
 		return 0, ErrIndex
@@ -104,12 +107,18 @@ func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleTyp
 		return 0, err
 	}
 	isActive, isBanned, roleType, _, pgIndex, _, err := r.GetRoleInfo(paddr)
+	if err != nil {
+		return 0, err
+	}
 	if roleType != pRoleType || !isActive || isBanned {
 		log.Println("pIndex ", pIndex, " roleType:", roleType, " isBanned:", isBanned, " isActive:", isActive)
 		return 0, ErrIndex
 	}
 	// check whether their gIndex is same
 	isActive, isBanned, roleType, _, cgIndex, _, err := r.GetRoleInfo(rfs.addr)
+	if err != nil {
+		return 0, err
+	}
 	if roleType != KeeperRoleType || !isActive || isBanned {
 		log.Println("caller ", rfs.addr.Hex(), " roleType:", roleType, " isBanned:", isBanned, " isActive:", isActive)
 		return 0, ErrIndex

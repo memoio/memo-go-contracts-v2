@@ -110,6 +110,9 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 
 	// check the rindex is not being banned
 	_, isBanned, _, _, _, _, err := r.GetRoleInfo(addr)
+	if err != nil {
+		return err
+	}
 	if isBanned {
 		return ErrIsBanned
 	}
@@ -194,6 +197,9 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 		return err
 	}
 	_, isBanned, _, _, _, _, err := r.GetRoleInfo(addr)
+	if err != nil {
+		return err
+	}
 	if isBanned {
 		return ErrIsBanned
 	}
