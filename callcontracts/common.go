@@ -228,7 +228,7 @@ func getTransactionReceipt(hash common.Hash) *types.Receipt {
 	}
 	receipt, err := client.TransactionReceipt(context.Background(), hash)
 	if err != nil {
-		log.Fatal("get tx receipt err: ", err)
+		log.Println("get transaction receipt err:", err)
 	}
 	return receipt
 }
