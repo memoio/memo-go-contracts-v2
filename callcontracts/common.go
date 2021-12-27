@@ -190,18 +190,18 @@ func checkTx(tx *types.Transaction) error {
 
 	var receipt *types.Receipt
 	for i := 0; i < 10; i++ {
+		t := checkTxSleepTime * (i + 1)
+		log.Printf("waiting %v sec.\n", t)
+		time.Sleep(time.Duration(t) * time.Second)
 		log.Println("getting txReceipt..")
 		receipt = getTransactionReceipt(tx.Hash())
 		if receipt != nil {
 			break
 		}
-		t := checkTxSleepTime * (i + 1)
-		log.Printf("waiting %v sec.\n", t)
-		time.Sleep(time.Duration(t) * time.Second)
 	}
 
 	if receipt == nil { //245s获取不到交易信息，判定交易失败
-		log.Println("get tx receipt failed(nil)")
+		log.Println("get tx receipt nil, tx not packaged")
 		return ErrTxFail
 	}
 
