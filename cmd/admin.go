@@ -19,6 +19,7 @@ var (
 )
 
 // AdminCmd is about contracts functions called by admin
+// TODO: admin value is optional
 var AdminCmd = &cli.Command{
 	Name:  "admin",
 	Usage: "Admin deploy and call contracts",
@@ -74,7 +75,7 @@ var AdminCmd = &cli.Command{
 
 var deployERC20Cmd = &cli.Command{
 	Name:  "deploy-erc20",
-	Usage: "admin deploy ERC20 contract. Args0:name, Args1:symbol",
+	Usage: "ERC20: admin deploy ERC20 contract. Args0:name, Args1:symbol",
 	Action: func(cctx *cli.Context) error {
 		name := cctx.Args().Get(0)
 		symbol := cctx.Args().Get(1)
@@ -98,7 +99,7 @@ var deployERC20Cmd = &cli.Command{
 
 var mintCmd = &cli.Command{
 	Name:  "mint",
-	Usage: "admin mint ERC20 token. Args0:target, Args1:amount",
+	Usage: "ERC20: admin mint ERC20 token. Args0:target, Args1:amount",
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		amount := cctx.Args().Get(1)
@@ -141,7 +142,7 @@ var mintCmd = &cli.Command{
 
 var burnCmd = &cli.Command{
 	Name:  "burn",
-	Usage: "admin burn ERC20 token. Args0:amount",
+	Usage: "ERC20: admin burn ERC20 token. Args0:amount",
 	Action: func(cctx *cli.Context) error {
 		amount := cctx.Args().Get(0)
 		fmt.Println("amount:", amount)
@@ -177,7 +178,7 @@ var burnCmd = &cli.Command{
 
 var airDropCmd = &cli.Command{
 	Name:  "airdrop",
-	Usage: "admin airdrop ERC20 token to targets. Args0:targets(for example: 0x4242c00fea991f432ae2ffb7ae88b8b353739a13,0x97041772c3bd9b97af8615fcf04812db9f81ee74), Args1:amount",
+	Usage: "ERC20: admin airdrop ERC20 token to targets. Args0:targets(for example: 0x4242c00fea991f432ae2ffb7ae88b8b353739a13,0x97041772c3bd9b97af8615fcf04812db9f81ee74), Args1:amount",
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		fmt.Println("target:", target)
@@ -223,7 +224,7 @@ var airDropCmd = &cli.Command{
 
 var setUpRoleCmd = &cli.Command{
 	Name:  "setUpRole",
-	Usage: "admin setUpRole in ERC20 token. Args0:target, Args1:role(DEFAULT_ADMIN_ROLE(0)、MINTER_ROLE(1)、PAUSER_ROLE(2))",
+	Usage: "ERC20: admin setUpRole in ERC20 token. Args0:target, Args1:role(0(DEFAULT_ADMIN_ROLE)、1(MINTER_ROLE)、2(PAUSER_ROLE))",
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		role := cctx.Args().Get(1)
@@ -262,7 +263,7 @@ var setUpRoleCmd = &cli.Command{
 
 var revokeRoleCmd = &cli.Command{
 	Name:  "revokeRole",
-	Usage: "admin revoke target's Role in ERC20 token. Args0:target, Args1:role(DEFAULT_ADMIN_ROLE(0)、MINTER_ROLE(1)、PAUSER_ROLE(2))",
+	Usage: "ERC20: admin revoke target's Role in ERC20 token. Args0:target, Args1:role(0(DEFAULT_ADMIN_ROLE)、1(MINTER_ROLE)、2(PAUSER_ROLE))",
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		role := cctx.Args().Get(1)
@@ -301,7 +302,7 @@ var revokeRoleCmd = &cli.Command{
 
 var pauseCmd = &cli.Command{
 	Name:  "pause",
-	Usage: "set true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE",
+	Usage: "ERC20: set true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE",
 	Action: func(cctx *cli.Context) error {
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
@@ -323,7 +324,7 @@ var pauseCmd = &cli.Command{
 
 var unpauseCmd = &cli.Command{
 	Name:  "unpause",
-	Usage: "set false to allow transfer operation in erc20. Called by who has PAUSER_ROLE",
+	Usage: "ERC20: set false to allow transfer operation in erc20. Called by who has PAUSER_ROLE",
 	Action: func(cctx *cli.Context) error {
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
@@ -345,7 +346,7 @@ var unpauseCmd = &cli.Command{
 
 var deployRoleCmd = &cli.Command{
 	Name:  "deploy-Role",
-	Usage: "admin deploy Role contract. Args0:foundation address, Args1:primaryToken address, Args2:pledgeKeeper, Args3:pledgeProvider",
+	Usage: "Role: admin deploy Role contract. Args0:foundation address, Args1:primaryToken address, Args2:pledgeKeeper, Args3:pledgeProvider",
 	Action: func(cctx *cli.Context) error {
 		foundation := cctx.Args().Get(0)
 		primaryToken := cctx.Args().Get(1)
@@ -399,7 +400,7 @@ var deployRoleCmd = &cli.Command{
 
 var setPICmd = &cli.Command{
 	Name:  "setPI",
-	Usage: "admin set PledgePool-address,Issuance-address and RoleFS-address to Role contract.",
+	Usage: "Role: admin set PledgePool-address,Issuance-address and RoleFS-address to Role contract. Args0:pledgePoolAddr, Args1:issuAddr, Args2:rolefsAddr",
 	Action: func(cctx *cli.Context) error {
 		pledgePoolAddr := cctx.Args().Get(0)
 		issuAddr := cctx.Args().Get(1)
@@ -442,7 +443,7 @@ var setPICmd = &cli.Command{
 
 var registerTokenCmd = &cli.Command{
 	Name:  "registerToken",
-	Usage: "admin registerToken in Role contract.",
+	Usage: "Role: admin registerToken in Role contract. Args0:tokenAddr",
 	Action: func(cctx *cli.Context) error {
 		tokenAddr := cctx.Args().Get(0)
 
@@ -473,7 +474,7 @@ var registerTokenCmd = &cli.Command{
 
 var createGroupCmd = &cli.Command{
 	Name:  "createGroup",
-	Usage: "admin create group in Role contract and then deploy FileSys, and set FileSys-address to group. Args0:rfsAddr, Args1:level",
+	Usage: "Role: admin create group in Role contract and then deploy FileSys, and set FileSys-address to group. Args0:rfsAddr, Args1:level",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "kindexes",
@@ -543,7 +544,7 @@ var createGroupCmd = &cli.Command{
 
 var addKeeperToGroupCmd = &cli.Command{
 	Name:  "addKeeperToGroup",
-	Usage: "admin add keeper to group in Role contract. Args0:kIndex, Args1:gIndex",
+	Usage: "Role: admin add keeper to group in Role contract. Args0:kIndex, Args1:gIndex",
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 2 {
 			return errors.New("should have 2 arguments. Args0:kIndex, Args1:gIndex")
@@ -584,7 +585,7 @@ var addKeeperToGroupCmd = &cli.Command{
 
 var setPledgeMoneyCmd = &cli.Command{
 	Name:  "setPledgeMoney",
-	Usage: "admin set pledgeKeeper and pledgeProvider in Role contract. Args0:pledgeKeeper, Args1:pledgeProvider",
+	Usage: "Role: admin set pledgeKeeper and pledgeProvider in Role contract. Args0:pledgeKeeper, Args1:pledgeProvider",
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 2 {
 			return errors.New("should have 2 arguments. Args0:pledgeKeeper, Args1:pledgeProvider")
@@ -627,7 +628,7 @@ var setPledgeMoneyCmd = &cli.Command{
 
 var alterOwnerCmd = &cli.Command{
 	Name:  "alterOwner",
-	Usage: "admin alter the owner of Role contract. Args0:newOwner",
+	Usage: "Role: admin alter the owner of Role contract. Args0:newOwner",
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 1 {
 			return errors.New("should have 1 arguments. Args0:newOwner")
@@ -661,7 +662,7 @@ var alterOwnerCmd = &cli.Command{
 
 var deployIssuanceCmd = &cli.Command{
 	Name:  "deployIssuance",
-	Usage: "admin deploy Issuance contract. Args0:rfsAddr",
+	Usage: "Issuance: admin deploy Issuance contract. Args0:rfsAddr",
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 1 {
 			return errors.New("should have 1 arguments. Args0:rfsAddr")
@@ -693,7 +694,7 @@ var deployIssuanceCmd = &cli.Command{
 
 var deployRolefsCmd = &cli.Command{
 	Name:  "deployRolefs",
-	Usage: "admin deploy RoleFS contract.",
+	Usage: "RoleFS: admin deploy RoleFS contract.",
 	Action: func(cctx *cli.Context) error {
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -713,7 +714,7 @@ var deployRolefsCmd = &cli.Command{
 
 var setAddrCmd = &cli.Command{
 	Name:  "setAddr",
-	Usage: "admin set issuan, role, fileSys, rtoken address to RoleFS contract.Args0:issuAddr, Args1:roleAddr, Args2:fsAddr, Args3:rtokenAddr",
+	Usage: "RoleFS: admin set issuan, role, fileSys, rtoken address to RoleFS contract.Args0:issuAddr, Args1:roleAddr, Args2:fsAddr, Args3:rtokenAddr",
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 4 {
 			return errors.New("should have 4 arguments. Args0:issuAddr, Args1:roleAddr, Args2:fsAddr, Args3:rtokenAddr")
@@ -765,7 +766,7 @@ var setAddrCmd = &cli.Command{
 
 var deployFileSysCmd = &cli.Command{
 	Name:  "deployFileSys",
-	Usage: "admin deploy FileSys contract. Args0:roleAddr, Args1:rfsAddr, Args2:gIndex",
+	Usage: "FileSys: admin deploy FileSys contract. Args0:roleAddr, Args1:rfsAddr, Args2:gIndex",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "kindexes",
@@ -837,7 +838,7 @@ var deployFileSysCmd = &cli.Command{
 
 var deployPledgePoolCmd = &cli.Command{
 	Name:  "deployPledgePool",
-	Usage: "admin deploy PledgePool contract. Args0:primeTokenAddr, Args1:rTokenAddr, Args2:roleAddr",
+	Usage: "PledgePool: admin deploy PledgePool contract. Args0:primeTokenAddr, Args1:rTokenAddr, Args2:roleAddr",
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 3 {
 			return errors.New("should have 3 arguments. Args0:primeTokenAddr, Args1:rTokenAddr, Args2:roleAddr")

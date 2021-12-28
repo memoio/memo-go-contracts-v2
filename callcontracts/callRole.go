@@ -37,6 +37,7 @@ func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, ple
 
 	log.Println("begin deploy Role contract...")
 	client := getClient(EndPoint)
+	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
 	checkRetryCount := 0
@@ -70,13 +71,16 @@ func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, ple
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("deploy Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return roleAddr, roleIns, err
 			}
 			continue
+		}
+		if err != nil {
+			return roleAddr, roleIns, err
 		}
 		break
 	}
@@ -130,13 +134,16 @@ func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Addre
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("SetPI in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -188,13 +195,16 @@ func (r *ContractModule) Register(addr common.Address, sign []byte) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Register in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -213,6 +223,7 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 	if err != nil {
 		return err
 	}
+	log.Println("account address get by rIndex", index, "is:", addr.Hex())
 	_, _, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
@@ -264,13 +275,16 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("RegisterKeeper in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -289,10 +303,12 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 	if err != nil {
 		return err
 	}
+	log.Println("account address get by rIndex", index, "is:", addr.Hex())
 	_, _, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
+	log.Println("account roleType is:", roleType)
 	if roleType != 0 { // role already registered
 		return ErrRoleReg
 	}
@@ -301,10 +317,12 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 	if err != nil {
 		return err
 	}
+	log.Println("account pledge value is:", pledge)
 	pledgep, err := r.PledgeP()
 	if err != nil {
 		return err
 	}
+	log.Println("register provider need pledge value:", pledgep)
 	if pledge.Cmp(pledgep) < 0 {
 		log.Println("the rindex ", index, " addr:", addr.Hex(), " pledgeMoney:", pledge, " is not enough, shouldn't less than ", pledgep)
 		return errPledgeNE
@@ -340,13 +358,16 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("RegisterProvider in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -366,6 +387,7 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 	if err != nil {
 		return err
 	}
+	log.Println("account address get by rIndex", index, "is:", addr.Hex())
 	_, _, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
@@ -423,13 +445,16 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("RegisterUser in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -483,13 +508,16 @@ func (r *ContractModule) RegisterToken(tokenAddr common.Address) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("RegisterToken in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -568,13 +596,16 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("CreateGroup in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return 0, err
 			}
 			continue
+		}
+		if err != nil {
+			return 0, err
 		}
 		break
 	}
@@ -634,13 +665,16 @@ func (r *ContractModule) SetGF(fsAddr common.Address, gIndex uint64) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("SetGF in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -678,6 +712,7 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 	if err != nil {
 		return err
 	}
+	log.Println("account address get by rIndex", kIndex, "is:", addr.Hex())
 	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
@@ -717,13 +752,16 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("AddKeeperToGroup in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -743,6 +781,7 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 	if err != nil {
 		return err
 	}
+	log.Println("account address get by rIndex", pIndex, "is:", addr.Hex())
 	isActive, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
@@ -800,13 +839,16 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("AddProviderToGroup in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -851,13 +893,16 @@ func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) erro
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("SetPledgeMoney in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -877,6 +922,7 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 	if err != nil {
 		return err
 	}
+	log.Println("account address get by rIndex", uIndex, "is:", addr.Hex())
 	_, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
@@ -926,13 +972,16 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Recharge in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -987,13 +1036,16 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("WithdrawFromFs in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -1221,7 +1273,17 @@ func (r *ContractModule) GetAddr(rIndex uint64) (common.Address, error) {
 	if rIndex == 0 {
 		return addr, ErrIndexZero
 	}
+	sum, err := r.GetAddrsNum()
+	if err != nil {
+		return addr, err
+	}
+	log.Println("addrs total:", sum)
+	if rIndex > sum {
+		return addr, ErrOARange
+	}
+
 	rIndex-- // get address by array index actually in contract, which is rIndex minus 1
+
 	for {
 		retryCount++
 		addr, err = roleIns.GetAddr(&bind.CallOpts{

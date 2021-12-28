@@ -33,6 +33,7 @@ func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Ad
 
 	log.Println("begin deploy Issuance contract...")
 	client := getClient(EndPoint)
+	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
 	checkRetryCount := 0
@@ -66,13 +67,16 @@ func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Ad
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("deploy Issuance transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return issuAddr, issuIns, err
 			}
 			continue
+		}
+		if err != nil {
+			return issuAddr, issuIns, err
 		}
 		break
 	}

@@ -33,6 +33,7 @@ func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc2
 
 	log.Println("begin deploy ERC20 contract...")
 	client := getClient(EndPoint)
+	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
 	checkRetryCount := 0
@@ -66,13 +67,15 @@ func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc2
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("deploy ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return erc20Addr, erc20Ins, err
 			}
 			continue
+		} else if err != nil {
+			return erc20Addr, erc20Ins, err
 		}
 		break
 	}
@@ -141,13 +144,16 @@ func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) erro
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Transfer in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -211,13 +217,16 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 
 		log.Println("tx sent ok, checking tx..")
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Approve in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -237,7 +246,7 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 	if err != nil {
 		return err
 	}
-	log.Println("Your allowance of", sender.Hex(), " is ", allo)
+	log.Println(sender.Hex(), "=>", e.addr.Hex(), "allowance is:", allo)
 	if allo.Cmp(value) < 0 {
 		log.Println("Allowance is not enough, please reconfirm the TransferFrom amount.")
 		return ErrBalNotE
@@ -284,13 +293,16 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("TransferFrom in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -355,13 +367,16 @@ func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("IncreaseAllowance in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -410,13 +425,16 @@ func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("DecreaseAllowance in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -473,13 +491,16 @@ func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) er
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("MintToken in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -540,13 +561,16 @@ func (e *ContractModule) Burn(burnValue *big.Int) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Burn in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -609,13 +633,16 @@ func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("AirDrop in ERC20 transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}

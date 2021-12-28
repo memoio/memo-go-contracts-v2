@@ -20,8 +20,8 @@ import (
 const (
 	MoneyTo   = 1e18
 	WaitTime  = 3 * time.Second
-	AdminAddr = "0x1c111472F298E4119150850c198C657DA1F8a368"
-	AdminSk   = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
+	AdminAddr = "0x6916c30dD1E2BC8d2550AC206c03C56834751e41"
+	AdminSk   = "85b7f07c7c0d84292ca565a623ca30c80c48c8225b6b43330a9ad071972bac49"
 	Acc1      = "0x9011B1c901d330A63d029B6B325EdE69aeEe11d4"
 	Sk1       = "7000cd6cee7cdb6bcc7eda212d1c5aea1d8d35321895f4d601fdd49be96fbc7b"
 	Acc2      = "0x7B024b830B0a9a315Baf9C76c0E53ec2dD19cf85"
@@ -46,8 +46,8 @@ const (
 
 var (
 	Foundation   = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
-	PrimaryToken = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
-	RTokenAddr   = common.HexToAddress("0x7a424f9aF3A69e19fe2A839Cf564d620B6C984d7")
+	PrimaryToken = common.HexToAddress("0x269658543337C4ecbA08Adaa38e13D0290e24De8")
+	RTokenAddr   = common.HexToAddress("0x360A3b47089B931e8763C0a63F3B91D250167597")
 )
 
 // TransferTo trans eth to addr for test

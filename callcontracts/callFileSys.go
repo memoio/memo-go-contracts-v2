@@ -44,6 +44,7 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 
 	log.Println("begin deploy FileSys contract...")
 	client := getClient(EndPoint)
+	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
 	checkRetryCount := 0
@@ -76,13 +77,16 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("deploy FileSys transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return fsAddr, fsIns, err
 			}
 			continue
+		}
+		if err != nil {
+			return fsAddr, fsIns, err
 		}
 		break
 	}

@@ -65,13 +65,16 @@ func (ac *ContractModule) SetUpRole(role uint8, addr common.Address) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("SetUpRole in AccessControl transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -132,13 +135,16 @@ func (ac *ContractModule) RevokeRole(role uint8, addr common.Address) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("RevokeRole in AccessControl transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -183,13 +189,16 @@ func (ac *ContractModule) RenounceRole(role uint8) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("RenounceRole in AccessControl transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -242,13 +251,16 @@ func (ac *ContractModule) Pause() error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Pause in AccessControl transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -301,13 +313,16 @@ func (ac *ContractModule) Unpause() error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Unpause in AccessControl transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}

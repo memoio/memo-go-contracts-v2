@@ -19,7 +19,7 @@ var (
 
 // 该测试需花费约14分钟
 func main() {
-	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
+	eth := flag.String("eth", "http://119.147.213.220:8193", "eth api Address;")   //dev网
 	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
 	flag.Parse()
 	ethEndPoint = *eth
@@ -318,8 +318,25 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("After addOrder: settleinfo time", _time, ",size", _size, ",price", _price, ",maxPay", _maxPay, ",hasPaid", _hasPaid, ",canPay", _canPay, ",lost", _lost, ",lostPaid", _lostPaid, ",managePay", _managePay, ",endPaid", _endPaid, ",linearPaid", _linearPaid)
-	if _time != start || _price != sprice || _size != size || _maxPay.Cmp(hundred) != 0 || _managePay.Cmp(big.NewInt(4)) != 0 {
-		log.Fatal("time should be ", start, " price should be ", sprice, " size should be ", size, " maxPay should be ", 100, " managePay should be ", 4)
+	if _time != start {
+		fmt.Println("time:", _time)
+		log.Fatal("time should be ", start)
+	}
+	if _size != size {
+		fmt.Println("size:", _size)
+		log.Fatal("sieze should be ", size)
+	}
+	if _price.Cmp(sprice) != 0 {
+		fmt.Println("price:", _price)
+		log.Fatal("price should be ", sprice)
+	}
+	if _maxPay.Cmp(hundred) != 0 {
+		fmt.Println("maxPay:", _maxPay)
+		log.Fatal("maxPay should be ", hundred)
+	}
+	if _managePay.Cmp(big.NewInt(4)) != 0 {
+		fmt.Println("managePay:", _managePay)
+		log.Fatal("managePay should be ", big.NewInt(4))
 	}
 	// 获取addOrder后proInfo中的aggOrder的信息，并测试正确性
 	_nonce, _subNonce, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
@@ -453,7 +470,7 @@ func main() {
 		log.Fatal(err)
 	}
 	time.Sleep(2 * time.Second)
-	err = r.RegisterProvider(roleAddr, p2Index, nil)
+	err = r.RegisterProvider(pledgePoolAddr, p2Index, nil)
 	if err != nil {
 		log.Fatal(err)
 	}

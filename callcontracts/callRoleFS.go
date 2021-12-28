@@ -32,6 +32,7 @@ func (rfs *ContractModule) DeployRoleFS() (common.Address, *rolefs.RoleFS, error
 
 	log.Println("begin deploy RoleFS contract...")
 	client := getClient(EndPoint)
+	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
 	checkRetryCount := 0
@@ -64,13 +65,16 @@ func (rfs *ContractModule) DeployRoleFS() (common.Address, *rolefs.RoleFS, error
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("deploy RoleFS transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return roleFSAddr, roleFSIns, err
 			}
 			continue
+		}
+		if err != nil {
+			return roleFSAddr, roleFSIns, err
 		}
 		break
 	}
@@ -176,13 +180,16 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("SetAddr in RoleFS transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -245,13 +252,16 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("AddOrder in RoleFS transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -312,13 +322,16 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("SubOrder in RoleFS transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -378,13 +391,16 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("AddRepair in RoleFS transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -445,13 +461,16 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("SubRepair in RoleFS transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -521,13 +540,16 @@ func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pInd
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("ProWithdraw in RoleFS transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
