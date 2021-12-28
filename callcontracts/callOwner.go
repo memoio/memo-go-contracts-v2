@@ -65,13 +65,16 @@ func (own *ContractModule) AlterOwner(newOwnerAddr common.Address) error {
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("AlterOwner in Role transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}

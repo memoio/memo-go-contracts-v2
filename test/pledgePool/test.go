@@ -18,7 +18,7 @@ var (
 
 // 仍然需要通过调用rolefs合约中的addOrder等函数去触发代币发行，从而触发PledgePool合约中的分润机制，之后再次测试getter类函数
 func main() {
-	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
+	eth := flag.String("eth", "http://119.147.213.220:8193", "eth api Address;")   //dev网
 	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
 	flag.Parse()
 	ethEndPoint = *eth

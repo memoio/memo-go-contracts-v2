@@ -63,7 +63,7 @@ const (
 	checkTxRetryCount         = 8
 	checkTxSleepTime          = 5
 	retryTxSleepTime          = time.Minute
-	retryGetInfoSleepTime     = time.Minute
+	retryGetInfoSleepTime     = 30 * time.Second
 	waitTime                  = 3 * time.Second
 
 	// AdminRole indicates the account has Admin right in ERC20 contract
@@ -98,7 +98,7 @@ const (
 
 var (
 	// ErrTxFail indicates that the transaction is not packaged or an error occurred during the packaging process
-	ErrTxFail = errors.New("transaction fails")
+	ErrTxFail = errors.New("transaction not packaged")
 	// ErrTxExecu indicates that an error occurred during packaging
 	ErrTxExecu = errors.New("transaction mined but execution failed")
 	// ErrBalNotE indicates that the account's balance is not enough to do something
@@ -206,7 +206,7 @@ func checkTx(tx *types.Transaction) error {
 	}
 
 	if receipt.Status == 0 { //等于0表示交易失败，等于1表示成功
-		log.Println("Transaction mined but execution failed")
+		log.Println("Transaction mined but execution failed, please check your tx input")
 		txReceipt, err := receipt.MarshalJSON()
 		if err != nil {
 			return err
@@ -226,7 +226,10 @@ func getTransactionReceipt(hash common.Hash) *types.Receipt {
 	if err != nil {
 		log.Fatal("rpc.Dial err", err)
 	}
-	receipt, err := client.TransactionReceipt(context.Background(), hash)
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	receipt, err := client.TransactionReceipt(ctx, hash)
 	if err != nil {
 		log.Println("get transaction receipt err:", err)
 	}

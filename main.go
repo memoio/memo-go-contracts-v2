@@ -30,7 +30,7 @@ func main() {
 	}
 
 	app := &cli.App{
-		Name:                 "test-contract",
+		Name:                 "memoContract",
 		Usage:                "test memo contract!",
 		EnableBashCompletion: true,
 		Commands:             commands,

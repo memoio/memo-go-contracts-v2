@@ -47,6 +47,7 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 
 	log.Println("begin deploy PledgePool contract...")
 	client := getClient(EndPoint)
+	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
 	checkRetryCount := 0
@@ -79,13 +80,16 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("deploy PledgePool transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return pledgepAddr, pledgepIns, err
 			}
 			continue
+		}
+		if err != nil {
+			return pledgepAddr, pledgepIns, err
 		}
 		break
 	}
@@ -168,13 +172,16 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Pledge transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
@@ -240,13 +247,16 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 		}
 
 		err = checkTx(tx)
-		if err != nil {
+		if err == ErrTxFail {
 			checkRetryCount++
 			log.Println("Withdraw transaction fails:", err)
 			if checkRetryCount > checkTxRetryCount {
 				return err
 			}
 			continue
+		}
+		if err != nil {
+			return err
 		}
 		break
 	}
