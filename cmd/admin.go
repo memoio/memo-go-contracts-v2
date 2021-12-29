@@ -19,28 +19,22 @@ var (
 )
 
 // AdminCmd is about contracts functions called by admin
-// TODO: admin value is optional
+// admin value is optional. [completed]
 var AdminCmd = &cli.Command{
 	Name:  "admin",
 	Usage: "Admin deploy and call contracts",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:    "erc20Addr",
-			Aliases: []string{"e"},
-			Value:   "0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA", //默认值为common.go中的erc20合约地址
-			Usage:   "the ERC20 contract address",
+			Name:    "adminAddr",
+			Aliases: []string{"aa"},
+			Value:   callconts.AdminAddr.Hex(), //默认值为common.go中的admin账户地址
+			Usage:   "the admin account's address",
 		},
 		&cli.StringFlag{
-			Name:    "roleAddr",
-			Aliases: []string{"r"},
-			Value:   "0xFbC6db9ae0f847F99907DA27068254e3482578d9", //默认值为common.go中的role合约地址
-			Usage:   "the Role contract address",
-		},
-		&cli.StringFlag{
-			Name:    "rolefsAddr",
-			Aliases: []string{"rfs"},
-			Value:   "0xCA3Ad5b308f1d00f4Dbb0eB7ff4EB8FDE079d138", //默认值为common.go中的role合约地址
-			Usage:   "the RoleFS contract address",
+			Name:    "adminSk",
+			Aliases: []string{"as"},
+			Value:   callconts.AdminSk, //默认值为common.go中的admin账户私钥
+			Usage:   "the admin account's secretkey",
 		},
 	},
 	Subcommands: []*cli.Command{
@@ -81,12 +75,17 @@ var deployERC20Cmd = &cli.Command{
 		symbol := cctx.Args().Get(1)
 		fmt.Println("name:", name, " symbol:", symbol)
 
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
+
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
 			GasPrice: big.NewInt(callconts.DefaultGasPrice),
 			GasLimit: callconts.DefaultGasLimit,
 		}
-		e := callconts.NewERC20(callconts.AdminAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(addr, addr, sk, txopts)
 		erc20Addr, _, err := e.DeployERC20(name, symbol)
 		if err != nil {
 			return err
@@ -100,6 +99,14 @@ var deployERC20Cmd = &cli.Command{
 var mintCmd = &cli.Command{
 	Name:  "mint",
 	Usage: "ERC20: admin mint ERC20 token. Args0:target, Args1:amount",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "erc20Addr",
+			Aliases: []string{"e"},
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
+			Usage:   "the ERC20 contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		amount := cctx.Args().Get(1)
@@ -129,8 +136,12 @@ var mintCmd = &cli.Command{
 
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err := e.MintToken(common.HexToAddress(target), mintValue)
 		if err != nil {
 			return err
@@ -143,6 +154,14 @@ var mintCmd = &cli.Command{
 var burnCmd = &cli.Command{
 	Name:  "burn",
 	Usage: "ERC20: admin burn ERC20 token. Args0:amount",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "erc20Addr",
+			Aliases: []string{"e"},
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
+			Usage:   "the ERC20 contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		amount := cctx.Args().Get(0)
 		fmt.Println("amount:", amount)
@@ -165,8 +184,12 @@ var burnCmd = &cli.Command{
 
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err := e.Burn(burnValue)
 		if err != nil {
 			return err
@@ -179,6 +202,14 @@ var burnCmd = &cli.Command{
 var airDropCmd = &cli.Command{
 	Name:  "airdrop",
 	Usage: "ERC20: admin airdrop ERC20 token to targets. Args0:targets(for example: 0x4242c00fea991f432ae2ffb7ae88b8b353739a13,0x97041772c3bd9b97af8615fcf04812db9f81ee74), Args1:amount",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "erc20Addr",
+			Aliases: []string{"e"},
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
+			Usage:   "the ERC20 contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		fmt.Println("target:", target)
@@ -211,8 +242,12 @@ var airDropCmd = &cli.Command{
 
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err := e.AirDrop(targetsAddr, airdropValue)
 		if err != nil {
 			return err
@@ -225,6 +260,14 @@ var airDropCmd = &cli.Command{
 var setUpRoleCmd = &cli.Command{
 	Name:  "setUpRole",
 	Usage: "ERC20: admin setUpRole in ERC20 token. Args0:target, Args1:role(0(DEFAULT_ADMIN_ROLE)、1(MINTER_ROLE)、2(PAUSER_ROLE))",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "erc20Addr",
+			Aliases: []string{"e"},
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
+			Usage:   "the ERC20 contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		role := cctx.Args().Get(1)
@@ -250,8 +293,12 @@ var setUpRoleCmd = &cli.Command{
 
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err = e.SetUpRole(uint8(r), common.HexToAddress(target))
 		if err != nil {
 			return err
@@ -264,6 +311,14 @@ var setUpRoleCmd = &cli.Command{
 var revokeRoleCmd = &cli.Command{
 	Name:  "revokeRole",
 	Usage: "ERC20: admin revoke target's Role in ERC20 token. Args0:target, Args1:role(0(DEFAULT_ADMIN_ROLE)、1(MINTER_ROLE)、2(PAUSER_ROLE))",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "erc20Addr",
+			Aliases: []string{"e"},
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
+			Usage:   "the ERC20 contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		role := cctx.Args().Get(1)
@@ -289,8 +344,12 @@ var revokeRoleCmd = &cli.Command{
 
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err = e.RevokeRole(uint8(r), common.HexToAddress(target))
 		if err != nil {
 			return err
@@ -303,9 +362,21 @@ var revokeRoleCmd = &cli.Command{
 var pauseCmd = &cli.Command{
 	Name:  "pause",
 	Usage: "ERC20: set true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "erc20Addr",
+			Aliases: []string{"e"},
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
+			Usage:   "the ERC20 contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -313,7 +384,7 @@ var pauseCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err := e.Pause()
 		if err != nil {
 			return err
@@ -325,9 +396,21 @@ var pauseCmd = &cli.Command{
 var unpauseCmd = &cli.Command{
 	Name:  "unpause",
 	Usage: "ERC20: set false to allow transfer operation in erc20. Called by who has PAUSER_ROLE",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "erc20Addr",
+			Aliases: []string{"e"},
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
+			Usage:   "the ERC20 contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -335,7 +418,7 @@ var unpauseCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err := e.Unpause()
 		if err != nil {
 			return err
@@ -377,12 +460,17 @@ var deployRoleCmd = &cli.Command{
 		}
 		fmt.Println("pledgeProvider:", pledgeP)
 
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
+
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
 			GasPrice: big.NewInt(callconts.DefaultGasPrice),
 			GasLimit: callconts.DefaultGasLimit,
 		}
-		r := callconts.NewR(callconts.AdminAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		r := callconts.NewR(callconts.AdminAddr, addr, sk, txopts)
 		roleAddr, _, err := r.DeployRole(common.HexToAddress(foundation), common.HexToAddress(primaryToken), pledgeK, pledgeP)
 		if err != nil {
 			return err
@@ -401,6 +489,14 @@ var deployRoleCmd = &cli.Command{
 var setPICmd = &cli.Command{
 	Name:  "setPI",
 	Usage: "Role: admin set PledgePool-address,Issuance-address and RoleFS-address to Role contract. Args0:pledgePoolAddr, Args1:issuAddr, Args2:rolefsAddr",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "roleAddr",
+			Aliases: []string{"r"},
+			Value:   callconts.RoleAddr.Hex(), //默认值为common.go中的role合约地址
+			Usage:   "the Role contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		pledgePoolAddr := cctx.Args().Get(0)
 		issuAddr := cctx.Args().Get(1)
@@ -425,6 +521,10 @@ var setPICmd = &cli.Command{
 
 		roleAddr := common.HexToAddress(cctx.String("roleAddr"))
 		fmt.Println("roleAddr:", roleAddr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -432,7 +532,7 @@ var setPICmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts)
 		err := r.SetPI(common.HexToAddress(pledgePoolAddr), common.HexToAddress(issuAddr), common.HexToAddress(rolefsAddr))
 		if err != nil {
 			return err
@@ -444,6 +544,14 @@ var setPICmd = &cli.Command{
 var registerTokenCmd = &cli.Command{
 	Name:  "registerToken",
 	Usage: "Role: admin registerToken in Role contract. Args0:tokenAddr",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "roleAddr",
+			Aliases: []string{"r"},
+			Value:   callconts.RoleAddr.Hex(), //默认值为common.go中的role合约地址
+			Usage:   "the Role contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		tokenAddr := cctx.Args().Get(0)
 
@@ -456,6 +564,10 @@ var registerTokenCmd = &cli.Command{
 
 		roleAddr := common.HexToAddress(cctx.String("roleAddr"))
 		fmt.Println("roleAddr:", roleAddr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -463,7 +575,7 @@ var registerTokenCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts)
 		err := r.RegisterToken(common.HexToAddress(tokenAddr))
 		if err != nil {
 			return err
@@ -476,6 +588,12 @@ var createGroupCmd = &cli.Command{
 	Name:  "createGroup",
 	Usage: "Role: admin create group in Role contract and then deploy FileSys, and set FileSys-address to group. Args0:rfsAddr, Args1:level",
 	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "roleAddr",
+			Aliases: []string{"r"},
+			Value:   callconts.RoleAddr.Hex(), //默认值为common.go中的role合约地址
+			Usage:   "the Role contract address",
+		},
 		&cli.StringFlag{
 			Name:        "kindexes",
 			Aliases:     []string{"ks"},
@@ -519,6 +637,10 @@ var createGroupCmd = &cli.Command{
 			keepers = append(keepers, uint64(intNum))
 		}
 		fmt.Println("keepers:", keepers)
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -526,7 +648,7 @@ var createGroupCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts)
 		gIndex, err := r.CreateGroup(common.HexToAddress(rfsAddr), founder, keepers, uint16(le))
 		if err != nil {
 			return err
@@ -545,6 +667,14 @@ var createGroupCmd = &cli.Command{
 var addKeeperToGroupCmd = &cli.Command{
 	Name:  "addKeeperToGroup",
 	Usage: "Role: admin add keeper to group in Role contract. Args0:kIndex, Args1:gIndex",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "roleAddr",
+			Aliases: []string{"r"},
+			Value:   callconts.RoleAddr.Hex(), //默认值为common.go中的role合约地址
+			Usage:   "the Role contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 2 {
 			return errors.New("should have 2 arguments. Args0:kIndex, Args1:gIndex")
@@ -567,6 +697,10 @@ var addKeeperToGroupCmd = &cli.Command{
 
 		roleAddr := common.HexToAddress(cctx.String("roleAddr"))
 		fmt.Println("roleAddr:", roleAddr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -574,7 +708,7 @@ var addKeeperToGroupCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts)
 		err = r.AddKeeperToGroup(uint64(ki), uint64(gi))
 		if err != nil {
 			return err
@@ -586,6 +720,14 @@ var addKeeperToGroupCmd = &cli.Command{
 var setPledgeMoneyCmd = &cli.Command{
 	Name:  "setPledgeMoney",
 	Usage: "Role: admin set pledgeKeeper and pledgeProvider in Role contract. Args0:pledgeKeeper, Args1:pledgeProvider",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "roleAddr",
+			Aliases: []string{"r"},
+			Value:   callconts.RoleAddr.Hex(), //默认值为common.go中的role合约地址
+			Usage:   "the Role contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 2 {
 			return errors.New("should have 2 arguments. Args0:pledgeKeeper, Args1:pledgeProvider")
@@ -610,6 +752,10 @@ var setPledgeMoneyCmd = &cli.Command{
 
 		roleAddr := common.HexToAddress(cctx.String("roleAddr"))
 		fmt.Println("roleAddr:", roleAddr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -617,7 +763,7 @@ var setPledgeMoneyCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts)
 		err := r.SetPledgeMoney(pk, pp)
 		if err != nil {
 			return err
@@ -629,6 +775,14 @@ var setPledgeMoneyCmd = &cli.Command{
 var alterOwnerCmd = &cli.Command{
 	Name:  "alterOwner",
 	Usage: "Role: admin alter the owner of Role contract. Args0:newOwner",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "roleAddr",
+			Aliases: []string{"r"},
+			Value:   callconts.RoleAddr.Hex(), //默认值为common.go中的role合约地址
+			Usage:   "the Role contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 1 {
 			return errors.New("should have 1 arguments. Args0:newOwner")
@@ -644,6 +798,10 @@ var alterOwnerCmd = &cli.Command{
 
 		roleAddr := common.HexToAddress(cctx.String("roleAddr"))
 		fmt.Println("roleAddr:", roleAddr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -651,7 +809,7 @@ var alterOwnerCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		own := callconts.NewOwn(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		own := callconts.NewOwn(roleAddr, addr, sk, txopts)
 		err := own.AlterOwner(common.HexToAddress(newOwner))
 		if err != nil {
 			return err
@@ -676,13 +834,18 @@ var deployIssuanceCmd = &cli.Command{
 		}
 		fmt.Println("rolefs address:", rfsAddr)
 
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
+
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
 			GasPrice: big.NewInt(callconts.DefaultGasPrice),
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		issu := callconts.NewIssu(callconts.AdminAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		issu := callconts.NewIssu(callconts.AdminAddr, addr, sk, txopts)
 		issuAddr, _, err := issu.DeployIssuance(common.HexToAddress(rfsAddr))
 		if err != nil {
 			return err
@@ -696,13 +859,18 @@ var deployRolefsCmd = &cli.Command{
 	Name:  "deployRolefs",
 	Usage: "RoleFS: admin deploy RoleFS contract.",
 	Action: func(cctx *cli.Context) error {
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
+
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
 			GasPrice: big.NewInt(callconts.DefaultGasPrice),
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		rfs := callconts.NewRFS(callconts.AdminAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		rfs := callconts.NewRFS(callconts.AdminAddr, addr, sk, txopts)
 		rfsAddr, _, err := rfs.DeployRoleFS()
 		if err != nil {
 			return err
@@ -715,6 +883,14 @@ var deployRolefsCmd = &cli.Command{
 var setAddrCmd = &cli.Command{
 	Name:  "setAddr",
 	Usage: "RoleFS: admin set issuan, role, fileSys, rtoken address to RoleFS contract.Args0:issuAddr, Args1:roleAddr, Args2:fsAddr, Args3:rtokenAddr",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "rolefsAddr",
+			Aliases: []string{"rfs"},
+			Value:   callconts.RoleFSAddr.Hex(), //默认值为common.go中的rolefs合约地址
+			Usage:   "the RoleFS contract address",
+		},
+	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 4 {
 			return errors.New("should have 4 arguments. Args0:issuAddr, Args1:roleAddr, Args2:fsAddr, Args3:rtokenAddr")
@@ -754,8 +930,12 @@ var setAddrCmd = &cli.Command{
 
 		rfsAddr := common.HexToAddress(cctx.String("rolefsAddr"))
 		fmt.Println("rfsAddr:", rfsAddr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
-		rfs := callconts.NewRFS(rfsAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		rfs := callconts.NewRFS(rfsAddr, addr, sk, txopts)
 		err := rfs.SetAddr(common.HexToAddress(issuAddr), common.HexToAddress(roleAddr), common.HexToAddress(fsAddr), common.HexToAddress(rtAddr))
 		if err != nil {
 			return err
@@ -819,6 +999,10 @@ var deployFileSysCmd = &cli.Command{
 			keepers = append(keepers, uint64(intNum))
 		}
 		fmt.Println("keepers:", keepers)
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -826,7 +1010,7 @@ var deployFileSysCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		fs := callconts.NewFileSys(callconts.AdminAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		fs := callconts.NewFileSys(callconts.AdminAddr, addr, sk, txopts)
 		fsAddr, _, err := fs.DeployFileSys(foundation, uint64(gi), common.HexToAddress(roleAddr), common.HexToAddress(rfsAddr), keepers)
 		if err != nil {
 			return err
@@ -865,13 +1049,18 @@ var deployPledgePoolCmd = &cli.Command{
 		}
 		fmt.Println("rToken address:", rTokenAddr)
 
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
+
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
 			GasPrice: big.NewInt(callconts.DefaultGasPrice),
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		pp := callconts.NewPledgePool(callconts.AdminAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		pp := callconts.NewPledgePool(callconts.AdminAddr, addr, sk, txopts)
 		pledgePoolAddr, _, err := pp.DeployPledgePool(common.HexToAddress(primeTokenAddr), common.HexToAddress(rTokenAddr), common.HexToAddress(roleAddr))
 		if err != nil {
 			return err

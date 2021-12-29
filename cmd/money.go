@@ -20,6 +20,18 @@ var MoneyCmd = &cli.Command{
 	Usage: "transfer eth or ERC20-token",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
+			Name:    "adminAddr",
+			Aliases: []string{"aa"},
+			Value:   callconts.AdminAddr.Hex(), //默认值为common.go中的admin账户地址
+			Usage:   "the admin account's address",
+		},
+		&cli.StringFlag{
+			Name:    "adminSk",
+			Aliases: []string{"as"},
+			Value:   callconts.AdminSk, //默认值为common.go中的admin账户私钥
+			Usage:   "the admin account's secretkey",
+		},
+		&cli.StringFlag{
 			Name:    "erc20Addr",
 			Aliases: []string{"e"},
 			Value:   "0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA", //默认值为common.go中的erc20合约地址
@@ -47,6 +59,10 @@ var balanceCmd = &cli.Command{
 
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -54,7 +70,7 @@ var balanceCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		bal, err := e.BalanceOf(common.HexToAddress(acc))
 		if err != nil {
 			return err
@@ -77,6 +93,10 @@ var transferCmd = &cli.Command{
 
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
+		addr := common.HexToAddress(cctx.String("adminAddr"))
+		fmt.Println("adminAddr:", addr.Hex())
+		sk := cctx.String("adminSk")
+		fmt.Println("adminSk:", sk)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -84,7 +104,7 @@ var transferCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
 		err := e.Transfer(common.HexToAddress(acc), transferMoney)
 		if err != nil {
 			return err
