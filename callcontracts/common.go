@@ -56,10 +56,10 @@ const (
 	// DefaultGasPrice default gas price in sending transaction
 	DefaultGasPrice = 200
 	// DefaultGasLimit default gas limit in sending transaction
-	DefaultGasLimit           = uint64(5000000) // block gaslimit is 8000000
+	DefaultGasLimit           = uint64(5000000) // as small as possible
 	sendTransactionRetryCount = 5
 	checkTxRetryCount         = 8
-	checkTxSleepTime          = 6
+	checkTxSleepTime          = 6 // 先等待6s（出块时间加1）
 	nextBlockTime             = 5 // 出块时间5s
 	retryTxSleepTime          = time.Minute
 	retryGetInfoSleepTime     = 30 * time.Second
