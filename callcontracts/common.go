@@ -52,16 +52,15 @@ var (
 
 const (
 	//InvalidAddr implements invalid contracts-address
-	InvalidAddr          = "0x0000000000000000000000000000000000000000"
-	spaceTimePayGasLimit = uint64(8000000)
-	spaceTimePayGasPrice = 2 * DefaultGasPrice
+	InvalidAddr = "0x0000000000000000000000000000000000000000"
 	// DefaultGasPrice default gas price in sending transaction
 	DefaultGasPrice = 200
 	// DefaultGasLimit default gas limit in sending transaction
-	DefaultGasLimit           = uint64(8000000)
+	DefaultGasLimit           = uint64(5000000) // as small as possible
 	sendTransactionRetryCount = 5
 	checkTxRetryCount         = 8
-	checkTxSleepTime          = 5
+	checkTxSleepTime          = 6 // 先等待6s（出块时间加1）
+	nextBlockTime             = 5 // 出块时间5s
 	retryTxSleepTime          = time.Minute
 	retryGetInfoSleepTime     = 30 * time.Second
 	waitTime                  = 3 * time.Second
@@ -189,8 +188,11 @@ func checkTx(tx *types.Transaction) error {
 	log.Println("waiting for miner...")
 
 	var receipt *types.Receipt
+	t := checkTxSleepTime
 	for i := 0; i < 10; i++ {
-		t := checkTxSleepTime * (i + 1)
+		if i != 0 {
+			t = nextBlockTime * i
+		}
 		log.Printf("waiting %v sec.\n", t)
 		time.Sleep(time.Duration(t) * time.Second)
 		log.Println("getting txReceipt..")
@@ -200,7 +202,7 @@ func checkTx(tx *types.Transaction) error {
 		}
 	}
 
-	if receipt == nil { //245s获取不到交易信息，判定交易失败
+	if receipt == nil { //231s获取不到交易信息，判定交易失败
 		log.Println("get tx receipt nil, tx not packaged")
 		return ErrTxFail
 	}
