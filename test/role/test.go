@@ -1103,7 +1103,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(">>>> old balance in erc20 is: ", newBalFs, " tIndex:", tmp)
+	fmt.Println(">>>> new balance in fs is: ", newBalFs, " tIndex:", tmp)
 
 	// test
 	if new(big.Int).Sub(newBalErc20, oldBalErc20).Cmp(oneEth) != 0 {
