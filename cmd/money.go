@@ -34,7 +34,7 @@ var MoneyCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:    "erc20Addr",
 			Aliases: []string{"e"},
-			Value:   "0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA", //默认值为common.go中的erc20合约地址
+			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
 			Usage:   "the ERC20 contract address",
 		},
 	},
