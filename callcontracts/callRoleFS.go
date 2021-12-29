@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewRFS new a instance of ContractModule
@@ -82,8 +83,8 @@ func (rfs *ContractModule) DeployRoleFS() (common.Address, *rolefs.RoleFS, error
 	return roleFSAddr, roleFSIns, nil
 }
 
-func newRoleFS(roleFSAddr common.Address) (*rolefs.RoleFS, error) {
-	roleFSIns, err := rolefs.NewRoleFS(roleFSAddr, getClient(EndPoint))
+func newRoleFS(roleFSAddr common.Address, client *ethclient.Client) (*rolefs.RoleFS, error) {
+	roleFSIns, err := rolefs.NewRoleFS(roleFSAddr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +146,9 @@ func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleTyp
 
 // SetAddr called by admin, which is the deployer. Set some address type variables.
 func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address) error {
-	roleFSIns, err := newRoleFS(rfs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -203,7 +206,9 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 // nonce需要从0开始依次累加
 // 调用该函数前，需要admin为RoleFS合约账户赋予MINTER_ROLE权限
 func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
-	roleFSIns, err := newRoleFS(rfs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -273,7 +278,9 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 // hash(uIndex, pIndex, _start, end, _size, nonce, tIndex, sPrice)?
 // 目前合约中还未对签名信息做判断处理
 func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
-	roleFSIns, err := newRoleFS(rfs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -342,7 +349,9 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 // AddRepair called by keeper. Add the repair order in the FileSys.
 // hash(pIndex, _start, end, _size, nonce, tIndex, sPrice, "a"), signed by newProvider
 func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
-	roleFSIns, err := newRoleFS(rfs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -411,7 +420,9 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 // SubRepair called by keeper. Reduce the repair order in the FileSys.
 // hash(pIndex, _start, end, _size, nonce, tIndex, sPrice, "s"), signed by newProvider
 func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex, nPIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, psign []byte, ksigns [][]byte) error {
-	roleFSIns, err := newRoleFS(rfs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -481,7 +492,9 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 // ProWithdraw called by keeper? Retrieve the Provider's balance in FileSys.
 // hash(pIndex, tIndex, pay, lost)?
 func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pIndex uint64, tIndex uint32, pay, lost *big.Int, ksigns [][]byte) error {
-	roleFSIns, err := newRoleFS(rfs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}

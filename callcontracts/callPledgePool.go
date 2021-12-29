@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewPledgePool new an instance of ContractModule. 'pledgePoolAddr' indicates PledgePool contract address.
@@ -30,8 +31,8 @@ func NewPledgePool(pledgePoolAddr, addr common.Address, hexSk string, txopts *Tx
 }
 
 // newPledgePool new an instance of PledgePool contract, 'pledgepAddr' indicates PledgePool contract address.
-func newPledgePool(pledgepAddr common.Address) (*pledgepool.PledgePool, error) {
-	ppIns, err := pledgepool.NewPledgePool(pledgepAddr, getClient(EndPoint))
+func newPledgePool(pledgepAddr common.Address, client *ethclient.Client) (*pledgepool.PledgePool, error) {
+	ppIns, err := pledgepool.NewPledgePool(pledgepAddr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +102,9 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 // Called by the account itself or by another account on its behalf.
 // 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是value）,如果是账户本身调用，则会由代码自动approve
 func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint64, value *big.Int, sign []byte) error {
-	pledgepIns, err := newPledgePool(p.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -192,7 +195,9 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 // Withdraw Called by the account itself or by another account on its behalf.
 // withdraw its balance from PledgePool.
 func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex uint64, tindex uint32, value *big.Int, sign []byte) error {
-	pledgepIns, err := newPledgePool(p.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -268,7 +273,9 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 func (p *ContractModule) GetPledge(tindex uint32) (*big.Int, error) {
 	var amount *big.Int
 
-	pledgepIns, err := newPledgePool(p.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
 		return amount, err
 	}
@@ -295,7 +302,9 @@ func (p *ContractModule) GetPledge(tindex uint32) (*big.Int, error) {
 func (p *ContractModule) GetBalanceInPPool(rindex uint64, tindex uint32) (*big.Int, error) {
 	var amount *big.Int
 
-	pledgepIns, err := newPledgePool(p.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
 		return amount, err
 	}
@@ -322,7 +331,9 @@ func (p *ContractModule) GetBalanceInPPool(rindex uint64, tindex uint32) (*big.I
 func (p *ContractModule) TotalPledge() (*big.Int, error) {
 	var amount *big.Int
 
-	pledgepIns, err := newPledgePool(p.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
 		return amount, err
 	}

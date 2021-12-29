@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewIssu new a instance of ContractModule. issuAddr: Issuance contract address
@@ -84,8 +85,8 @@ func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Ad
 	return issuAddr, issuIns, nil
 }
 
-func newIssuance(issuAddr common.Address) (*role.Issuance, error) {
-	issuIns, err := role.NewIssuance(issuAddr, getClient(EndPoint))
+func newIssuance(issuAddr common.Address, client *ethclient.Client) (*role.Issuance, error) {
+	issuIns, err := role.NewIssuance(issuAddr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +96,10 @@ func newIssuance(issuAddr common.Address) (*role.Issuance, error) {
 // MintLevel get mintLevel in Issuance contract
 func (issu *ContractModule) MintLevel() (*big.Int, error) {
 	m := big.NewInt(0)
-	issuIns, err := newIssuance(issu.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
 		return m, err
 	}
@@ -121,7 +125,10 @@ func (issu *ContractModule) MintLevel() (*big.Int, error) {
 // LastMint get lastMint in Issuance contract
 func (issu *ContractModule) LastMint() (*big.Int, error) {
 	m := big.NewInt(0)
-	issuIns, err := newIssuance(issu.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
 		return m, err
 	}
@@ -147,7 +154,10 @@ func (issu *ContractModule) LastMint() (*big.Int, error) {
 // Price get price in Issuance contract
 func (issu *ContractModule) Price() (*big.Int, error) {
 	m := big.NewInt(0)
-	issuIns, err := newIssuance(issu.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
 		return m, err
 	}
@@ -173,7 +183,10 @@ func (issu *ContractModule) Price() (*big.Int, error) {
 // Size get size in Issuance contract
 func (issu *ContractModule) Size() (*big.Int, error) {
 	m := big.NewInt(0)
-	issuIns, err := newIssuance(issu.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
 		return m, err
 	}
@@ -199,7 +212,10 @@ func (issu *ContractModule) Size() (*big.Int, error) {
 // SpaceTime get spaceTime in Issuance contract
 func (issu *ContractModule) SpaceTime() (*big.Int, error) {
 	m := big.NewInt(0)
-	issuIns, err := newIssuance(issu.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
 		return m, err
 	}
@@ -225,7 +241,10 @@ func (issu *ContractModule) SpaceTime() (*big.Int, error) {
 // TotalPay get totalPay in Issuance contract
 func (issu *ContractModule) TotalPay() (*big.Int, error) {
 	m := big.NewInt(0)
-	issuIns, err := newIssuance(issu.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
 		return m, err
 	}
@@ -251,7 +270,10 @@ func (issu *ContractModule) TotalPay() (*big.Int, error) {
 // TotalPaid get totalPaid in Issuance contract
 func (issu *ContractModule) TotalPaid() (*big.Int, error) {
 	m := big.NewInt(0)
-	issuIns, err := newIssuance(issu.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
 		return m, err
 	}

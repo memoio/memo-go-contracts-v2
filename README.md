@@ -32,3 +32,6 @@ admin选取一部分keeper(也可以为空，因为后续可以调用addKeeperTo
 rIndex从1开始，不能为0；
 gIndex也从1开始，不能为0；
 tIndex从0开始，tIndex=0表示主代币；
+
+## nonce
+涉及到的nonce值都需要从0开始依次累加，从而与合约中的nonce值匹配；

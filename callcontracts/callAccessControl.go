@@ -14,7 +14,9 @@ import (
 // SetUpRole Called by who has DEFAULT_ADMIN_ROLE. Set role to addr.
 // role: DEFAULT_ADMIN_ROLE(0)、MINTER_ROLE(1)、PAUSER_ROLE(2)
 func (ac *ContractModule) SetUpRole(role uint8, addr common.Address) error {
-	acIns, err := newERC20(ac.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -84,7 +86,9 @@ func (ac *ContractModule) SetUpRole(role uint8, addr common.Address) error {
 
 // RevokeRole Called by who has DEFAULT_ADMIN_ROLE. Revoke other account's role.
 func (ac *ContractModule) RevokeRole(role uint8, addr common.Address) error {
-	acIns, err := newERC20(ac.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -154,7 +158,9 @@ func (ac *ContractModule) RevokeRole(role uint8, addr common.Address) error {
 
 // RenounceRole Account renounce its role .
 func (ac *ContractModule) RenounceRole(role uint8) error {
-	acIns, err := newERC20(ac.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -208,7 +214,9 @@ func (ac *ContractModule) RenounceRole(role uint8) error {
 
 // Pause Set to true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE.
 func (ac *ContractModule) Pause() error {
-	acIns, err := newERC20(ac.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -270,7 +278,9 @@ func (ac *ContractModule) Pause() error {
 
 // Unpause Set to false to allow transfer operation in erc20. Called by who has PAUSER_ROLE.
 func (ac *ContractModule) Unpause() error {
-	acIns, err := newERC20(ac.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -334,7 +344,9 @@ func (ac *ContractModule) Unpause() error {
 func (ac *ContractModule) HasRole(role uint8, addr common.Address) (bool, error) {
 	var has bool
 
-	acIns, err := newERC20(ac.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return has, err
 	}
@@ -361,7 +373,9 @@ func (ac *ContractModule) HasRole(role uint8, addr common.Address) (bool, error)
 func (ac *ContractModule) GetPaused() (bool, error) {
 	var isPaused bool
 
-	acIns, err := newERC20(ac.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return isPaused, err
 	}

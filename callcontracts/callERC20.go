@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewERC20 new a instance of ContractModule
@@ -84,8 +85,8 @@ func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc2
 }
 
 // newERC20 new an instance of ERC20 contract, 'erc20Addr' indicates ERC20 contract address
-func newERC20(erc20Addr common.Address) (*erc20.ERC20, error) {
-	erc20Ins, err := erc20.NewERC20(erc20Addr, getClient(EndPoint))
+func newERC20(erc20Addr common.Address, client *ethclient.Client) (*erc20.ERC20, error) {
+	erc20Ins, err := erc20.NewERC20(erc20Addr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +95,9 @@ func newERC20(erc20Addr common.Address) (*erc20.ERC20, error) {
 
 // Transfer the account represented by the e.hexsk transfers the specified amount to recipient.
 func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -163,7 +166,9 @@ func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) erro
 
 // Approve The account represented by the e.hexsk authorizes the balance of the specified amount to addr.
 func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -236,7 +241,9 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 
 // TransferFrom The account represented by the e.hexsk transfer value of the specified amount from sender to recipient.
 func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -312,7 +319,9 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 
 // IncreaseAllowance The account represented by the e.hexsk increase the allowance for recipient.
 func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -386,7 +395,9 @@ func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.
 
 // DecreaseAllowance The account represented by the e.hexsk decrease the allowance for recipient.
 func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -444,7 +455,9 @@ func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.
 
 // MintToken The account represented by the e.hexsk mint token to target. Called by who has MINTER_ROLE.
 func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -510,7 +523,9 @@ func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) er
 
 // Burn The account represented by the e.hexsk burn it's balance. Called by who has DEFAULT_ADMIN_ROLE.
 func (e *ContractModule) Burn(burnValue *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -580,7 +595,9 @@ func (e *ContractModule) Burn(burnValue *big.Int) error {
 
 // AirDrop The account represented by the e.hexsk airdrop to targets. Called by who has DEFAULT_ADMIN_ROLE.
 func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error {
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -654,7 +671,9 @@ func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error
 func (e *ContractModule) GetName() (string, error) {
 	var name string
 
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return name, err
 	}
@@ -681,7 +700,9 @@ func (e *ContractModule) GetName() (string, error) {
 func (e *ContractModule) GetSymbol() (string, error) {
 	var name string
 
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return name, err
 	}
@@ -708,7 +729,9 @@ func (e *ContractModule) GetSymbol() (string, error) {
 func (e *ContractModule) GetDecimals() (uint8, error) {
 	var decimals uint8
 
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return decimals, err
 	}
@@ -735,7 +758,9 @@ func (e *ContractModule) GetDecimals() (uint8, error) {
 func (e *ContractModule) GetTotalSupply() (*big.Int, error) {
 	var totalSupply *big.Int
 
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return totalSupply, err
 	}
@@ -762,7 +787,9 @@ func (e *ContractModule) GetTotalSupply() (*big.Int, error) {
 func (e *ContractModule) BalanceOf(addr common.Address) (*big.Int, error) {
 	var balance *big.Int
 
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return balance, err
 	}
@@ -789,7 +816,9 @@ func (e *ContractModule) BalanceOf(addr common.Address) (*big.Int, error) {
 func (e *ContractModule) Allowance(sender, addr common.Address) (*big.Int, error) {
 	var allowance *big.Int
 
-	erc20Ins, err := newERC20(e.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
 	if err != nil {
 		return allowance, err
 	}
