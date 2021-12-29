@@ -15,6 +15,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewR new a instance of ContractModule. 'roleAddr' indicates Role contract address
@@ -89,8 +90,8 @@ func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, ple
 }
 
 // newRole new an instance of Role contract, 'roleAddr' indicates Role contract address
-func newRole(roleAddr common.Address) (*role.Role, error) {
-	roleIns, err := role.NewRole(roleAddr, getClient(EndPoint))
+func newRole(roleAddr common.Address, client *ethclient.Client) (*role.Role, error) {
+	roleIns, err := role.NewRole(roleAddr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,9 @@ func newRole(roleAddr common.Address) (*role.Role, error) {
 
 // SetPI callled by admin, set pledgePool-address、 issuance-address and rolefs-address
 func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Address) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -153,7 +156,9 @@ func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Addre
 
 // Register called by anyone to get index
 func (r *ContractModule) Register(addr common.Address, sign []byte) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -214,7 +219,9 @@ func (r *ContractModule) Register(addr common.Address, sign []byte) error {
 
 // RegisterKeeper called by anyone to register Keeper role, befor this, you should pledge in PledgePool
 func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uint64, blskey []byte, sign []byte) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -294,7 +301,9 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 
 // RegisterProvider called by anyone to register Provider role, befor this, you should pledge in PledgePool
 func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index uint64, sign []byte) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -377,7 +386,9 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 
 // RegisterUser called by anyone to register User role
 func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -464,7 +475,9 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 
 // RegisterToken called by admin to register token. Once token is registered, it is supported by memo.
 func (r *ContractModule) RegisterToken(tokenAddr common.Address) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -547,7 +560,9 @@ func (r *ContractModule) CreateGroup(rfsAddr common.Address, founder uint64, kin
 func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, error) {
 	tx := &types.Transaction{}
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return 0, err
 	}
@@ -621,7 +636,9 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 
 // SetGF called by admin to set fsAddress for group after CreateGroup and deployFileSys.
 func (r *ContractModule) SetGF(fsAddr common.Address, gIndex uint64) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -684,7 +701,9 @@ func (r *ContractModule) SetGF(fsAddr common.Address, gIndex uint64) error {
 
 // AddKeeperToGroup called by admin.
 func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -771,7 +790,9 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 
 // AddProviderToGroup called by provider or called by others.
 func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign []byte) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -858,7 +879,9 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 
 // SetPledgeMoney called by admin to set the amount that the keeper and provider needs to pledge.
 func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -912,7 +935,9 @@ func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) erro
 
 // Recharge called by user or called by others.
 func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tIndex uint32, money *big.Int, sign []byte) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -991,7 +1016,9 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 
 // WithdrawFromFs called by memo-role or called by others.
 func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64, tIndex uint32, amount *big.Int, sign []byte) error {
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -1056,7 +1083,9 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 // PledgePool get pledgepool
 func (r *ContractModule) PledgePool() (common.Address, error) {
 	var pp common.Address
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return pp, err
 	}
@@ -1082,7 +1111,9 @@ func (r *ContractModule) PledgePool() (common.Address, error) {
 // Foundation get foundation address
 func (r *ContractModule) Foundation() (common.Address, error) {
 	var f common.Address
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return f, err
 	}
@@ -1108,7 +1139,9 @@ func (r *ContractModule) Foundation() (common.Address, error) {
 // PledgeK get the pledgeAmount that the account need to pledge when it register Keeper
 func (r *ContractModule) PledgeK() (*big.Int, error) {
 	pk := big.NewInt(0)
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return pk, err
 	}
@@ -1134,7 +1167,10 @@ func (r *ContractModule) PledgeK() (*big.Int, error) {
 // PledgeP get the pledgeAmount that the account need to pledge when it register Provider
 func (r *ContractModule) PledgeP() (*big.Int, error) {
 	pp := big.NewInt(0)
-	roleIns, err := newRole(r.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return pp, err
 	}
@@ -1160,7 +1196,10 @@ func (r *ContractModule) PledgeP() (*big.Int, error) {
 // RToken get RToken contract address
 func (r *ContractModule) RToken() (common.Address, error) {
 	var rt common.Address
-	roleIns, err := newRole(r.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return rt, err
 	}
@@ -1186,7 +1225,10 @@ func (r *ContractModule) RToken() (common.Address, error) {
 // Issuance get Issuance contract address
 func (r *ContractModule) Issuance() (common.Address, error) {
 	var is common.Address
-	roleIns, err := newRole(r.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return is, err
 	}
@@ -1212,7 +1254,10 @@ func (r *ContractModule) Issuance() (common.Address, error) {
 // Rolefs get RoleFS contract address
 func (r *ContractModule) Rolefs() (common.Address, error) {
 	var rfs common.Address
-	roleIns, err := newRole(r.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return rfs, err
 	}
@@ -1238,7 +1283,10 @@ func (r *ContractModule) Rolefs() (common.Address, error) {
 // GetAddrsNum get the number of registered addresses.
 func (r *ContractModule) GetAddrsNum() (uint64, error) {
 	var anum uint64
-	roleIns, err := newRole(r.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return anum, err
 	}
@@ -1264,7 +1312,10 @@ func (r *ContractModule) GetAddrsNum() (uint64, error) {
 // GetAddr get address by role index.
 func (r *ContractModule) GetAddr(rIndex uint64) (common.Address, error) {
 	var addr common.Address
-	roleIns, err := newRole(r.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return addr, err
 	}
@@ -1304,7 +1355,10 @@ func (r *ContractModule) GetAddr(rIndex uint64) (common.Address, error) {
 // GetRoleIndex get the account role index by address.
 func (r *ContractModule) GetRoleIndex(addr common.Address) (uint64, error) {
 	var rIndex uint64
-	roleIns, err := newRole(r.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return rIndex, err
 	}
@@ -1334,7 +1388,9 @@ func (r *ContractModule) GetRoleInfo(addr common.Address) (bool, bool, uint8, ui
 	var index, gIndex uint64
 	var extra []byte
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return isActive, isBanned, roleType, index, gIndex, extra, err
 	}
@@ -1361,7 +1417,9 @@ func (r *ContractModule) GetRoleInfo(addr common.Address) (bool, bool, uint8, ui
 func (r *ContractModule) GetGroupsNum() (uint64, error) {
 	var gnum uint64
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return gnum, err
 	}
@@ -1391,7 +1449,9 @@ func (r *ContractModule) GetGroupInfo(gIndex uint64) (bool, bool, bool, uint16, 
 	var size, price *big.Int
 	var fsAddr common.Address
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return isActive, isBanned, isReady, level, size, price, fsAddr, err
 	}
@@ -1423,7 +1483,9 @@ func (r *ContractModule) GetAddrGindex(rIndex uint64) (common.Address, uint64, e
 	var addr common.Address
 	var gIndex uint64
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return addr, gIndex, err
 	}
@@ -1454,7 +1516,9 @@ func (r *ContractModule) GetAddrGindex(rIndex uint64) (common.Address, uint64, e
 func (r *ContractModule) GetGKNum(gIndex uint64) (uint64, error) {
 	var gkNum uint64
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return gkNum, err
 	}
@@ -1485,7 +1549,9 @@ func (r *ContractModule) GetGKNum(gIndex uint64) (uint64, error) {
 func (r *ContractModule) GetGUPNum(gIndex uint64) (uint64, uint64, error) {
 	var gpNum, guNum uint64
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return guNum, gpNum, err
 	}
@@ -1516,7 +1582,9 @@ func (r *ContractModule) GetGUPNum(gIndex uint64) (uint64, uint64, error) {
 func (r *ContractModule) GetGroupK(gIndex uint64, index uint64) (uint64, error) {
 	var kIndex uint64
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return kIndex, err
 	}
@@ -1556,7 +1624,9 @@ func (r *ContractModule) GetGroupK(gIndex uint64, index uint64) (uint64, error) 
 func (r *ContractModule) GetGroupP(gIndex uint64, index uint64) (uint64, error) {
 	var pIndex uint64
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return pIndex, err
 	}
@@ -1596,7 +1666,9 @@ func (r *ContractModule) GetGroupP(gIndex uint64, index uint64) (uint64, error) 
 func (r *ContractModule) GetGroupU(gIndex uint64, index uint64) (uint64, error) {
 	var uIndex uint64
 
-	roleIns, err := newRole(r.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return uIndex, err
 	}

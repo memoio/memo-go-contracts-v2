@@ -26,7 +26,9 @@ func NewOwn(roleAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.O
 
 // AlterOwner called by admin, to alter Role-contract's owner
 func (own *ContractModule) AlterOwner(newOwnerAddr common.Address) error {
-	roleIns, err := newRole(own.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(own.contractAddress, client)
 	if err != nil {
 		return err
 	}
@@ -87,7 +89,9 @@ func (own *ContractModule) AlterOwner(newOwnerAddr common.Address) error {
 func (own *ContractModule) GetOwner() (common.Address, error) {
 	var ownAddr common.Address
 
-	roleIns, err := newRole(own.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	roleIns, err := newRole(own.contractAddress, client)
 	if err != nil {
 		return ownAddr, err
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewFileSys new a instance of ContractModule, fsAddr:FileSys contract address
@@ -26,8 +27,8 @@ func NewFileSys(fsAddr, addr common.Address, hexSk string, txopts *TxOpts) iface
 }
 
 // newFileSys new an instance of FileSys contract, 'fsAddr' indicates FileSys contract address.
-func newFileSys(fsAddr common.Address) (*filesys.FileSys, error) {
-	fsIns, err := filesys.NewFileSys(fsAddr, getClient(EndPoint))
+func newFileSys(fsAddr common.Address, client *ethclient.Client) (*filesys.FileSys, error) {
+	fsIns, err := filesys.NewFileSys(fsAddr, client)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +100,9 @@ func (fs *ContractModule) GetFsInfo(uIndex uint64) (bool, uint32, error) {
 	var isActive bool
 	var tokenIndex uint32
 
-	fsIns, err := newFileSys(fs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return isActive, tokenIndex, err
 	}
@@ -126,7 +129,10 @@ func (fs *ContractModule) GetFsInfo(uIndex uint64) (bool, uint32, error) {
 // GetFsProviderSum get providers sum in fs. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetFsProviderSum(uIndex uint64) (uint64, error) {
 	var pSum uint64
-	fsIns, err := newFileSys(fs.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return pSum, err
 	}
@@ -152,7 +158,10 @@ func (fs *ContractModule) GetFsProviderSum(uIndex uint64) (uint64, error) {
 // GetFsProvider get pIndex in fs by array index. return repairFs info when uIndex is 0
 func (fs *ContractModule) GetFsProvider(uIndex uint64, index uint64) (uint64, error) {
 	var pIndex uint64
-	fsIns, err := newFileSys(fs.contractAddress)
+
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return pIndex, err
 	}
@@ -180,7 +189,9 @@ func (fs *ContractModule) GetFsInfoAggOrder(uIndex uint64, pIndex uint64) (uint6
 	var nonce uint64
 	var subNonce uint64
 
-	fsIns, err := newFileSys(fs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return nonce, subNonce, err
 	}
@@ -208,7 +219,9 @@ func (fs *ContractModule) GetStoreInfo(uIndex uint64, pIndex uint64, tIndex uint
 	var _time, size uint64
 	var price *big.Int
 
-	fsIns, err := newFileSys(fs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return _time, size, price, err
 	}
@@ -239,7 +252,9 @@ func (fs *ContractModule) GetChannelInfo(uIndex uint64, pIndex uint64, tIndex ui
 	var nonce, expire uint64
 	var amount *big.Int
 
-	fsIns, err := newFileSys(fs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return amount, nonce, expire, err
 	}
@@ -270,7 +285,9 @@ func (fs *ContractModule) GetSettleInfo(pIndex uint64, tIndex uint32) (uint64, u
 	var _time, size uint64
 	var price, maxPay, hasPaid, canPay, lost, lostPaid, managePay, endPaid, linearPaid *big.Int
 
-	fsIns, err := newFileSys(fs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return _time, size, price, maxPay, hasPaid, canPay, lost, lostPaid, managePay, endPaid, linearPaid, err
 	}
@@ -298,7 +315,9 @@ func (fs *ContractModule) GetSettleInfo(pIndex uint64, tIndex uint32) (uint64, u
 func (fs *ContractModule) GetBalance(rIndex uint64, tIndex uint32) (*big.Int, *big.Int, error) {
 	var avail, tmp *big.Int
 
-	fsIns, err := newFileSys(fs.contractAddress)
+	client := getClient(EndPoint)
+	defer client.Close()
+	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
 		return avail, tmp, err
 	}
