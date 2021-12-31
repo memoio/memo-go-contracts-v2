@@ -23,6 +23,7 @@ func main() {
 	flag.Parse()
 	ethEndPoint = *eth
 	qethEndPoint = *qeth
+	_ = qethEndPoint
 	callconts.EndPoint = ethEndPoint
 
 	// 用于测试的一些参数
