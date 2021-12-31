@@ -296,6 +296,14 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 		break
 	}
 	log.Println("RegisterKeeper in Role has been successful!")
+
+	// show event info in receipt
+	kIndex, kAddr, err := getRKeeperInfoFromRLogs(tx.Hash())
+	if err != nil {
+		return err
+	}
+	log.Printf("RegisterKeeper in Role, the kIndex is %v, kAddr is %v\n", kIndex, kAddr)
+
 	return nil
 }
 
@@ -381,6 +389,14 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 		break
 	}
 	log.Println("RegisterProvider in Role has been successful!")
+
+	// show event info in receipt
+	pIndex, pAddr, err := getRProviderInfoFromRLogs(tx.Hash())
+	if err != nil {
+		return err
+	}
+	log.Printf("RegisterProvider in Role, the pIndex is %v, pAddr is %v\n", pIndex, pAddr)
+
 	return nil
 }
 
@@ -470,6 +486,14 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 		break
 	}
 	log.Println("RegisterUser in Role has been successful!")
+
+	// show event info in receipt
+	uIndex, uAddr, err := getRUserInfoFromRLogs(tx.Hash())
+	if err != nil {
+		return err
+	}
+	log.Printf("RegisterUser in Role, the uIndex is %v, uAddr is %v\n", uIndex, uAddr)
+
 	return nil
 }
 
@@ -626,11 +650,13 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 	}
 	log.Println("CreateGroup in Role has been successful!")
 
+	// get event info from receipt
 	gIndex, err := getGIndexFromRLogs(tx.Hash())
 	if err != nil {
 		return 0, err
 	}
 	log.Println("CreateGroup in Role, the gIndex is", gIndex)
+
 	return gIndex, nil
 }
 
