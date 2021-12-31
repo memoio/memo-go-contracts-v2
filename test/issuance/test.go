@@ -47,6 +47,20 @@ func main() {
 	}
 	fmt.Println("The Issuance contract address is ", issuAddr.Hex())
 
+	// ======for redeploy Issuance in callconts======
+	// role.SetPI
+	// role := callconts.NewR(callconts.RoleAddr, adminAddr, test.AdminSk, txopts)
+	// err = role.SetPI(callconts.PledgePoolAddr, issuAddr, rolefsAddr)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// rolefs := callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts)
+	// err = rolefs.SetAddr(issuAddr, callconts.RoleAddr, callconts.FileSysAddr, callconts.RTokenAddr)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// ======for redeploy Issuance in callconts======
+
 	fmt.Println("============2. begin test MintLevel============")
 	issu = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts)
 	mintLevel, err := issu.MintLevel()

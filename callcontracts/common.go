@@ -42,7 +42,7 @@ var (
 	// PledgePool contract address
 	PledgePoolAddr = common.HexToAddress("0xEF42eC9Cd7c140ec37D4470A62e95b57aDf24371")
 	// Issuance contract address
-	IssuanceAddr = common.HexToAddress("0x9AE34571c1c7a1165FA87942972Ba75F032846B6")
+	IssuanceAddr = common.HexToAddress("0xe8924Ed18C4270270696175F90b0C9D84b774A26")
 
 	AdminAddr  = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 	AdminSk    = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"

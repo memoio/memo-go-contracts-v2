@@ -24,7 +24,7 @@ var errHexskFormat = errors.New("the hexsk'format is wrong")
 func main() {
 	fmt.Println("welcome to test contract!")
 
-	// test issuance  =>   get params
+	// callconts issuance  =>   get params
 	txopts := &callconts.TxOpts{
 		Nonce:    nil,
 		GasPrice: big.NewInt(callconts.DefaultGasPrice),
@@ -66,6 +66,19 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("totalPay:", tp)
+
+	// callconts role  =>   get issuance
+	role := callconts.NewR(callconts.RoleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+	issuAddr, err := role.Issuance()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("IssuanceAddr:", issuAddr.Hex())
+	if issuAddr.Hex() != callconts.IssuanceAddr.Hex() {
+		fmt.Println("issuanceAddr different! error...")
+	} else {
+		fmt.Println("issuanceAddr same! right...")
+	}
 
 	commands := []*cli.Command{
 		cmd.AdminCmd,
