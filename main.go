@@ -83,6 +83,7 @@ func main() {
 	commands := []*cli.Command{
 		cmd.AdminCmd,
 		cmd.MoneyCmd,
+		cmd.GetERC20Cmd,
 	}
 
 	app := &cli.App{
