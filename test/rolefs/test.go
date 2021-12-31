@@ -36,12 +36,15 @@ func main() {
 	pledgeK := big.NewInt(1e6)
 	start := uint64(time.Now().Unix())
 	fmt.Println("start:", start)
-	end := start + 10
-	size := uint64(10)
+	end := start + 100*86400
+	size := uint64(1000000)
 	nonce := uint64(0)
-	sprice := big.NewInt(10)
+	sprice := big.NewInt(1e11) // 1e11 1e6 1e2 1e7
+	addOrderpay := big.NewInt(0).Mul(big.NewInt(int64(end-start)), sprice)
+	rechargeValue := big.NewInt(0).Mul(addOrderpay, big.NewInt(2)) // need not less than (end - start)*sprice + managePay + taxPay
 	zero := big.NewInt(0)
-	hundred := big.NewInt(100)
+	managePay := big.NewInt(1).Div(addOrderpay, big.NewInt(25))
+	reduceBal := big.NewInt(1).Add(addOrderpay, big.NewInt(1).Div(addOrderpay, big.NewInt(20)))
 
 	//start := 1639911209
 	//uIndex := uint64(2)
@@ -78,9 +81,10 @@ func main() {
 	}
 	fmt.Println("admin balance in primaryToken is ", bal)
 	// 余额不足，自动充值
-	if bal.Cmp(big.NewInt(test.MoneyTo)) < 0 {
+	mintValue := big.NewInt(1).Add(big.NewInt(test.MoneyTo), rechargeValue)
+	if bal.Cmp(mintValue) < 0 {
 		// mintToken
-		err = erc20.MintToken(adminAddr, big.NewInt(test.MoneyTo))
+		err = erc20.MintToken(adminAddr, mintValue)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -96,7 +100,19 @@ func main() {
 			log.Fatal(err)
 		}
 		fmt.Println("acc", i, " balance in primaryToken is ", bal)
-		if bal.Cmp(pledgeK) < 0 {
+		if i == 0 {
+			if bal.Cmp(rechargeValue) < 0 {
+				err = erc20.Transfer(acc, rechargeValue)
+				if err != nil {
+					log.Fatal(err)
+				}
+				bal, err = erc20.BalanceOf(acc)
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Println("after transfer, acc", i, " balance in primaryToken is ", bal)
+			}
+		} else if bal.Cmp(pledgeK) < 0 {
 			err = erc20.Transfer(acc, pledgeK)
 			if err != nil {
 				log.Fatal(err)
@@ -213,7 +229,7 @@ func main() {
 	}
 	// user approve
 	erc20 = callconts.NewERC20(test.PrimaryToken, acc1Addr, test.Sk1, txopts)
-	err = erc20.Approve(fsAddr, pledgeK)
+	err = erc20.Approve(fsAddr, rechargeValue)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -223,11 +239,11 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The allowance of User to FileSys contract is ", allo)
-	if allo.Cmp(pledgeK) != 0 {
-		log.Fatal("allowance should be ", pledgeK)
+	if allo.Cmp(rechargeValue) != 0 {
+		log.Fatal("allowance should be ", rechargeValue)
 	}
-	// user往FileSys中充值pledgeK，用于存储服务付费
-	err = r.Recharge(rTokenAddr, uIndex, 0, pledgeK, nil)
+	// user往FileSys中充值rechargeValue，用于存储服务付费
+	err = r.Recharge(rTokenAddr, uIndex, 0, rechargeValue, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -238,8 +254,8 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("user avail in fs:", avail)
-	if avail.Cmp(pledgeK) < 0 {
-		log.Fatal("user avail should not less than ", pledgeK)
+	if avail.Cmp(rechargeValue) < 0 {
+		log.Fatal("user avail should not less than ", rechargeValue)
 	}
 	// provider注册、质押、申请角色、加入group
 	r = callconts.NewR(roleAddr, acc3Addr, test.Sk3, txopts)
@@ -330,13 +346,13 @@ func main() {
 		fmt.Println("price:", _price)
 		log.Fatal("price should be ", sprice)
 	}
-	if _maxPay.Cmp(hundred) != 0 {
+	if _maxPay.Cmp(addOrderpay) != 0 {
 		fmt.Println("maxPay:", _maxPay)
-		log.Fatal("maxPay should be ", hundred)
+		log.Fatal("maxPay should be ", addOrderpay)
 	}
-	if _managePay.Cmp(big.NewInt(4)) != 0 {
+	if _managePay.Cmp(managePay) != 0 {
 		fmt.Println("managePay:", _managePay)
-		log.Fatal("managePay should be ", big.NewInt(4))
+		log.Fatal("managePay should be ", managePay)
 	}
 	// 获取addOrder后proInfo中的aggOrder的信息，并测试正确性
 	_nonce, _subNonce, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
@@ -362,8 +378,8 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("After addOrder: user avail ", _avail, ",tmp ", _tmp)
-	if _avail.Sub(avail, _avail).Cmp(big.NewInt(105)) != 0 {
-		log.Fatal("the new avail should be 105 less than avail")
+	if _avail.Sub(avail, _avail).Cmp(reduceBal) != 0 {
+		log.Fatal("the new avail should be", reduceBal, "less than avail")
 	}
 	// 获取addOrder后Role合约里的group信息，并测试正确性
 	_isActive, _isBanned, _isReady, _level, sizeG, priceG, _fsAddr, err := r.GetGroupInfo(gIndex)
@@ -405,7 +421,7 @@ func main() {
 	}
 	fmt.Println("after SubOrder: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid)
 	// after SubOrder:  end 5 5 100 0 100 0 0 4 0 0
-	if _time != end || _size != (size-5) || _maxPay.Cmp(hundred) != 0 || _hasPaid.Cmp(zero) != 0 || _canPay.Cmp(hundred) != 0 || _lost.Cmp(zero) != 0 || _managePay.Cmp(big.NewInt(4)) != 0 {
+	if _time != end || _size != (size-5) || _maxPay.Cmp(addOrderpay) != 0 || _hasPaid.Cmp(zero) != 0 || _canPay.Cmp(addOrderpay) != 0 || _lost.Cmp(zero) != 0 || _managePay.Cmp(big.NewInt(4)) != 0 {
 		log.Fatal("result wrong")
 	}
 
@@ -469,7 +485,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	time.Sleep(2 * time.Second)
+	time.Sleep(5 * time.Second)
 	err = r.RegisterProvider(pledgePoolAddr, p2Index, nil)
 	if err != nil {
 		log.Fatal(err)

@@ -142,6 +142,7 @@ type TxOpts struct {
 	Nonce    *big.Int
 	GasPrice *big.Int
 	GasLimit uint64
+	EndPoint string
 }
 
 // ContractModule  The basic information of node used for contract.
@@ -208,17 +209,20 @@ func checkTx(tx *types.Transaction) error {
 		return ErrTxFail
 	}
 
+	log.Println("GasUsed:", receipt.GasUsed, "CumulativeGasUsed:", receipt.CumulativeGasUsed)
+
 	if receipt.Status == 0 { //等于0表示交易失败，等于1表示成功
 		log.Println("Transaction mined but execution failed, please check your tx input")
-		txReceipt, err := receipt.MarshalJSON()
-		if err != nil {
-			return err
+		// txReceipt, err := receipt.MarshalJSON()
+		// if err != nil {
+		// 	return err
+		// }
+		// log.Println("TxReceipt:", string(txReceipt))
+		if receipt.GasUsed != receipt.CumulativeGasUsed {
+			log.Println("Err: tx exceed gas limit")
 		}
-		log.Println("TxReceipt:", string(txReceipt))
 		return ErrTxExecu
 	}
-
-	log.Println("GasUsed:", receipt.GasUsed, "CumulativeGasUsed:", receipt.CumulativeGasUsed)
 
 	return nil
 }

@@ -24,6 +24,49 @@ var errHexskFormat = errors.New("the hexsk'format is wrong")
 func main() {
 	fmt.Println("welcome to test contract!")
 
+	// test issuance  =>   get params
+	txopts := &callconts.TxOpts{
+		Nonce:    nil,
+		GasPrice: big.NewInt(callconts.DefaultGasPrice),
+		GasLimit: callconts.DefaultGasLimit,
+	}
+	issu := callconts.NewIssu(callconts.IssuanceAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+	lastMint, err := issu.LastMint()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("lastMint:", lastMint)
+	ml, err := issu.MintLevel()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("mintlevel:", ml)
+	p, err := issu.Price()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("price:", p)
+	s, err := issu.Size()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("size:", s)
+	spt, err := issu.SpaceTime()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("spacetime:", spt)
+	tpaid, err := issu.TotalPaid()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("totalPaid:", tpaid)
+	tp, err := issu.TotalPay()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("totalPay:", tp)
+
 	commands := []*cli.Command{
 		cmd.AdminCmd,
 		cmd.MoneyCmd,
