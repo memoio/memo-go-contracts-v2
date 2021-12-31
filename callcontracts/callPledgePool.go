@@ -186,9 +186,18 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 		if err != nil {
 			return err
 		}
+		// check ok, tx success
 		break
 	}
 	log.Println("Pledge in PledgePool contract has been successful!")
+
+	// show event info in receipt
+	accAddr, money, err := getPledgeInfoFromRLogs(tx.Hash())
+	if err != nil {
+		return err
+	}
+	log.Printf("Pledge in PledgePool, the pledger address is %v, pledge money is %v\n", accAddr, money)
+
 	return nil
 }
 
@@ -266,6 +275,14 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 		break
 	}
 	log.Println("Withdraw in PledgePool contract has been successful!")
+
+	// show event info in receipt
+	accAddr, money, err := getWithdrawInfoFromRLogs(tx.Hash())
+	if err != nil {
+		return err
+	}
+	log.Printf("Withdraw in PledgePool, the withdrawer address is %v, withdraw money is %v\n", accAddr, money)
+
 	return nil
 }
 

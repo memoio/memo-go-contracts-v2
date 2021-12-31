@@ -23,6 +23,7 @@ func main() {
 	flag.Parse()
 	ethEndPoint = *eth
 	qethEndPoint = *qeth
+	_ = qethEndPoint
 	callconts.EndPoint = ethEndPoint
 
 	// 用于测试的一些参数
@@ -115,6 +116,22 @@ func main() {
 	fmt.Println("The total pledge of primaryToken is ", p)
 
 	fmt.Println("============6. begin test Withdraw============")
+	addrNum, err := r.GetAddrsNum()
+	if err != nil {
+		log.Fatal("get addrNum failed: ", err)
+	}
+	fmt.Println("addrNum: ", addrNum)
+
+	// show all acc
+	for i := uint64(0); i < addrNum; i++ {
+		// rIndex as param
+		rAddr, err := r.GetAddr(i + 1)
+		if err != nil {
+			log.Fatal("get addr failed: ", err)
+		}
+		fmt.Println("rIndex: ", i+1, " rAddr: ", rAddr)
+	}
+
 	err = pp.Withdraw(roleAddr, test.RTokenAddr, rIndex, 0, pledgeMoney, nil)
 	if err != nil {
 		log.Fatal(err)
