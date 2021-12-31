@@ -42,7 +42,7 @@ var (
 	// PledgePool contract address
 	PledgePoolAddr = common.HexToAddress("0xEF42eC9Cd7c140ec37D4470A62e95b57aDf24371")
 	// Issuance contract address
-	IssuanceAddr = common.HexToAddress("0x9AE34571c1c7a1165FA87942972Ba75F032846B6")
+	IssuanceAddr = common.HexToAddress("0xe8924Ed18C4270270696175F90b0C9D84b774A26")
 
 	AdminAddr  = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 	AdminSk    = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
@@ -142,6 +142,7 @@ type TxOpts struct {
 	Nonce    *big.Int
 	GasPrice *big.Int
 	GasLimit uint64
+	EndPoint string
 }
 
 // ContractModule  The basic information of node used for contract.
@@ -208,17 +209,20 @@ func checkTx(tx *types.Transaction) error {
 		return ErrTxFail
 	}
 
+	log.Println("GasUsed:", receipt.GasUsed, "CumulativeGasUsed:", receipt.CumulativeGasUsed)
+
 	if receipt.Status == 0 { //等于0表示交易失败，等于1表示成功
 		log.Println("Transaction mined but execution failed, please check your tx input")
-		txReceipt, err := receipt.MarshalJSON()
-		if err != nil {
-			return err
+		// txReceipt, err := receipt.MarshalJSON()
+		// if err != nil {
+		// 	return err
+		// }
+		// log.Println("TxReceipt:", string(txReceipt))
+		if receipt.GasUsed != receipt.CumulativeGasUsed {
+			log.Println("Err: tx exceed gas limit")
 		}
-		log.Println("TxReceipt:", string(txReceipt))
 		return ErrTxExecu
 	}
-
-	log.Println("GasUsed:", receipt.GasUsed, "CumulativeGasUsed:", receipt.CumulativeGasUsed)
 
 	return nil
 }
