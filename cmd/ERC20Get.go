@@ -167,7 +167,7 @@ var boCmd = &cli.Command{
 		} else {
 			// check addr
 			if len(acc) != 42 || acc == callconts.InvalidAddr {
-				fmt.Println("erc20Addr should be with prefix 0x, and shouldn't be 0x0")
+				fmt.Println("acc should be with prefix 0x, and shouldn't be 0x0")
 				return nil
 			}
 		}
@@ -200,24 +200,24 @@ var boCmd = &cli.Command{
 // get allowance of an acc pair
 var alCmd = &cli.Command{
 	Name:  "al",
-	Usage: "get allowance of an acc pair.  arg0: sender address, arg1: owner address",
+	Usage: "get allowance of an acc pair.  arg0: owner address, arg1: spender address",
 	Action: func(cctx *cli.Context) error {
 		// parse args
-		sender := cctx.Args().Get(0)
-		// check addr
-		if len(sender) != 42 || sender == callconts.InvalidAddr {
-			fmt.Println("erc20Addr should be with prefix 0x, and shouldn't be 0x0")
-			return nil
-		}
-		fmt.Println("sender address:", sender)
-
-		owner := cctx.Args().Get(1)
+		owner := cctx.Args().Get(0)
 		// check addr
 		if len(owner) != 42 || owner == callconts.InvalidAddr {
-			fmt.Println("erc20Addr should be with prefix 0x, and shouldn't be 0x0")
+			fmt.Println("owner should be with prefix 0x, and shouldn't be 0x0")
 			return nil
 		}
 		fmt.Println("owner address:", owner)
+
+		spender := cctx.Args().Get(1)
+		// check addr
+		if len(spender) != 42 || spender == callconts.InvalidAddr {
+			fmt.Println("spender should be with prefix 0x, and shouldn't be 0x0")
+			return nil
+		}
+		fmt.Println("spender address:", spender)
 
 		// parse flags
 		erc20 := common.HexToAddress(cctx.String("erc20"))
@@ -233,11 +233,11 @@ var alCmd = &cli.Command{
 		}
 		// erc20 caller
 		e := callconts.NewERC20(erc20, caller, "", txopts)
-		al, err := e.Allowance(common.HexToAddress(owner), common.HexToAddress(sender))
+		al, err := e.Allowance(common.HexToAddress(owner), common.HexToAddress(spender))
 		if err != nil {
 			return err
 		}
-		fmt.Printf("allowance of %s to %s is : %v\n", sender, owner, al)
+		fmt.Printf("allowance of %s to %s is : %v\n", owner, spender, al)
 
 		return nil
 	},
