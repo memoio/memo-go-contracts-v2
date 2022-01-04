@@ -100,12 +100,12 @@ func init() {
 	userAddr = common.HexToAddress(test.Acc1)
 
 	// init callers before contracts deployed
-	// rAdmin = callconts.NewR(common.Address{}, adminAddr, test.AdminSk, txopts)
-	// rUser = callconts.NewR(common.Address{}, userAddr, test.Sk1, txopts)
-	roleCaller = callconts.NewR(common.Address{}, common.Address{}, "", txopts)
-	ppCaller = callconts.NewPledgePool(common.Address{}, common.Address{}, "", txopts)
-	rfsCaller = callconts.NewRFS(common.Address{}, common.Address{}, "", txopts)
-	issuCaller = callconts.NewIssu(common.Address{}, common.Address{}, "", txopts)
+	// rAdmin = callconts.NewR(common.Address{}, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	// rUser = callconts.NewR(common.Address{}, userAddr, test.Sk1, txopts, ethEndPoint)
+	roleCaller = callconts.NewR(common.Address{}, common.Address{}, "", txopts, callconts.EndPoint)
+	ppCaller = callconts.NewPledgePool(common.Address{}, common.Address{}, "", txopts, callconts.EndPoint)
+	rfsCaller = callconts.NewRFS(common.Address{}, common.Address{}, "", txopts, callconts.EndPoint)
+	issuCaller = callconts.NewIssu(common.Address{}, common.Address{}, "", txopts, callconts.EndPoint)
 }
 
 func main() {
@@ -137,7 +137,7 @@ func main() {
 
 	// get acc address and gIndex by rIndex
 	fmt.Println("test role 2")
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	acc, gIndex, err := roleCaller.GetAddrGindex(2)
 	if err != nil {
 		log.Fatal(err)
@@ -153,7 +153,7 @@ func main() {
 	}
 
 	fmt.Println("test role 4")
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	acc, gIndex, err = roleCaller.GetAddrGindex(4)
 	if err != nil {
 		log.Fatal(err)
@@ -172,7 +172,7 @@ func main() {
 	fmt.Println("============ 3. test GetGroupsNum ============")
 
 	// test GetGroupsNum
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	gNum, err := roleCaller.GetGroupsNum()
 	if err != nil {
 		log.Fatal(err)
@@ -186,7 +186,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 4. test PledgePool ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	pp, err := roleCaller.PledgePool()
 	if err != nil {
 		log.Fatal(err)
@@ -199,7 +199,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 5. test Foundation ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	fd, err := roleCaller.Foundation()
 	if err != nil {
 		log.Fatal(err)
@@ -212,7 +212,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 6. test RToken ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	rt, err := roleCaller.RToken()
 	if err != nil {
 		log.Fatal(err)
@@ -225,7 +225,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 7. test Issuance ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	is, err := roleCaller.Issuance()
 	if err != nil {
 		log.Fatal(err)
@@ -238,7 +238,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 8. test Rolefs ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	rfs, err := roleCaller.Rolefs()
 	if err != nil {
 		log.Fatal(err)
@@ -255,7 +255,7 @@ func main() {
 	if fast {
 		fmt.Println("@@ skipped for fast testing")
 	} else {
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		an, err := roleCaller.GetAddrsNum()
 		if err != nil {
 			log.Fatal(err)
@@ -269,7 +269,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 10. test GetAddr ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	ga, err := roleCaller.GetAddr(1)
 	if err != nil {
 		log.Fatal(err)
@@ -282,7 +282,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 11. test GetRoleInfo ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	isActive, isBanned, roleType, index, gIndex, extra, err := roleCaller.GetRoleInfo(common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
@@ -293,7 +293,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 12. test GetGroupsNum ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	gn, err := roleCaller.GetGroupsNum()
 	if err != nil {
 		log.Fatal(err)
@@ -306,7 +306,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 13. test GetGKNum ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	kNum, err := roleCaller.GetGKNum(1)
 	if err != nil {
 		log.Fatal(err)
@@ -319,7 +319,7 @@ func main() {
 	fmt.Println("")
 	fmt.Println("============ 14. test GetGUPNum ============")
 
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	_, pNum, err := roleCaller.GetGUPNum(1)
 	if err != nil {
 		log.Fatal(err)
@@ -333,7 +333,7 @@ func main() {
 		fmt.Println("============ 15. test AddProviderToGroup ============")
 
 		// caller must be provider himself to avoid sign
-		rForProvider := callconts.NewR(roleAddr, common.HexToAddress(test.Acc5), test.Sk5, txopts)
+		rForProvider := callconts.NewR(roleAddr, common.HexToAddress(test.Acc5), test.Sk5, txopts, ethEndPoint)
 		err := rForProvider.AddProviderToGroup(5, 1, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -352,7 +352,7 @@ func main() {
 	fmt.Println("============ 16. test GetGroupK ============")
 
 	// group 1 , keeper[1] == 3
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	ggk, err := roleCaller.GetGroupK(1, 1)
 	if err != nil {
 		log.Fatal(err)
@@ -366,7 +366,7 @@ func main() {
 	fmt.Println("============ 17. test GetGroupP ============")
 
 	// group 1 , provider[0] == 5
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	ggp, err := roleCaller.GetGroupP(1, 0)
 	if err != nil {
 		log.Fatal(err)
@@ -383,7 +383,7 @@ func main() {
 		fmt.Println("@@ skipped for fast testing")
 	} else {
 		// show old pledge
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		oldPK, err := roleCaller.PledgeK()
 		if err != nil {
 			log.Fatal(err)
@@ -432,7 +432,7 @@ func main() {
 		CheckERC20Balance()
 
 		// check old balance of user in erc20
-		erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts)
+		erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts, ethEndPoint)
 
 		oldBalErc20, err := erc20Caller.BalanceOf(userAddr)
 		if err != nil {
@@ -441,7 +441,7 @@ func main() {
 		fmt.Println(">>>> old balance in erc20 is: ", oldBalErc20)
 
 		// check old balance of user in fs1
-		fs1 := callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts)
+		fs1 := callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		oldBalFs, tmp, err := fs1.GetBalance(1, 0)
 		if err != nil {
 			log.Fatal(err)
@@ -461,7 +461,7 @@ func main() {
 		fmt.Println("The allowance of ", userAddr, " to ", fsAddr1, " is ", allo)
 
 		// user recharge 1 eth into fileSys
-		roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts)
+		roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts, ethEndPoint)
 		usrIndex, err := roleCaller.GetRoleIndex(userAddr)
 		if err != nil {
 			log.Fatal(err)
@@ -469,7 +469,7 @@ func main() {
 		fmt.Println("user index:", usrIndex)
 
 		// query token index
-		rtCaller := callconts.NewRT(rtokenAddr, userAddr, test.Sk1, txopts)
+		rtCaller := callconts.NewRT(rtokenAddr, userAddr, test.Sk1, txopts, ethEndPoint)
 		tIndex, ok, err := rtCaller.GetTI(test.PrimaryToken)
 		if err != nil {
 			log.Fatal(err)
@@ -480,7 +480,7 @@ func main() {
 		fmt.Println("token index:", tIndex)
 
 		// user(acc1) recharge 1 eth into fs, with primary token
-		roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts)
+		roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts, ethEndPoint)
 		err = roleCaller.Recharge(rtokenAddr, 1, 0, oneEth, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -520,7 +520,7 @@ func main() {
 
 		// check old balance of user in erc20
 		userAddr = common.HexToAddress(test.Acc1)
-		erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts)
+		erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts, ethEndPoint)
 		oldBalErc20, err := erc20Caller.BalanceOf(userAddr)
 		if err != nil {
 			log.Fatal(err)
@@ -528,7 +528,7 @@ func main() {
 		fmt.Println(">>>> old balance in erc20 is: ", oldBalErc20)
 
 		// query user balance before withdraw
-		fs1 := callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts)
+		fs1 := callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		oldBalFs, tmp, err := fs1.GetBalance(1, 0)
 		if err != nil {
 			log.Fatal(err)
@@ -536,7 +536,7 @@ func main() {
 		fmt.Println(">>>> old balance in fs1 is: ", oldBalFs, " tmp:", tmp)
 
 		// withdraw
-		roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts)
+		roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts, ethEndPoint)
 		err = roleCaller.WithdrawFromFs(rtokenAddr, 1, 0, oneEth, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -580,7 +580,7 @@ func main() {
 		}
 
 		// other account call register for regist acc6
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		err = roleCaller.Register(common.HexToAddress(test.Acc6), sig)
 		if err != nil {
 			log.Fatal(err)
@@ -591,7 +591,7 @@ func main() {
 		for retry := 5; retry > 0; retry-- {
 			fmt.Println("call GetRoleIndex and store index ")
 
-			roleCaller = callconts.NewR(roleAddr, common.HexToAddress(test.Acc6), test.Sk6, txopts)
+			roleCaller = callconts.NewR(roleAddr, common.HexToAddress(test.Acc6), test.Sk6, txopts, ethEndPoint)
 			rIndex, err = roleCaller.GetRoleIndex(common.HexToAddress(test.Acc6))
 			if err != nil {
 				log.Fatal(err)
@@ -629,7 +629,7 @@ func main() {
 		acc7 := common.HexToAddress(test.Acc7)
 		fmt.Printf("Role address: %s, acc7 address: %s\n", roleAddr.Hex(), test.Acc7)
 
-		roleCaller = callconts.NewR(roleAddr, acc7, test.Sk7, txopts)
+		roleCaller = callconts.NewR(roleAddr, acc7, test.Sk7, txopts, ethEndPoint)
 		err = roleCaller.Register(acc7, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -640,7 +640,7 @@ func main() {
 		for retry := 5; retry > 0; retry-- {
 			fmt.Println("call GetRoleIndex and store index ")
 
-			roleCaller = callconts.NewR(roleAddr, common.HexToAddress(test.Acc7), test.Sk7, txopts)
+			roleCaller = callconts.NewR(roleAddr, common.HexToAddress(test.Acc7), test.Sk7, txopts, ethEndPoint)
 			rIndex, err = roleCaller.GetRoleIndex(acc7)
 			if err != nil {
 				log.Fatal(err)
@@ -666,7 +666,7 @@ func main() {
 		}
 
 		//--- admin send Erc20 token to acc7
-		erc20Caller = callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+		erc20Caller = callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		bal, err := erc20Caller.BalanceOf(acc7)
 		if err != nil {
 			log.Fatal(err)
@@ -692,7 +692,7 @@ func main() {
 		}
 
 		//--- set pledge money to 1 eth
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		err = roleCaller.SetPledgeMoney(oneEth, oneEth)
 		if err != nil {
 			log.Fatal(err)
@@ -712,7 +712,7 @@ func main() {
 		// set plege pool addr to package level var for register keeper
 		//callconts.PledgePoolAddr = pledgePoolAddr
 		// other account call register for regist acc7
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		// rIndex = 7, blsKey = nil
 		err = roleCaller.RegisterKeeper(pledgePoolAddr, 7, nil, sig)
 		if err != nil {
@@ -720,7 +720,7 @@ func main() {
 		}
 
 		// get role info
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		isActive, isBanned, roleType, index, gIndex, extra, err = roleCaller.GetRoleInfo(common.HexToAddress(test.Acc7))
 		if err != nil {
 			log.Fatal(err)
@@ -741,7 +741,7 @@ func main() {
 		acc8 := common.HexToAddress(test.Acc8)
 		fmt.Printf("Role address: %s, acc8 address: %s\n", roleAddr.Hex(), test.Acc8)
 
-		roleCaller = callconts.NewR(roleAddr, acc8, test.Sk8, txopts)
+		roleCaller = callconts.NewR(roleAddr, acc8, test.Sk8, txopts, ethEndPoint)
 		err = roleCaller.Register(acc8, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -751,7 +751,7 @@ func main() {
 		// check role index
 		for retry := 5; retry > 0; retry-- {
 			fmt.Println("call GetRoleIndex and store index ")
-			roleCaller = callconts.NewR(roleAddr, common.HexToAddress(test.Acc8), test.Sk8, txopts)
+			roleCaller = callconts.NewR(roleAddr, common.HexToAddress(test.Acc8), test.Sk8, txopts, ethEndPoint)
 			rIndex, err = roleCaller.GetRoleIndex(common.HexToAddress(test.Acc8))
 			if err != nil {
 				log.Fatal(err)
@@ -776,7 +776,7 @@ func main() {
 		}
 
 		//--- admin send Erc20 token to acc8
-		erc20Caller = callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+		erc20Caller = callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		bal, err := erc20Caller.BalanceOf(acc8)
 		if err != nil {
 			log.Fatal(err)
@@ -802,7 +802,7 @@ func main() {
 		}
 
 		//--- set pledge money to 1 eth
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		err = roleCaller.SetPledgeMoney(oneEth, oneEth)
 		if err != nil {
 			log.Fatal(err)
@@ -822,7 +822,7 @@ func main() {
 		// set plege pool addr to package level var for register keeper
 		callconts.PledgePoolAddr = pledgePoolAddr
 		// admin as caller
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		// rIndex = 8
 		err = roleCaller.RegisterProvider(pledgePoolAddr, 8, sig)
 		if err != nil {
@@ -830,7 +830,7 @@ func main() {
 		}
 
 		// get role info
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		isActive, isBanned, roleType, index, gIndex, extra, err = roleCaller.GetRoleInfo(common.HexToAddress(test.Acc8))
 		if err != nil {
 			log.Fatal(err)
@@ -858,7 +858,7 @@ func main() {
 
 		fmt.Println("call AddProviderToGroup")
 		// admin as caller
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		// rIndex = 8, gIndex = 1
 		err = roleCaller.AddProviderToGroup(8, 1, sig)
 		if err != nil {
@@ -866,7 +866,7 @@ func main() {
 		}
 
 		// get role info
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		isActive, isBanned, roleType, index, gIndex, extra, err = roleCaller.GetRoleInfo(common.HexToAddress(test.Acc8))
 		if err != nil {
 			log.Fatal(err)
@@ -891,7 +891,7 @@ func main() {
 		acc9 := common.HexToAddress(test.Acc9)
 		fmt.Printf("Role address: %s, acc9 address: %s\n", roleAddr.Hex(), test.Acc9)
 
-		roleCaller = callconts.NewR(roleAddr, acc9, test.Sk9, txopts)
+		roleCaller = callconts.NewR(roleAddr, acc9, test.Sk9, txopts, ethEndPoint)
 		err = roleCaller.Register(acc9, nil)
 		if err != nil {
 			log.Fatal(err)
@@ -921,7 +921,7 @@ func main() {
 		// set plege pool addr to package level var for register keeper
 		callconts.PledgePoolAddr = pledgePoolAddr
 		// admin as caller
-		roleCaller := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		// rIndex = 8
 		//roleAddr, rTokenAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte
 		err = roleCaller.RegisterUser(rtokenAddr, 9, 1, 0, nil, sig)
@@ -930,7 +930,7 @@ func main() {
 		}
 
 		// get role info
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		isActive, isBanned, roleType, index, gIndex, extra, err = roleCaller.GetRoleInfo(common.HexToAddress(test.Acc9))
 		if err != nil {
 			log.Fatal(err)
@@ -957,7 +957,7 @@ func main() {
 
 	// check old balance of user in erc20
 	userAddr = common.HexToAddress(test.Acc1)
-	erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts)
+	erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts, ethEndPoint)
 	oldBalErc20, err := erc20Caller.BalanceOf(userAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -965,7 +965,7 @@ func main() {
 	fmt.Println(">>>> old balance in erc20 is: ", oldBalErc20)
 
 	// check old balance of user in fs
-	fs1 := callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts)
+	fs1 := callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	oldBalFs, tmp, err := fs1.GetBalance(1, 0)
 	if err != nil {
 		log.Fatal(err)
@@ -985,7 +985,7 @@ func main() {
 	fmt.Println("The allowance of ", userAddr, " to ", fsAddr1, " is ", allo)
 
 	// user recharge 1 eth into fileSys
-	roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts)
+	roleCaller = callconts.NewR(roleAddr, userAddr, test.Sk1, txopts, ethEndPoint)
 	usrIndex, err := roleCaller.GetRoleIndex(userAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -993,7 +993,7 @@ func main() {
 	fmt.Println("user index:", usrIndex)
 
 	// query token index
-	rtCaller := callconts.NewRT(rtokenAddr, userAddr, test.Sk1, txopts)
+	rtCaller := callconts.NewRT(rtokenAddr, userAddr, test.Sk1, txopts, ethEndPoint)
 	tIndex, ok, err := rtCaller.GetTI(test.PrimaryToken)
 	if err != nil {
 		log.Fatal(err)
@@ -1018,7 +1018,7 @@ func main() {
 	// recharge
 
 	// user(acc1) recharge 1 eth into fs, with primary token
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	err = roleCaller.Recharge(rtokenAddr, 1, 0, oneEth, sig)
 	if err != nil {
 		log.Fatal(err)
@@ -1057,7 +1057,7 @@ func main() {
 	CheckERC20Balance()
 
 	// check old balance of user in erc20
-	erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts)
+	erc20Caller = callconts.NewERC20(test.PrimaryToken, userAddr, test.Sk1, txopts, ethEndPoint)
 	oldBalErc20, err = erc20Caller.BalanceOf(userAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -1065,7 +1065,7 @@ func main() {
 	fmt.Println(">>>> old balance in erc20 is: ", oldBalErc20)
 
 	// query user balance before withdraw
-	fs1 = callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts)
+	fs1 = callconts.NewFileSys(fsAddr1, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	oldBalFs, tmp, err = fs1.GetBalance(1, 0)
 	if err != nil {
 		log.Fatal(err)
@@ -1085,7 +1085,7 @@ func main() {
 	fmt.Println("call withdraw with sig")
 
 	// withdraw
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	err = roleCaller.WithdrawFromFs(rtokenAddr, 1, 0, oneEth, sig)
 	if err != nil {
 		log.Fatal(err)
@@ -1128,7 +1128,7 @@ func main() {
 func toPledge(addr, roleAddr, pledgePoolAddr common.Address, sk string, rindex uint64, pledgek *big.Int, txopts *callconts.TxOpts) error {
 
 	// 调用pledge前需要先approve
-	erc20 := callconts.NewERC20(test.PrimaryToken, addr, sk, txopts)
+	erc20 := callconts.NewERC20(test.PrimaryToken, addr, sk, txopts, ethEndPoint)
 	err := erc20.Approve(pledgePoolAddr, pledgek)
 	if err != nil {
 		return err
@@ -1141,7 +1141,7 @@ func toPledge(addr, roleAddr, pledgePoolAddr common.Address, sk string, rindex u
 	fmt.Println("The allowance of ", addr, " to ", pledgePoolAddr, " is ", allow)
 
 	// 质押
-	ppCaller = callconts.NewPledgePool(pledgePoolAddr, addr, sk, txopts)
+	ppCaller = callconts.NewPledgePool(pledgePoolAddr, addr, sk, txopts, ethEndPoint)
 	err = ppCaller.Pledge(test.PrimaryToken, roleAddr, rindex, pledgek, nil)
 	if err != nil {
 		return err
@@ -1215,7 +1215,7 @@ func CheckERC20Balance() {
 	fmt.Println(">>>> checking balance of admin, 9 eth at least")
 
 	// 查看测试账户的ERC20代币余额，不足时自动充值
-	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
 
 	// 确保admin账户的ERC20代币余额充足（至少9 eth）
 	bal, err := erc20.BalanceOf(adminAddr)
@@ -1276,11 +1276,11 @@ func PrePaire() (err error) {
 		issuAddr = common.HexToAddress(config["issuance"])
 
 		// update rfs caller after deployed
-		// rfsCaller = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts)
+		// rfsCaller = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		// // update pledge pool caller after deployed
-		// ppCaller = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts)
+		// ppCaller = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		// // update issuance address after deployed
-		// issuCaller = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts)
+		// issuCaller = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	}
 
 	// deploy: Role、RoleFS、PledgePool、CreateGroup(FileSys)
@@ -1292,7 +1292,7 @@ func PrePaire() (err error) {
 		fmt.Println(">>>> begin deploy Role")
 
 		// deploy Role
-		roleCaller = callconts.NewR(common.Address{}, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(common.Address{}, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		roleAddr, _, err = roleCaller.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
 		if err != nil {
 			log.Fatal(err)
@@ -1300,7 +1300,7 @@ func PrePaire() (err error) {
 		fmt.Println("----> The Role contract address: ", roleAddr.Hex())
 
 		// get and store RToken
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		rtokenAddr, err = roleCaller.RToken()
 		if err != nil {
 			log.Fatal(err)
@@ -1308,14 +1308,14 @@ func PrePaire() (err error) {
 		fmt.Println("----> The RToken contract address: ", rtokenAddr.Hex())
 
 		// deploy RoleFS
-		rfsCaller = callconts.NewRFS(common.Address{}, adminAddr, test.AdminSk, txopts)
+		rfsCaller = callconts.NewRFS(common.Address{}, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		rolefsAddr, _, err = rfsCaller.DeployRoleFS()
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The RoleFS contract address: ", rolefsAddr.Hex())
 		// update rfs caller after roleFS deployed
-		rfsCaller = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts)
+		rfsCaller = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	}
 
 	// register accounts： User=[acc1] Keeper=[acc2, acc3, acc4] Provider=[acc5]
@@ -1327,7 +1327,7 @@ func PrePaire() (err error) {
 		fmt.Println(">>>> begin register accounts to get role indexes")
 		for i, addr := range addrs {
 			fmt.Printf("Role address: %s, register acc: %s\n", roleAddr.Hex(), addr)
-			roleCaller = callconts.NewR(roleAddr, addr, sks[i], txopts)
+			roleCaller = callconts.NewR(roleAddr, addr, sks[i], txopts, ethEndPoint)
 			err = roleCaller.Register(addr, nil)
 			if err != nil {
 				log.Fatal(err)
@@ -1361,14 +1361,14 @@ func PrePaire() (err error) {
 		fmt.Println("@@ fast test skip deloy pledge pool, use existing contract")
 	} else {
 		fmt.Println(">>>> begin deploy PledgePool")
-		ppCaller = callconts.NewPledgePool(common.Address{}, adminAddr, test.AdminSk, txopts)
+		ppCaller = callconts.NewPledgePool(common.Address{}, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		pledgePoolAddr, _, err = ppCaller.DeployPledgePool(test.PrimaryToken, rtokenAddr, roleAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The PledgePool contract address: ", pledgePoolAddr.Hex())
 		// update pledge pool caller after deployed
-		ppCaller = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts)
+		ppCaller = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	}
 
 	// get pledge
@@ -1379,13 +1379,13 @@ func PrePaire() (err error) {
 	} else {
 		fmt.Println(">>>> Getting min pledge from Role")
 		// get min Pledge for keeper and provider
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		pledgek, err = roleCaller.PledgeK() // 申请Keeper最少需质押的金额
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("min pledge for applying keeper: ", pledgek)
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		pledgep, err = roleCaller.PledgeP() // 申请Provider最少需质押的金额
 		if err != nil {
 			log.Fatal(err)
@@ -1400,17 +1400,17 @@ func PrePaire() (err error) {
 		fmt.Println(">>>> begin deploy Issuance")
 
 		// deploy issuance contract
-		issuCaller = callconts.NewIssu(common.Address{}, adminAddr, test.AdminSk, txopts)
+		issuCaller = callconts.NewIssu(common.Address{}, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		issuAddr, _, err = issuCaller.DeployIssuance(rolefsAddr)
 		if err != nil {
 			log.Fatal(err)
 		}
 		fmt.Println("----> The Issuance contract address is: ", issuAddr.Hex()) // 0xB15FEDB8017845331b460786fb5129C1Da06f6B1
 		// update issuance address after deployed
-		issuCaller = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts)
+		issuCaller = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 
 		// 给Role合约指定所有相关合约地址
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		err = roleCaller.SetPI(pledgePoolAddr, issuAddr, rolefsAddr)
 		if err != nil {
 			log.Fatal(err)
@@ -1454,12 +1454,12 @@ func PrePaire() (err error) {
 
 		callconts.PledgePoolAddr = pledgePoolAddr
 		for i, rindex := range rIndexes[1:4] {
-			rKeeper := callconts.NewR(roleAddr, addrs[i+1], sks[i+1], txopts)
+			rKeeper := callconts.NewR(roleAddr, addrs[i+1], sks[i+1], txopts, ethEndPoint)
 			fmt.Println(addrs[i+1].Hex(), " begin to register Keeper...")
 
 			// query admin's ERC20 balance in pledgepool
 			fmt.Println("pledgePoolAddr: ", pledgePoolAddr, " rindex:", rindex)
-			p = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts)
+			p = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 			bal, err := p.GetBalanceInPPool(rindex, 0)
 			if err != nil {
 				log.Fatal(err)
@@ -1484,7 +1484,7 @@ func PrePaire() (err error) {
 
 		fmt.Println(">>>> begin register provider ")
 
-		rProvider := callconts.NewR(roleAddr, addrs[4], sks[4], txopts)
+		rProvider := callconts.NewR(roleAddr, addrs[4], sks[4], txopts, ethEndPoint)
 		// isActive, isBanned, roleType, index, gIndex, extra
 		isActive, _, roleType, index, gIndex, _, err := rProvider.GetRoleInfo(addrs[4])
 		if err != nil {
@@ -1511,7 +1511,7 @@ func PrePaire() (err error) {
 		// create group, keeper1 keeper2 in group1, keeper3 in group2
 		fmt.Println(">>>> begin create group 1")
 		// 需要admin先调用CreateGroup,同时将部署FileSys合约
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		gIndex1, err = roleCaller.CreateGroup(rolefsAddr, uint64(0), rIndexes[1:3], 2)
 		if err != nil {
 			log.Fatal(err)
@@ -1521,7 +1521,7 @@ func PrePaire() (err error) {
 		}
 
 		// store fsAddr of group1
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		_, _, _, _, _, _, fsAddr1, err = roleCaller.GetGroupInfo(1)
 		if err != nil {
 			log.Fatal("get group1 info failed")
@@ -1529,7 +1529,7 @@ func PrePaire() (err error) {
 
 		// test create group 2 with inActive, level=2, but only 1 keeper involved
 		fmt.Println(">>>> begin create group 2")
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		gIndex2, err = roleCaller.CreateGroup(rolefsAddr, uint64(0), rIndexes[3:4], 2)
 		if err != nil {
 			log.Fatal(err)
@@ -1538,7 +1538,7 @@ func PrePaire() (err error) {
 			log.Fatal("gIndex2 should be 2")
 		}
 		// store fsAddr of group2
-		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+		roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 		_, _, _, _, _, _, fsAddr2, err = roleCaller.GetGroupInfo(2)
 		if err != nil {
 			log.Fatal("get group2 info failed")
@@ -1551,7 +1551,7 @@ func PrePaire() (err error) {
 	} else {
 		fmt.Println(">>>> begin register user")
 		// role caller for user
-		rUser := callconts.NewR(roleAddr, addrs[0], sks[0], txopts)
+		rUser := callconts.NewR(roleAddr, addrs[0], sks[0], txopts, ethEndPoint)
 		// isActive, isBanned, roleType, index, gIndex, extra
 		isActive, _, roleType, index, gIndex, _, err := rUser.GetRoleInfo(addrs[0])
 		if err != nil {
@@ -1594,7 +1594,7 @@ func PrePaire() (err error) {
 	)
 	// get group1 info
 	fmt.Println(">>>> getting group1 info")
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	isActive, isBanned, isReady, level, _size, price, fsAddr1, err = roleCaller.GetGroupInfo(gIndex1)
 	if err != nil {
 		log.Fatal(err)
@@ -1607,7 +1607,7 @@ func PrePaire() (err error) {
 
 	// get group2 info
 	fmt.Println(">>>> getting group2 info")
-	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	roleCaller = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	isActive, isBanned, isReady, level, _size, price, fsAddr2, err = roleCaller.GetGroupInfo(gIndex2)
 	if err != nil {
 		log.Fatal(err)

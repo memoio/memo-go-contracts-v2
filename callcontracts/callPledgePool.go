@@ -19,12 +19,13 @@ import (
 )
 
 // NewPledgePool new an instance of ContractModule. 'pledgePoolAddr' indicates PledgePool contract address.
-func NewPledgePool(pledgePoolAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.PledgePoolInfo {
+func NewPledgePool(pledgePoolAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.PledgePoolInfo {
 	p := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: pledgePoolAddr,
+		endPoint:        endPoint,
 	}
 
 	return p
@@ -47,7 +48,7 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 	var err error
 
 	log.Println("begin deploy PledgePool contract...")
-	client := getClient(EndPoint)
+	client := getClient(p.endPoint)
 	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
@@ -102,14 +103,14 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 // Called by the account itself or by another account on its behalf.
 // 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是value）,如果是账户本身调用，则会由代码自动approve
 func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint64, value *big.Int, sign []byte) error {
-	client := getClient(EndPoint)
+	client := getClient(p.endPoint)
 	defer client.Close()
 	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
 		return err
 	}
 
-	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts)
+	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts, p.endPoint)
 	addr, err := r.GetAddr(rindex)
 	if err != nil {
 		return err
@@ -125,7 +126,7 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 	}
 
 	// check whether the allowance[addr][pledgePoolAddr] is not less than value, if not, will approve automatically by code.
-	e := NewERC20(erc20Addr, p.addr, p.hexSk, p.txopts)
+	e := NewERC20(erc20Addr, p.addr, p.hexSk, p.txopts, p.endPoint)
 	allo, err := e.Allowance(addr, p.contractAddress)
 	if err != nil {
 		return err
@@ -204,7 +205,7 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 // Withdraw Called by the account itself or by another account on its behalf.
 // withdraw its balance from PledgePool.
 func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex uint64, tindex uint32, value *big.Int, sign []byte) error {
-	client := getClient(EndPoint)
+	client := getClient(p.endPoint)
 	defer client.Close()
 	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
@@ -212,7 +213,7 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 	}
 
 	// check if rindex is banned
-	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts)
+	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts, p.endPoint)
 	addr, err := r.GetAddr(rindex)
 	if err != nil {
 		return err
@@ -225,7 +226,7 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 		return ErrIsBanned
 	}
 	// check if tindex is valid
-	rt := NewRT(rTokenAddr, p.addr, p.hexSk, p.txopts)
+	rt := NewRT(rTokenAddr, p.addr, p.hexSk, p.txopts, p.endPoint)
 	isValid, err := rt.IsValid(tindex)
 	if !isValid {
 		return ErrTIndex
@@ -290,7 +291,7 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 func (p *ContractModule) GetPledge(tindex uint32) (*big.Int, error) {
 	var amount *big.Int
 
-	client := getClient(EndPoint)
+	client := getClient(p.endPoint)
 	defer client.Close()
 	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
@@ -319,7 +320,7 @@ func (p *ContractModule) GetPledge(tindex uint32) (*big.Int, error) {
 func (p *ContractModule) GetBalanceInPPool(rindex uint64, tindex uint32) (*big.Int, error) {
 	var amount *big.Int
 
-	client := getClient(EndPoint)
+	client := getClient(p.endPoint)
 	defer client.Close()
 	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {
@@ -348,7 +349,7 @@ func (p *ContractModule) GetBalanceInPPool(rindex uint64, tindex uint32) (*big.I
 func (p *ContractModule) TotalPledge() (*big.Int, error) {
 	var amount *big.Int
 
-	client := getClient(EndPoint)
+	client := getClient(p.endPoint)
 	defer client.Close()
 	pledgepIns, err := newPledgePool(p.contractAddress, client)
 	if err != nil {

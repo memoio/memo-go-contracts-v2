@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// 查询在erc20代币上的余额
-	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	bal, err := erc20.BalanceOf(adminAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -61,7 +61,7 @@ func main() {
 		fmt.Println("after mint, admin balance in primaryToken is ", bal)
 	}
 
-	pp := callconts.NewPledgePool(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+	pp := callconts.NewPledgePool(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
 
 	fmt.Println("============1. begin test deploy PledgePool contract============")
 	ppAddr, _, err := pp.DeployPledgePool(test.PrimaryToken, test.RTokenAddr, roleAddr)
@@ -77,7 +77,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// 然后质押账户需要在Role合约中Register从而获得rindex
-	r := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	r := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	err = r.Register(adminAddr, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -88,7 +88,7 @@ func main() {
 	}
 	fmt.Println("The account's role index is ", rIndex)
 	// 开始pledge
-	pp = callconts.NewPledgePool(ppAddr, adminAddr, test.AdminSk, txopts)
+	pp = callconts.NewPledgePool(ppAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, rIndex, pledgeMoney, nil)
 	if err != nil {
 		log.Fatal(err)

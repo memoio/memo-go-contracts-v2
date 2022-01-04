@@ -34,21 +34,21 @@ var (
 	// Role contract address
 	RoleAddr = common.HexToAddress("0xFbC6db9ae0f847F99907DA27068254e3482578d9")
 	// RoleFS contract address
-	RoleFSAddr = common.HexToAddress("0xCA3Ad5b308f1d00f4Dbb0eB7ff4EB8FDE079d138")
+	RoleFSAddr = common.HexToAddress("0x8851A74D61d4acEaDdD7ec50cDFa65978127E0A8")
 	// RToken contract address
 	RTokenAddr = common.HexToAddress("0xEA490b38Fb5F872169D917e052D799942440a916")
 	// FileSys contract address
-	FileSysAddr = common.HexToAddress("0x139743cD6F0B5CA710F35552411971787D53d5FD")
+	FileSysAddr = common.HexToAddress("0x802DC5872692fd5034F3f1Eb3ae60f81e2366644")
 	// PledgePool contract address
 	PledgePoolAddr = common.HexToAddress("0xEF42eC9Cd7c140ec37D4470A62e95b57aDf24371")
 	// Issuance contract address
-	IssuanceAddr = common.HexToAddress("0xe8924Ed18C4270270696175F90b0C9D84b774A26")
+	IssuanceAddr = common.HexToAddress("0xC8A4a6209d72B7cE48A661CA2fD6168590a0c980")
 
 	AdminAddr  = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 	AdminSk    = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 	Foundation = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
 
-	GIndex = uint64(1)
+	GIndex = uint64(4)
 )
 
 const (
@@ -142,7 +142,6 @@ type TxOpts struct {
 	Nonce    *big.Int
 	GasPrice *big.Int
 	GasLimit uint64
-	EndPoint string
 }
 
 // ContractModule  The basic information of node used for contract.
@@ -152,6 +151,7 @@ type ContractModule struct {
 	hexSk           string         //local privateKey
 	txopts          *TxOpts
 	contractAddress common.Address
+	endPoint        string // ethClient endPoint
 }
 
 // getClient get rpc-client based the endPoint

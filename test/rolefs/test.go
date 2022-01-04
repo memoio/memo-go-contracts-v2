@@ -74,7 +74,7 @@ func main() {
 	}
 
 	// 查询在erc20代币上的余额
-	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	bal, err := erc20.BalanceOf(adminAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -125,7 +125,7 @@ func main() {
 		}
 	}
 
-	rfs := callconts.NewRFS(adminAddr, adminAddr, test.AdminSk, txopts)
+	rfs := callconts.NewRFS(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 
 	fmt.Println("============1. begin test deploy RoleFS contract============")
 	rolefsAddr, _, err := rfs.DeployRoleFS()
@@ -133,18 +133,18 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("RoleFS contract Address:", rolefsAddr.Hex())
-	rfs = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts)
+	rfs = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 
 	// 部署RoleFS合约之后，需要调用SetAddr函数赋予合约需要的状态变量信息
 	fmt.Println("============2. begin test SetAddr============")
 	// 部署Role合约
-	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts)
+	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeK)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The Role contract address is ", roleAddr.Hex())
-	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	// 获得RToken合约地址
 	rTokenAddr, err := r.RToken()
 	if err != nil {
@@ -152,28 +152,28 @@ func main() {
 	}
 	fmt.Println("The RToken contract address is ", rTokenAddr.Hex())
 	// 部署PledgePool合约
-	pp := callconts.NewPledgePool(adminAddr, adminAddr, test.AdminSk, txopts)
+	pp := callconts.NewPledgePool(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	pledgePoolAddr, _, err := pp.DeployPledgePool(test.PrimaryToken, rTokenAddr, roleAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The PledgePool contract address is ", pledgePoolAddr.Hex())
-	pp = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts)
+	pp = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	// 部署Issuance合约
-	issu := callconts.NewIssu(adminAddr, adminAddr, test.AdminSk, txopts)
+	issu := callconts.NewIssu(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	issuanceAddr, _, err := issu.DeployIssuance(rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The Issuance contract address is ", issuanceAddr.Hex())
-	issu = callconts.NewIssu(issuanceAddr, adminAddr, test.AdminSk, txopts)
+	issu = callconts.NewIssu(issuanceAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	// setPI
 	err = r.SetPI(pledgePoolAddr, issuanceAddr, rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// keeper注册、质押、申请角色
-	r = callconts.NewR(roleAddr, acc2Addr, test.Sk2, txopts)
+	r = callconts.NewR(roleAddr, acc2Addr, test.Sk2, txopts, ethEndPoint)
 	err = r.Register(acc2Addr, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -183,7 +183,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("kIndex ", kIndex)
-	pp = callconts.NewPledgePool(pledgePoolAddr, acc2Addr, test.Sk2, txopts)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc2Addr, test.Sk2, txopts, ethEndPoint)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -193,7 +193,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// createGroup, and deploy FileSys contract
-	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts)
+	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	gIndex, err := r.CreateGroup(rolefsAddr, 0, []uint64{kIndex}, 1)
 	if err != nil {
 		log.Fatal(err)
@@ -213,7 +213,7 @@ func main() {
 
 	fmt.Println("============3. begin test AddOrder============")
 	// user注册、充值
-	r = callconts.NewR(roleAddr, acc1Addr, test.Sk1, txopts)
+	r = callconts.NewR(roleAddr, acc1Addr, test.Sk1, txopts, ethEndPoint)
 	err = r.Register(acc1Addr, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -228,7 +228,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// user approve
-	erc20 = callconts.NewERC20(test.PrimaryToken, acc1Addr, test.Sk1, txopts)
+	erc20 = callconts.NewERC20(test.PrimaryToken, acc1Addr, test.Sk1, txopts, ethEndPoint)
 	err = erc20.Approve(fsAddr, rechargeValue)
 	if err != nil {
 		log.Fatal(err)
@@ -248,7 +248,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// user获取其在FileSys中的balance
-	fs := callconts.NewFileSys(fsAddr, adminAddr, test.AdminSk, txopts)
+	fs := callconts.NewFileSys(fsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	avail, _, err := fs.GetBalance(uIndex, 0)
 	if err != nil {
 		log.Fatal(err)
@@ -258,7 +258,7 @@ func main() {
 		log.Fatal("user avail should not less than ", rechargeValue)
 	}
 	// provider注册、质押、申请角色、加入group
-	r = callconts.NewR(roleAddr, acc3Addr, test.Sk3, txopts)
+	r = callconts.NewR(roleAddr, acc3Addr, test.Sk3, txopts, ethEndPoint)
 	err = r.Register(acc3Addr, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -268,7 +268,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("pIndex ", pIndex)
-	pp = callconts.NewPledgePool(pledgePoolAddr, acc3Addr, test.Sk3, txopts)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc3Addr, test.Sk3, txopts, ethEndPoint)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, pIndex, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -282,13 +282,13 @@ func main() {
 		log.Fatal(err)
 	}
 	//admin为RoleFS赋予Minter_Role权限
-	erc20 = callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts)
+	erc20 = callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	err = erc20.SetUpRole(callconts.MinterRole, rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// keeper调用addOrder
-	rfs = callconts.NewRFS(rolefsAddr, acc2Addr, test.Sk2, txopts)
+	rfs = callconts.NewRFS(rolefsAddr, acc2Addr, test.Sk2, txopts, ethEndPoint)
 	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, nil, nil, [][]byte{[]byte("test")})
 	if err != nil {
 		log.Fatal(err)
@@ -470,7 +470,7 @@ func main() {
 	}
 	// 调用AddRepair前，需要先调用ProWithdraw、指定lost值
 	// 新注册一个provider
-	r = callconts.NewR(roleAddr, acc4Addr, test.Sk4, txopts)
+	r = callconts.NewR(roleAddr, acc4Addr, test.Sk4, txopts, ethEndPoint)
 	err = r.Register(acc4Addr, nil)
 	if err != nil {
 		log.Fatal(err)
@@ -480,7 +480,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("p2Index ", p2Index)
-	pp = callconts.NewPledgePool(pledgePoolAddr, acc4Addr, test.Sk4, txopts)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc4Addr, test.Sk4, txopts, ethEndPoint)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, p2Index, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)

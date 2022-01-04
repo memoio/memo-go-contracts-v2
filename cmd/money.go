@@ -37,6 +37,12 @@ var MoneyCmd = &cli.Command{
 			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
 			Usage:   "the ERC20 contract address",
 		},
+		&cli.StringFlag{
+			Name:    "endPoint",
+			Aliases: []string{"ep"},
+			Value:   callconts.EndPoint, //默认值为common.go中的endPoint
+			Usage:   "the geth endPoint",
+		},
 	},
 	Subcommands: []*cli.Command{
 		balanceCmd,
@@ -63,6 +69,8 @@ var balanceCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -70,7 +78,7 @@ var balanceCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		bal, err := e.BalanceOf(common.HexToAddress(acc))
 		if err != nil {
 			return err
@@ -97,6 +105,8 @@ var transferCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -104,7 +114,7 @@ var transferCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err := e.Transfer(common.HexToAddress(acc), transferMoney)
 		if err != nil {
 			return err

@@ -10,12 +10,13 @@ import (
 )
 
 // NewRT new a instance of ContractModule
-func NewRT(rTokenAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.RTokenInfo {
+func NewRT(rTokenAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.RTokenInfo {
 	rt := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: rTokenAddr,
+		endPoint:        endPoint,
 	}
 
 	return rt
@@ -24,7 +25,7 @@ func NewRT(rTokenAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.
 // IsValid check whether the tokenIndex is valid, rTokenAddr indicates RToken contract address, get it by RToken() in callRole.go
 func (rt *ContractModule) IsValid(tIndex uint32) (bool, error) {
 	var isvalid bool
-	client := getClient(EndPoint)
+	client := getClient(rt.endPoint)
 	defer client.Close()
 	rToken, err := role.NewRToken(rt.contractAddress, client)
 	if err != nil {
@@ -53,7 +54,7 @@ func (rt *ContractModule) IsValid(tIndex uint32) (bool, error) {
 func (rt *ContractModule) GetTA(tIndex uint32) (common.Address, error) {
 	var taddr common.Address
 
-	client := getClient(EndPoint)
+	client := getClient(rt.endPoint)
 	defer client.Close()
 	rToken, err := role.NewRToken(rt.contractAddress, client)
 	if err != nil {
@@ -83,7 +84,7 @@ func (rt *ContractModule) GetTI(taddr common.Address) (uint32, bool, error) {
 	var tindex uint32
 	var isvalid bool
 
-	client := getClient(EndPoint)
+	client := getClient(rt.endPoint)
 	defer client.Close()
 	rToken, err := role.NewRToken(rt.contractAddress, client)
 	if err != nil {
@@ -112,7 +113,7 @@ func (rt *ContractModule) GetTI(taddr common.Address) (uint32, bool, error) {
 func (rt *ContractModule) GetTNum() (uint32, error) {
 	var tnum uint32
 
-	client := getClient(EndPoint)
+	client := getClient(rt.endPoint)
 	defer client.Close()
 	rToken, err := role.NewRToken(rt.contractAddress, client)
 	if err != nil {

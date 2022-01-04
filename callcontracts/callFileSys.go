@@ -15,12 +15,13 @@ import (
 )
 
 // NewFileSys new a instance of ContractModule, fsAddr:FileSys contract address
-func NewFileSys(fsAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.FileSysInfo {
+func NewFileSys(fsAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.FileSysInfo {
 	fs := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: fsAddr,
+		endPoint:        endPoint,
 	}
 
 	return fs
@@ -44,7 +45,7 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 	var err error
 
 	log.Println("begin deploy FileSys contract...")
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
@@ -100,7 +101,7 @@ func (fs *ContractModule) GetFsInfo(uIndex uint64) (bool, uint32, error) {
 	var isActive bool
 	var tokenIndex uint32
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
@@ -130,7 +131,7 @@ func (fs *ContractModule) GetFsInfo(uIndex uint64) (bool, uint32, error) {
 func (fs *ContractModule) GetFsProviderSum(uIndex uint64) (uint64, error) {
 	var pSum uint64
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
@@ -159,7 +160,7 @@ func (fs *ContractModule) GetFsProviderSum(uIndex uint64) (uint64, error) {
 func (fs *ContractModule) GetFsProvider(uIndex uint64, index uint64) (uint64, error) {
 	var pIndex uint64
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
@@ -189,7 +190,7 @@ func (fs *ContractModule) GetFsInfoAggOrder(uIndex uint64, pIndex uint64) (uint6
 	var nonce uint64
 	var subNonce uint64
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
@@ -219,7 +220,7 @@ func (fs *ContractModule) GetStoreInfo(uIndex uint64, pIndex uint64, tIndex uint
 	var _time, size uint64
 	var price *big.Int
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
@@ -252,7 +253,7 @@ func (fs *ContractModule) GetChannelInfo(uIndex uint64, pIndex uint64, tIndex ui
 	var nonce, expire uint64
 	var amount *big.Int
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
@@ -285,7 +286,7 @@ func (fs *ContractModule) GetSettleInfo(pIndex uint64, tIndex uint32) (uint64, u
 	var _time, size uint64
 	var price, maxPay, hasPaid, canPay, lost, lostPaid, managePay, endPaid, linearPaid *big.Int
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {
@@ -315,7 +316,7 @@ func (fs *ContractModule) GetSettleInfo(pIndex uint64, tIndex uint32) (uint64, u
 func (fs *ContractModule) GetBalance(rIndex uint64, tIndex uint32) (*big.Int, *big.Int, error) {
 	var avail, tmp *big.Int
 
-	client := getClient(EndPoint)
+	client := getClient(fs.endPoint)
 	defer client.Close()
 	fsIns, err := newFileSys(fs.contractAddress, client)
 	if err != nil {

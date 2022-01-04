@@ -40,7 +40,7 @@ func main() {
 	}
 
 	fmt.Println("============1. begin test deploy Issuance contract============")
-	issu := callconts.NewIssu(rolefsAddr, adminAddr, test.AdminSk, txopts)
+	issu := callconts.NewIssu(rolefsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	issuAddr, _, err := issu.DeployIssuance(rolefsAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -62,7 +62,7 @@ func main() {
 	// ======for redeploy Issuance in callconts======
 
 	fmt.Println("============2. begin test MintLevel============")
-	issu = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts)
+	issu = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	mintLevel, err := issu.MintLevel()
 	if err != nil {
 		log.Fatal(err)
