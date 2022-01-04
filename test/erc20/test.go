@@ -43,7 +43,7 @@ func main() {
 		GasLimit: callconts.DefaultGasLimit,
 	}
 	var erc20Addr common.Address
-	e := callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts)
+	e := callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts, ethEndPoint)
 
 	fmt.Println("============1. begin test deploy ERC20 contract============")
 	erc20Addr, _, err := e.DeployERC20(name, symbol)
@@ -54,7 +54,7 @@ func main() {
 	//erc20Addr := common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 
 	fmt.Println("============2. begin test GetName============")
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts, ethEndPoint)
 	n, err := e.GetName()
 	if err != nil {
 		log.Fatal(err)
@@ -123,7 +123,7 @@ func main() {
 		log.Fatal("The account has not AdminRole")
 	}
 	fmt.Println(err) // tmp
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts, ethEndPoint)
 	err = e.Pause()
 	if err != nil {
 		log.Fatal(err)
@@ -150,13 +150,13 @@ func main() {
 	}
 
 	fmt.Println("============11. begin test SetUpRole in AccessControl============")
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts, ethEndPoint)
 	err = e.SetUpRole(callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err == nil {
 		log.Fatal(err)
 	}
 	fmt.Println(err)
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts, ethEndPoint)
 	err = e.SetUpRole(callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
 		log.Fatal(err)
@@ -250,7 +250,7 @@ func main() {
 	}
 
 	fmt.Println("============17. begin test TransferFrom in ERC20============")
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts, ethEndPoint)
 	bal0, err = e.BalanceOf(common.HexToAddress(test.Acc2))
 	if err != nil {
 		log.Fatal(err)
@@ -277,7 +277,7 @@ func main() {
 	}
 
 	fmt.Println("============18. begin test IncreaseAllowance in ERC20============")
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts, ethEndPoint)
 	err = e.IncreaseAllowance(common.HexToAddress(test.Acc1), big.NewInt(500))
 	if err != nil {
 		log.Fatal(err)
@@ -337,7 +337,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts, ethEndPoint)
 	err = e.Burn(bal)
 	if err != nil {
 		log.Fatal(err)
@@ -355,7 +355,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc2), test.Sk2, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc2), test.Sk2, txopts, ethEndPoint)
 	err = e.Burn(bal11)
 	if err != nil {
 		log.Fatal(err)
@@ -382,7 +382,7 @@ func main() {
 		log.Fatal("Acc2 RenounceRole fails")
 	}
 
-	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts)
+	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc1), test.Sk1, txopts, ethEndPoint)
 	err = e.RenounceRole(callconts.AdminRole)
 	if err != nil {
 		log.Fatal(err)

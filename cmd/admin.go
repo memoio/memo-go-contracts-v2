@@ -36,6 +36,12 @@ var AdminCmd = &cli.Command{
 			Value:   callconts.AdminSk, //默认值为common.go中的admin账户私钥
 			Usage:   "the admin account's secretkey",
 		},
+		&cli.StringFlag{
+			Name:    "endPoint",
+			Aliases: []string{"ep"},
+			Value:   callconts.EndPoint, //默认值为common.go中的endPoint
+			Usage:   "the geth endPoint",
+		},
 	},
 	Subcommands: []*cli.Command{
 		// erc20
@@ -79,13 +85,15 @@ var deployERC20Cmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
 			GasPrice: big.NewInt(callconts.DefaultGasPrice),
 			GasLimit: callconts.DefaultGasLimit,
 		}
-		e := callconts.NewERC20(addr, addr, sk, txopts)
+		e := callconts.NewERC20(addr, addr, sk, txopts, endPoint)
 		erc20Addr, _, err := e.DeployERC20(name, symbol)
 		if err != nil {
 			return err
@@ -140,8 +148,10 @@ var mintCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err := e.MintToken(common.HexToAddress(target), mintValue)
 		if err != nil {
 			return err
@@ -188,8 +198,10 @@ var burnCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err := e.Burn(burnValue)
 		if err != nil {
 			return err
@@ -246,8 +258,10 @@ var airDropCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err := e.AirDrop(targetsAddr, airdropValue)
 		if err != nil {
 			return err
@@ -297,8 +311,10 @@ var setUpRoleCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err = e.SetUpRole(uint8(r), common.HexToAddress(target))
 		if err != nil {
 			return err
@@ -348,8 +364,10 @@ var revokeRoleCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err = e.RevokeRole(uint8(r), common.HexToAddress(target))
 		if err != nil {
 			return err
@@ -377,6 +395,8 @@ var pauseCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -384,7 +404,7 @@ var pauseCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err := e.Pause()
 		if err != nil {
 			return err
@@ -411,6 +431,8 @@ var unpauseCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -418,7 +440,7 @@ var unpauseCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
 		err := e.Unpause()
 		if err != nil {
 			return err
@@ -464,19 +486,21 @@ var deployRoleCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
 			GasPrice: big.NewInt(callconts.DefaultGasPrice),
 			GasLimit: callconts.DefaultGasLimit,
 		}
-		r := callconts.NewR(callconts.AdminAddr, addr, sk, txopts)
+		r := callconts.NewR(callconts.AdminAddr, addr, sk, txopts, endPoint)
 		roleAddr, _, err := r.DeployRole(common.HexToAddress(foundation), common.HexToAddress(primaryToken), pledgeK, pledgeP)
 		if err != nil {
 			return err
 		}
 		fmt.Println("Role contract address:", roleAddr.Hex())
-		r = callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts)
+		r = callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts, endPoint)
 		rTokenAddr, err := r.RToken()
 		if err != nil {
 			return err
@@ -525,6 +549,8 @@ var setPICmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -532,7 +558,7 @@ var setPICmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, addr, sk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts, endPoint)
 		err := r.SetPI(common.HexToAddress(pledgePoolAddr), common.HexToAddress(issuAddr), common.HexToAddress(rolefsAddr))
 		if err != nil {
 			return err
@@ -568,6 +594,8 @@ var registerTokenCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -575,7 +603,7 @@ var registerTokenCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, addr, sk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts, endPoint)
 		err := r.RegisterToken(common.HexToAddress(tokenAddr))
 		if err != nil {
 			return err
@@ -628,19 +656,25 @@ var createGroupCmd = &cli.Command{
 		ks = strings.Split(kIndexes, ",")
 		fmt.Println("kIndexes:", ks)
 		var keepers []uint64
-		for _, tmp := range ks {
-			intNum, err := strconv.Atoi(tmp)
-			if err != nil {
-				fmt.Println("trans string", tmp, " to int error")
-				return err
+		if ks[0] == "" {
+			keepers = nil
+		} else {
+			for _, tmp := range ks {
+				intNum, err := strconv.Atoi(tmp)
+				if err != nil {
+					fmt.Println("trans string", tmp, " to int error")
+					return err
+				}
+				keepers = append(keepers, uint64(intNum))
 			}
-			keepers = append(keepers, uint64(intNum))
 		}
 		fmt.Println("keepers:", keepers)
 		addr := common.HexToAddress(cctx.String("adminAddr"))
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -648,7 +682,7 @@ var createGroupCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, addr, sk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts, endPoint)
 		gIndex, err := r.CreateGroup(common.HexToAddress(rfsAddr), founder, keepers, uint16(le))
 		if err != nil {
 			return err
@@ -701,6 +735,8 @@ var addKeeperToGroupCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -708,7 +744,7 @@ var addKeeperToGroupCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, addr, sk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts, endPoint)
 		err = r.AddKeeperToGroup(uint64(ki), uint64(gi))
 		if err != nil {
 			return err
@@ -756,6 +792,8 @@ var setPledgeMoneyCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -763,7 +801,7 @@ var setPledgeMoneyCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		r := callconts.NewR(roleAddr, addr, sk, txopts)
+		r := callconts.NewR(roleAddr, addr, sk, txopts, endPoint)
 		err := r.SetPledgeMoney(pk, pp)
 		if err != nil {
 			return err
@@ -802,6 +840,8 @@ var alterOwnerCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -809,7 +849,7 @@ var alterOwnerCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		own := callconts.NewOwn(roleAddr, addr, sk, txopts)
+		own := callconts.NewOwn(roleAddr, addr, sk, txopts, endPoint)
 		err := own.AlterOwner(common.HexToAddress(newOwner))
 		if err != nil {
 			return err
@@ -838,6 +878,8 @@ var deployIssuanceCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -845,7 +887,7 @@ var deployIssuanceCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		issu := callconts.NewIssu(callconts.AdminAddr, addr, sk, txopts)
+		issu := callconts.NewIssu(callconts.AdminAddr, addr, sk, txopts, endPoint)
 		issuAddr, _, err := issu.DeployIssuance(common.HexToAddress(rfsAddr))
 		if err != nil {
 			return err
@@ -863,6 +905,8 @@ var deployRolefsCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -870,7 +914,7 @@ var deployRolefsCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		rfs := callconts.NewRFS(callconts.AdminAddr, addr, sk, txopts)
+		rfs := callconts.NewRFS(callconts.AdminAddr, addr, sk, txopts, endPoint)
 		rfsAddr, _, err := rfs.DeployRoleFS()
 		if err != nil {
 			return err
@@ -934,8 +978,10 @@ var setAddrCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
-		rfs := callconts.NewRFS(rfsAddr, addr, sk, txopts)
+		rfs := callconts.NewRFS(rfsAddr, addr, sk, txopts, endPoint)
 		err := rfs.SetAddr(common.HexToAddress(issuAddr), common.HexToAddress(roleAddr), common.HexToAddress(fsAddr), common.HexToAddress(rtAddr))
 		if err != nil {
 			return err
@@ -1003,6 +1049,8 @@ var deployFileSysCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -1010,7 +1058,7 @@ var deployFileSysCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		fs := callconts.NewFileSys(callconts.AdminAddr, addr, sk, txopts)
+		fs := callconts.NewFileSys(callconts.AdminAddr, addr, sk, txopts, endPoint)
 		fsAddr, _, err := fs.DeployFileSys(foundation, uint64(gi), common.HexToAddress(roleAddr), common.HexToAddress(rfsAddr), keepers)
 		if err != nil {
 			return err
@@ -1053,6 +1101,8 @@ var deployPledgePoolCmd = &cli.Command{
 		fmt.Println("adminAddr:", addr.Hex())
 		sk := cctx.String("adminSk")
 		fmt.Println("adminSk:", sk)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -1060,7 +1110,7 @@ var deployPledgePoolCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		pp := callconts.NewPledgePool(callconts.AdminAddr, addr, sk, txopts)
+		pp := callconts.NewPledgePool(callconts.AdminAddr, addr, sk, txopts, endPoint)
 		pledgePoolAddr, _, err := pp.DeployPledgePool(common.HexToAddress(primeTokenAddr), common.HexToAddress(rTokenAddr), common.HexToAddress(roleAddr))
 		if err != nil {
 			return err

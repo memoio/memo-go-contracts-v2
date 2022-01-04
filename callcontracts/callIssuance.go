@@ -15,12 +15,13 @@ import (
 )
 
 // NewIssu new a instance of ContractModule. issuAddr: Issuance contract address
-func NewIssu(issuAddr, addr common.Address, hexSk string, txopts *TxOpts) iface.IssuanceInfo {
+func NewIssu(issuAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.IssuanceInfo {
 	issu := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: issuAddr,
+		endPoint:        endPoint,
 	}
 
 	return issu
@@ -33,7 +34,7 @@ func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Ad
 	var err error
 
 	log.Println("begin deploy Issuance contract...")
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	tx := &types.Transaction{}
 	retryCount := 0
@@ -97,7 +98,7 @@ func newIssuance(issuAddr common.Address, client *ethclient.Client) (*role.Issua
 func (issu *ContractModule) MintLevel() (*big.Int, error) {
 	m := big.NewInt(0)
 
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
@@ -126,7 +127,7 @@ func (issu *ContractModule) MintLevel() (*big.Int, error) {
 func (issu *ContractModule) LastMint() (*big.Int, error) {
 	m := big.NewInt(0)
 
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
@@ -155,7 +156,7 @@ func (issu *ContractModule) LastMint() (*big.Int, error) {
 func (issu *ContractModule) Price() (*big.Int, error) {
 	m := big.NewInt(0)
 
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
@@ -184,7 +185,7 @@ func (issu *ContractModule) Price() (*big.Int, error) {
 func (issu *ContractModule) Size() (*big.Int, error) {
 	m := big.NewInt(0)
 
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
@@ -213,7 +214,7 @@ func (issu *ContractModule) Size() (*big.Int, error) {
 func (issu *ContractModule) SpaceTime() (*big.Int, error) {
 	m := big.NewInt(0)
 
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
@@ -242,7 +243,7 @@ func (issu *ContractModule) SpaceTime() (*big.Int, error) {
 func (issu *ContractModule) TotalPay() (*big.Int, error) {
 	m := big.NewInt(0)
 
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
@@ -271,7 +272,7 @@ func (issu *ContractModule) TotalPay() (*big.Int, error) {
 func (issu *ContractModule) TotalPaid() (*big.Int, error) {
 	m := big.NewInt(0)
 
-	client := getClient(EndPoint)
+	client := getClient(issu.endPoint)
 	defer client.Close()
 	issuIns, err := newIssuance(issu.contractAddress, client)
 	if err != nil {
