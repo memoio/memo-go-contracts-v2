@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// erc20 address and caller address set by flags
+// GetERC20Cmd erc20 address and caller address set by flags
 // input of method set by param
 var GetERC20Cmd = &cli.Command{
 	Name:  "eget",
@@ -26,6 +26,12 @@ var GetERC20Cmd = &cli.Command{
 			Aliases: []string{"c"},
 			Value:   callconts.AdminAddr.Hex(), // default caller = admin
 			Usage:   "tx caller",
+		},
+		&cli.StringFlag{
+			Name:    "endPoint",
+			Aliases: []string{"ep"},
+			Value:   callconts.EndPoint, //默认值为common.go中的endPoint
+			Usage:   "the geth endPoint",
 		},
 	},
 	Subcommands: []*cli.Command{
@@ -48,6 +54,8 @@ var nameCmd = &cli.Command{
 		fmt.Println("erc20:", erc20)
 		caller := common.HexToAddress(cctx.String("caller"))
 		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		// send tx
 		txopts := &callconts.TxOpts{
@@ -56,7 +64,7 @@ var nameCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
 		n, err := e.GetName()
 		if err != nil {
 			return err
@@ -77,6 +85,8 @@ var symbolCmd = &cli.Command{
 		fmt.Println("erc20:", erc20)
 		caller := common.HexToAddress(cctx.String("caller"))
 		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		// send tx
 		txopts := &callconts.TxOpts{
@@ -85,7 +95,7 @@ var symbolCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
 		n, err := e.GetSymbol()
 		if err != nil {
 			return err
@@ -106,6 +116,8 @@ var decCmd = &cli.Command{
 		fmt.Println("erc20:", erc20)
 		caller := common.HexToAddress(cctx.String("caller"))
 		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		// send tx
 		txopts := &callconts.TxOpts{
@@ -114,7 +126,7 @@ var decCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
 		dec, err := e.GetDecimals()
 		if err != nil {
 			return err
@@ -135,6 +147,8 @@ var tsCmd = &cli.Command{
 		fmt.Println("erc20:", erc20)
 		caller := common.HexToAddress(cctx.String("caller"))
 		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		// send tx
 		txopts := &callconts.TxOpts{
@@ -143,7 +157,7 @@ var tsCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
 		ts, err := e.GetTotalSupply()
 		if err != nil {
 			return err
@@ -178,6 +192,8 @@ var boCmd = &cli.Command{
 		fmt.Println("erc20 address:", erc20)
 		caller := common.HexToAddress(cctx.String("caller"))
 		fmt.Println("caller address:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		// send tx
 		txopts := &callconts.TxOpts{
@@ -186,7 +202,7 @@ var boCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
 		b, err := e.BalanceOf(common.HexToAddress(acc))
 		if err != nil {
 			return err
@@ -224,6 +240,8 @@ var alCmd = &cli.Command{
 		fmt.Println("erc20 address:", erc20)
 		caller := common.HexToAddress(cctx.String("caller"))
 		fmt.Println("caller address:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
 
 		// send tx
 		txopts := &callconts.TxOpts{
@@ -232,7 +250,7 @@ var alCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
 		al, err := e.Allowance(common.HexToAddress(owner), common.HexToAddress(spender))
 		if err != nil {
 			return err
