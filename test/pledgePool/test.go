@@ -30,6 +30,7 @@ func main() {
 	adminAddr := common.HexToAddress(test.AdminAddr)
 	roleAddr := common.HexToAddress("0xcB94eeEA7c35eB9eC32CE40fE1B07C99E9dE663d")
 	pledgeMoney := big.NewInt(1e6)
+	addrsNum := uint64(7)
 
 	// 查看余额，支付交易Gas费，余额不足时，需充值（暂时手动）
 	bal := callconts.QueryEthBalance(test.AdminAddr, ethEndPoint)
@@ -87,6 +88,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The account's role index is ", rIndex)
+	if rIndex != addrsNum {
+		log.Fatal("rIndex should be ", addrsNum)
+	}
 	// 开始pledge
 	pp = callconts.NewPledgePool(ppAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, rIndex, pledgeMoney, nil)
@@ -100,6 +104,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The total pledge value of token0 is ", p)
+	if p.Cmp(pledgeMoney) != 0 {
+		log.Fatal("pledge value should be ", pledgeMoney)
+	}
 
 	fmt.Println("============4. begin test GetBalanceInPPool============")
 	p, err = pp.GetBalanceInPPool(rIndex, 0)
@@ -107,6 +114,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The balance value of token0 in PledgePool contract is ", p)
+	if p.Cmp(pledgeMoney) != 0 {
+		log.Fatal("balance value in PledgePool should be ", pledgeMoney)
+	}
 
 	fmt.Println("============5. begin test TotalPledge============")
 	p, err = pp.TotalPledge()
@@ -114,16 +124,22 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The total pledge of primaryToken is ", p)
+	if p.Cmp(pledgeMoney) != 0 {
+		log.Fatal("totalPledge should be ", pledgeMoney)
+	}
 
 	fmt.Println("============6. begin test Withdraw============")
-	addrNum, err := r.GetAddrsNum()
+	_addrNum, err := r.GetAddrsNum()
 	if err != nil {
 		log.Fatal("get addrNum failed: ", err)
 	}
-	fmt.Println("addrNum: ", addrNum)
+	fmt.Println("addrNum: ", _addrNum)
+	if _addrNum != addrsNum {
+		log.Fatal("addrs num should be ", addrsNum)
+	}
 
 	// show all acc
-	for i := uint64(0); i < addrNum; i++ {
+	for i := uint64(0); i < _addrNum; i++ {
 		// rIndex as param
 		rAddr, err := r.GetAddr(i + 1)
 		if err != nil {
@@ -141,6 +157,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("After Withdraw, the balance value of token0 in PledgePool contract is ", p)
+	if p.Cmp(big.NewInt(0))!=0 {
+		log.Fatal("After Withdraw, the balance in PledgePool should be 0")
+	}
 
 	fmt.Println("============test success!============")
 }
