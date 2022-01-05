@@ -28,6 +28,10 @@ func main() {
 		cmd.AdminCmd,
 		cmd.MoneyCmd,
 		cmd.GetERC20Cmd,
+		cmd.FSGet,
+		cmd.RGet,
+		cmd.RTGet,
+		cmd.PPGet,
 	}
 
 	app := &cli.App{
