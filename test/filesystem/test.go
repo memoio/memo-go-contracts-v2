@@ -29,7 +29,7 @@ func main() {
 	adminAddr := common.HexToAddress(test.AdminAddr)
 	rechargeMoney := big.NewInt(1e8)
 	start := uint64(time.Now().Unix()) // 当前时间的时间戳
-	end := start + 10
+	end := 86400 - start%86400 + start // end需要与天对齐
 	size := uint64(10)
 	sprice := big.NewInt(100)
 	// 部署Role的参数
@@ -222,6 +222,18 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The group info: isActive:", isActive, " isBanned: ", isBanned, " isReady:", isReady, " level:", level, " size:", _size, " price:", price, " fsAddr:", fsAddr.Hex())
+	if !isActive {
+		log.Fatal("group should be active")
+	}
+	if isBanned {
+		log.Fatal("group shouldn't be banned")
+	}
+	if isReady {
+		log.Fatal("group shouldn't be ready")
+	}
+	if level != 2 {
+		log.Fatal("level shoule be 2")
+	}
 
 	fmt.Println("============2. begin test GetFsInfo============")
 	// 先注册User，与group绑定
@@ -316,7 +328,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("The order info nonce is ", _nonce, " subNonce is ", subNonce) // 应该都为0
+	fmt.Println("The order info nonce is ", _nonce, " subNonce is ", subNonce)
+	if _nonce != 1 || subNonce != 0 {
+		log.Fatal("nonce should be 1, subNonce should be 0")
+	}
 
 	fmt.Println("============5. begin test GetFsProviderSum============")
 	pSum, err := fs.GetFsProviderSum(rIndexes[0])
@@ -343,21 +358,65 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("The store information time is ", _t, " size is ", _s, " price is ", _p) // 应该和上述的time、size、price相同
+	fmt.Println("The store information time is ", _t, ", size is ", _s, ", price is ", _p) // 应该和上述的time、size、price相同
+	if _s != size || _p.Cmp(sprice) != 0 {
+		log.Fatal("size shoule be ", size, ", price should be", sprice)
+	}
 
 	fmt.Println("============8. begin test GetChannelInfo============")
 	amount, _n, expire, err := fs.GetChannelInfo(rIndexes[0], rIndexes[4], 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("The channel info amount is ", amount, " nonce is ", _n, " expire is ", expire)
+	fmt.Println("The channel info amount is ", amount, ", nonce is ", _n, ", expire is ", expire)
+	if expire != end || amount.Cmp(big.NewInt(0)) != 0 || _n != 0 {
+		log.Fatal("expire should be ", end, ", amount shoule be 0, nonce should be 0")
+	}
 
 	fmt.Println("============9. begin test GetSettleInfo============")
 	setime, sesize, seprice, maxPay, hasPaid, canPay, lost, lostPaid, managePay, endPaid, linearPaid, err := fs.GetSettleInfo(rIndexes[4], 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("The settlement info time is ", setime, " size is ", sesize, " price is ", seprice, " maxPay is ", maxPay, " hasPaid is ", hasPaid, " canPay is ", canPay, " lost is ", lost, " lostPaid is ", lostPaid, " managePay is ", managePay, " endPaid is ", endPaid, " linearPaid is ", linearPaid)
+	fmt.Println("The settlement info time is ", setime, ", size is ", sesize, ", price is ", seprice, ", maxPay is ", maxPay, ", hasPaid is ", hasPaid, ", canPay is ", canPay, ", lost is ", lost, ", lostPaid is ", lostPaid, ", managePay is ", managePay, ", endPaid is ", endPaid, ", linearPaid is ", linearPaid)
+	if setime != start {
+		log.Fatal("time shoule be ", start)
+	}
+	if sesize != size {
+		log.Fatal("size shoule be ", size)
+	}
+	if seprice.Cmp(sprice) != 0 {
+		log.Fatal("price shoule be ", sprice)
+	}
+	_maxPay := big.NewInt(0).Mul(new(big.Int).SetUint64(end-start), sprice)
+	if maxPay.Cmp(_maxPay) != 0 {
+		log.Fatal("maxPay should be ", _maxPay)
+	}
+	zero := big.NewInt(0)
+	if hasPaid.Cmp(zero) != 0 || canPay.Cmp(zero) != 0 || lost.Cmp(zero) != 0 || lostPaid.Cmp(zero) != 0 || endPaid.Cmp(zero) != 0 || linearPaid.Cmp(zero) != 0 {
+		log.Fatal("hasPaid,canPay,lost,lostPaid,endPaid,linearPaid shoule be 0")
+	}
+	_managePay := big.NewInt(0).Div(_maxPay, big.NewInt(25))
+	if managePay.Cmp(_managePay) != 0 {
+		log.Fatal("managePay should be ", _managePay)
+	}
+
+	fmt.Println("============10. begin test AddOrder again============")
+	// 调用RoleFS合约中的AddOrder函数,keeper调用
+	rfs = callconts.NewRFS(rolefsAddr, addrs[1], sks[1], txopts, ethEndPoint)
+	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], end, end+86400, size, 1, 0, sprice, nil, nil, [][]byte{[]byte("Hello")})
+	if err != nil {
+		log.Fatal(err)
+	}
+	// 获取order信息
+	_nonce, subNonce, err = fs.GetFsInfoAggOrder(rIndexes[0], rIndexes[4])
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("The order info nonce is ", _nonce, " subNonce is ", subNonce)
+	if _nonce != 2 || subNonce != 0 {
+		log.Fatal("nonce should be 2, subNonce should be 0")
+	}
 
 	fmt.Println("============test success!============")
 }

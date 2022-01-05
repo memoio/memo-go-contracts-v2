@@ -47,20 +47,6 @@ func main() {
 	}
 	fmt.Println("The Issuance contract address is ", issuAddr.Hex())
 
-	// ======for redeploy Issuance in callconts======
-	// role.SetPI
-	// role := callconts.NewR(callconts.RoleAddr, adminAddr, test.AdminSk, txopts)
-	// err = role.SetPI(callconts.PledgePoolAddr, issuAddr, rolefsAddr)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// rolefs := callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts)
-	// err = rolefs.SetAddr(issuAddr, callconts.RoleAddr, callconts.FileSysAddr, callconts.RTokenAddr)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// ======for redeploy Issuance in callconts======
-
 	fmt.Println("============2. begin test MintLevel============")
 	issu = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
 	mintLevel, err := issu.MintLevel()
@@ -68,6 +54,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The mintLevel is ", mintLevel)
+	if mintLevel.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("mintlevel should be 0")
+	}
 
 	fmt.Println("============3. begin test LastMint============")
 	lastMint, err := issu.LastMint()
@@ -82,6 +71,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The price is ", price)
+	if price.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("price should be 0")
+	}
 
 	fmt.Println("============5. begin test Size============")
 	size, err := issu.Size()
@@ -89,6 +81,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The size is ", size)
+	if size.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("size should be 0")
+	}
 
 	fmt.Println("============6. begin test SpaceTime============")
 	spaceTime, err := issu.SpaceTime()
@@ -96,6 +91,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The spaceTime is ", spaceTime)
+	if spaceTime.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("spacetime should be 0")
+	}
 
 	fmt.Println("============7. begin test TotalPay============")
 	totalPay, err := issu.TotalPay()
@@ -103,6 +101,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The totalPay is ", totalPay)
+	if totalPay.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("totalPay should be 0")
+	}
 
 	fmt.Println("============8. begin test TotalPaid============")
 	totalPaid, err := issu.TotalPaid()
@@ -110,6 +111,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The totalPaid is ", totalPaid)
+	if totalPaid.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("totalPaid should be 0")
+	}
 
 	fmt.Println("============test success!============")
 }
