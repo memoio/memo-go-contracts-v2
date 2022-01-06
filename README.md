@@ -30,6 +30,7 @@
 6. role.SetPI
 7. role.CreateGroup => fsAddr
 8. rolefs.SetAddr
+9. admin SetUpRole(callconts.MinterRole, rolefsAddr)
 
 admin 选取一部分 keeper(也可以为空，因为后续可以调用 addKeeperToGroup 增添 keeper 到 group 中)创建 group(createGroup)，每个 group 对应一个 filesys。所以在 admin 调用 createGroup 时，会同时部署一个 FileSys 合约。
 
@@ -54,3 +55,8 @@ tIndex 从 0 开始，tIndex=0 表示主代币；
 
 **ErrTxFail("transaction not packaged")**
 出现这种错误，表明链上交易量较多，在给定的时间内交易还未被打包。代码会尝试加大 gasPrice 重新发起交易。
+
+## foundation 取回 fs 中的收益
+
+// TODO
+首先取得所有的 group，然后取得所有的 fsAddr,调用 fs 合约中的 withdraw 函数，从而取回在该 fs 合约中的收益。

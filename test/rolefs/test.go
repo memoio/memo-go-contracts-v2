@@ -36,7 +36,7 @@ func main() {
 	pledgeK := big.NewInt(1e6)
 	start := uint64(time.Now().Unix())
 	fmt.Println("start:", start)
-	end := start + 100*86400
+	end := 86400 - start%86400 + start + 100*86400
 	size := uint64(1000000)
 	nonce := uint64(0)
 	sprice := big.NewInt(1e11) // 1e11 1e6 1e2 1e7
@@ -178,6 +178,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	time.Sleep(1 * time.Second)
 	kIndex, err := r.GetRoleIndex(acc2Addr)
 	if err != nil {
 		log.Fatal(err)
@@ -369,7 +370,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("After addOrder: foundation avail ", _availF, ",tmp ", _tmpF)
-	if _availF.Cmp(big.NewInt(1)) != 0 || _tmpF.Cmp(zero) != 0 {
+	if _availF.Cmp(big.NewInt(1).Div(addOrderpay, big.NewInt(100))) != 0 || _tmpF.Cmp(zero) != 0 {
 		log.Fatal("availF should be ", 1, " tmpF should be ", _tmpF)
 	}
 	// 获取addOrder后user的balance，并测试正确性
@@ -410,7 +411,7 @@ func main() {
 	//size:10, price:10, totalPay:100,上面测试通过的话，这里就不需要再重复测试了
 
 	fmt.Println("============4. begin test SubOrder============")
-	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, end, size-5, nonce, 0, sprice.Sub(sprice, big.NewInt(5)), nil, nil, [][]byte{[]byte("test")})
+	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, start+10, size-5, nonce, 0, big.NewInt(0).Sub(sprice, big.NewInt(5)), nil, nil, [][]byte{[]byte("test")})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -419,10 +420,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after SubOrder: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid)
-	// after SubOrder:  end 5 5 100 0 100 0 0 4 0 0
-	if _time != end || _size != (size-5) || _maxPay.Cmp(addOrderpay) != 0 || _hasPaid.Cmp(zero) != 0 || _canPay.Cmp(addOrderpay) != 0 || _lost.Cmp(zero) != 0 || _managePay.Cmp(big.NewInt(4)) != 0 {
-		log.Fatal("result wrong")
+	fmt.Println("after SubOrder: time", _time, ", size", _size, ", price", _price, ", maxPay", _maxPay, ", hasPaid", _hasPaid, ", canPay", _canPay, ", lost", _lost, ", lostPaid", _lostPaid, ", managePay", _managePay, ", endPaid", _endPaid, ", linearPaid", _linearPaid)
+	if _time != start+10 {
+		log.Fatal("time should be ", start+10)
+	}
+	if _size != 5 {
+		log.Fatal("size should be ", 5)
+	}
+	if _price.Cmp(big.NewInt(5)) != 0 {
+		log.Fatal("price should be 5")
+	}
+	if _maxPay.Cmp(addOrderpay) != 0 {
+		log.Fatal("managePay should be", addOrderpay)
+	}
+	tmp := big.NewInt(0).Mul(sprice, big.NewInt(10)) //sprice*(newEnd - oldStart), newEnd是上面调用subOrder的start+10
+	if _canPay.Cmp(tmp) != 0 {
+		log.Fatal("canPay should be ", tmp)
 	}
 
 	fmt.Println("============5. begin test ProWithdraw============")
@@ -433,23 +446,36 @@ func main() {
 		log.Fatal(err)
 	}
 	// 获取settlement信息，并判断正确性
-	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err = fs.GetSettleInfo(pIndex, 0)
+	_time2, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after ProWithdraw: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid)
-	// end+1010 5 5 100 20 5150 10 0 4 0 0
-	if _size != (size-5) || _hasPaid.Cmp(pay) != 0 || _lost.Cmp(lost) != 0 {
-		log.Fatal("result wrong")
+	fmt.Println("after ProWithdraw: time", _time2, ", size", _size, ", price", _price, ", maxPay", _maxPay, ", hasPaid", _hasPaid, ", canPay", _canPay, ", lost", _lost, ", lostPaid", _lostPaid, ", managePay", _managePay, ", endPaid", _endPaid, ", linearPaid", _linearPaid)
+	if _size != 5 {
+		log.Fatal("size should be ", 5)
+	}
+	if _hasPaid.Cmp(pay) != 0 {
+		log.Fatal("hasPaid should be ", pay)
+	}
+	thisCanPay := big.NewInt(0).Mul(new(big.Int).SetUint64(_time2-_time), _price)
+	tmp2 := big.NewInt(0).Add(tmp, thisCanPay)
+	if _canPay.Cmp(tmp2) != 0 {
+		log.Fatal("canPay should be ", tmp2)
+	}
+	if _lost.Cmp(lost) != 0 {
+		log.Fatal("lost should be ", lost)
 	}
 	// 获取balance信息
 	_avail, _tmp, err = fs.GetBalance(pIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after ProWithdraw, provider avail", _avail, " tmp", _tmp)
-	if _avail.Cmp(zero) != 0 || _tmp.Cmp(big.NewInt(70)) != 0 {
-		log.Fatal("result wrong")
+	fmt.Println("after ProWithdraw, provider avail", _avail, ", tmp", _tmp)
+	if _avail.Cmp(zero) != 0 {
+		log.Fatal("avail should be 0")
+	}
+	if _tmp.Cmp(big.NewInt(0).Sub(_canPay, _hasPaid)) != 0 {
+		log.Fatal("tmp should be ", big.NewInt(0).Sub(_canPay, _hasPaid))
 	}
 	// 获取provider在tIndex上的代币余额
 	bal, err = erc20.BalanceOf(acc3Addr)
@@ -480,6 +506,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("p2Index ", p2Index)
+	if p2Index != 4 {
+		log.Fatal("p2Index should be 4")
+	}
 	pp = callconts.NewPledgePool(pledgePoolAddr, acc4Addr, test.Sk4, txopts, ethEndPoint)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, p2Index, pledgeK, nil)
 	if err != nil {
@@ -496,15 +525,15 @@ func main() {
 	}
 	// 先构造签名信息
 	//bytes32 h = keccak256(abi.encodePacked(pIndex, _start, end, _size, nonce, tIndex, sprice));
-	npSig, err := callconts.SignForRepair(test.Sk4, pIndex, start+9, end, size, nonce, 0, big.NewInt(5), "a") // new provider sign，此处需要确保sprice*(end-start)<=lost
+	npSig, err := callconts.SignForRepair(test.Sk4, pIndex, start+9, start+10, size, nonce, 0, big.NewInt(5), "a") // new provider sign，此处需要确保sprice*(end-start)<=lost
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("params:", pIndex, start+9, end, size, nonce, 0, big.NewInt(5), "a")
+	fmt.Println("params:", pIndex, start+9, start+10, size, nonce, 0, big.NewInt(5), "a")
 	fmt.Println("npSign:", npSig)
 	// 调用AddRepair
 	time.Sleep(2 * time.Second)
-	err = rfs.AddRepair(roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, big.NewInt(5), npSig, nil)
+	err = rfs.AddRepair(roleAddr, rTokenAddr, pIndex, p2Index, start+9, start+10, size, nonce, 0, big.NewInt(5), npSig, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -513,16 +542,23 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after AddRepair: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid)
-	if _time != (start+9) || _size != size || _price.Cmp(big.NewInt(5)) != 0 || _maxPay.Cmp(big.NewInt(5)) != 0 || _lost.Cmp(zero) != 0 {
-		log.Fatal("result wrong")
+	fmt.Println("after AddRepair: time", _time, ", size", _size, ", price", _price, ", maxPay", _maxPay, ", hasPaid", _hasPaid, ", canPay", _canPay, ", lost", _lost, ", lostPaid", _lostPaid, ", managePay", _managePay, ", endPaid", _endPaid, ", linearPaid", _linearPaid)
+	if _time != (start + 9) {
+		log.Fatal("time should be ", start+9)
 	}
+	if _size != size {
+		log.Fatal("size should be ", size)
+	}
+	if _price.Cmp(big.NewInt(5)) != 0 {
+		log.Fatal("price should be 5")
+	}
+	// if _max.Cmp()
 	// 获取balance信息
 	_avail, _tmp, err = fs.GetBalance(p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after AddRepair, provider avail", _avail, " tmp", _tmp)
+	fmt.Println("after AddRepair, provider avail", _avail, ", tmp", _tmp)
 	if _avail.Cmp(zero) != 0 || _tmp.Cmp(big.NewInt(5)) != 0 {
 		log.Fatal("result wrong")
 	}
@@ -539,7 +575,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after AddRepair, repairFs provider nonce:", _nonce, " subNonce:", _subNonce)
+	fmt.Println("after AddRepair, repairFs provider nonce:", _nonce, ", subNonce:", _subNonce)
 	if _nonce != 1 || _subNonce != 0 {
 		log.Fatal("result wrong")
 	}
@@ -547,7 +583,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after AddRepair, repairFs provider storeInfo:", _time, _size, _price)
+	fmt.Println("after AddRepair, repairFs provider storeInfo: time", _time, ", size", _size, ", price", _price)
 	if _time != 0 || _size != size || _price.Cmp(big.NewInt(5)) != 0 {
 		log.Fatal("result wrong")
 	}
@@ -555,7 +591,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after AddRepair, repairFs provider channelInfo:", _amount, _nonce, _expire)
+	fmt.Println("after AddRepair, repairFs provider channelInfo: amount", _amount, ", nonce", _nonce, ", expire", _expire)
 	if _amount.Cmp(zero) != 0 || _nonce != 0 || _expire != 0 {
 		log.Fatal("result wrong")
 	}
@@ -563,12 +599,15 @@ func main() {
 	fmt.Println("============7. begin test SubRepair============")
 	// 先构造签名信息
 	//bytes32 h = keccak256(abi.encodePacked(pIndex, _start, end, _size, nonce, tIndex, sprice));
-	npSig, err = callconts.SignForRepair(test.Sk4, pIndex, start+9, end, size, nonce, 0, big.NewInt(5), "s") // new provider sign
+	npSig, err = callconts.SignForRepair(test.Sk4, pIndex, start+9, start+10, size, nonce, 0, big.NewInt(5), "s") // new provider sign
 	if err != nil {
 		log.Fatal(err)
 	}
 	// 调用SubRepair
-	err = rfs.SubRepair(roleAddr, rTokenAddr, pIndex, p2Index, start+9, end, size, nonce, 0, big.NewInt(5), npSig, nil)
+	startSubRepair := start + 9
+	endSubRepair := start + 10
+	spriceSubRepair := big.NewInt(5)
+	err = rfs.SubRepair(roleAddr, rTokenAddr, pIndex, p2Index, startSubRepair, endSubRepair, size, nonce, 0, spriceSubRepair, npSig, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -577,13 +616,23 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after SubRepair: ", _time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid)
+	fmt.Println("after SubRepair: time", _time, ", size", _size, ", price", _price, ", maxPay", _maxPay, ", hasPaid", _hasPaid, ", canPay", _canPay, ", lost", _lost, ", lostPaid", _lostPaid, ", managePay", _managePay, ", endPaid", _endPaid, ", linearPaid", _linearPaid)
+	if _time != endSubRepair {
+		log.Fatal("time should be ", endSubRepair)
+	}
+	if _price.Cmp(zero) != 0 { // spriceAddRepair - spriceSubRepair
+		log.Fatal("price should be 0")
+	}
+	maxPaySubRepair := big.NewInt(0).Mul(spriceSubRepair, new(big.Int).SetUint64(endSubRepair-startSubRepair))
+	if _maxPay.Cmp(maxPaySubRepair) != 0 {
+		log.Fatal("maxPay should be ", maxPaySubRepair)
+	}
 	// 获取balance信息
 	_avail, _tmp, err = fs.GetBalance(p2Index, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after SubRepair, provider avail", _avail, " tmp", _tmp)
+	fmt.Println("after SubRepair, provider avail", _avail, ", tmp", _tmp)
 	if _avail.Cmp(zero) != 0 || _tmp.Cmp(big.NewInt(5)) != 0 {
 		log.Fatal("result wrong")
 	}
@@ -600,7 +649,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after SubRepair, repairFs provider nonce:", _nonce, " subNonce:", _subNonce)
+	fmt.Println("after SubRepair, repairFs provider nonce:", _nonce, ", subNonce:", _subNonce)
 	if _nonce != 1 || _subNonce != 1 {
 		log.Fatal("result wrong")
 	}
@@ -608,7 +657,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after SubRepair, repairFs provider storeInfo:", _time, _size, _price)
+	fmt.Println("after SubRepair, repairFs provider storeInfo: time", _time, ", size", _size, ", price", _price)
 	if _time != 0 || _size != 0 || _price.Cmp(zero) != 0 {
 		log.Fatal("result wrong")
 	}
@@ -616,7 +665,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("after SubRepair, repairFs provider channelInfo:", _amount, _nonce, _expire)
+	fmt.Println("after SubRepair, repairFs provider channelInfo: amount", _amount, ", nonce", _nonce, ", expire", _expire)
 	if _amount.Cmp(zero) != 0 || _nonce != 0 || _expire != 0 {
 		log.Fatal("result wrong")
 	}

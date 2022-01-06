@@ -122,6 +122,7 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 		return err
 	}
 	if isBanned {
+		log.Println("pledge: account with rindex is banned")
 		return ErrIsBanned
 	}
 
@@ -142,8 +143,19 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 				return err
 			}
 		} else { // otherwise, quit Pledge
+			log.Println("pledge: call pledge by other account, but the allowance is not enough")
 			return ErrAlloNotE
 		}
+	}
+
+	// check balance
+	bal, err := e.BalanceOf(addr)
+	if err != nil {
+		return err
+	}
+	if bal.Cmp(value) < 0 {
+		log.Println("pledge: addr balance is ", bal, " is not enough to pledge ", value)
+		return ErrBalNotE
 	}
 
 	log.Println("begin Pledge in PledgePool contract with value", value, " and rindex", rindex, " ...")
@@ -192,13 +204,6 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 	}
 	log.Println("Pledge in PledgePool contract has been successful!")
 
-	// show event info in receipt
-	accAddr, money, err := getPledgeInfoFromRLogs(tx.Hash())
-	if err != nil {
-		return err
-	}
-	log.Printf("Pledge in PledgePool, the pledger address is %v, pledge money is %v\n", accAddr, money)
-
 	return nil
 }
 
@@ -223,11 +228,15 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 		return err
 	}
 	if isBanned {
+		log.Println("withdraw: account with rindex ", rindex, " is banned")
 		return ErrIsBanned
 	}
 	// check if tindex is valid
 	rt := NewRT(rTokenAddr, p.addr, p.hexSk, p.txopts, p.endPoint)
 	isValid, err := rt.IsValid(tindex)
+	if err != nil {
+		return err
+	}
 	if !isValid {
 		return ErrTIndex
 	}
@@ -277,12 +286,13 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 	}
 	log.Println("Withdraw in PledgePool contract has been successful!")
 
-	// show event info in receipt
-	accAddr, money, err := getWithdrawInfoFromRLogs(tx.Hash())
-	if err != nil {
-		return err
+	if tx != nil {
+		_, wd, err := getWithdrawInfoFromRLogs(tx.Hash())
+		if err != nil {
+			return err
+		}
+		log.Println("account withdraw money:", wd)
 	}
-	log.Printf("Withdraw in PledgePool, the withdrawer address is %v, withdraw money is %v\n", accAddr, money)
 
 	return nil
 }
