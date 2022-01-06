@@ -103,7 +103,20 @@ func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) erro
 		return err
 	}
 
+	paused, err := e.GetPaused()
+	if err != nil {
+		return err
+	}
+	if paused {
+		return errPaused
+	}
+
 	if recipient.Hex() == InvalidAddr {
+		log.Println("you try to transfer money to an invalidAddr")
+		return ErrInValAddr
+	}
+	if e.addr.Hex() == InvalidAddr {
+		log.Println("sender in transfer is an invalidAddr")
 		return ErrInValAddr
 	}
 
@@ -175,6 +188,11 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 	}
 
 	if addr.Hex() == InvalidAddr {
+		log.Println("you try to approve an invalidAddr")
+		return ErrInValAddr
+	}
+	if e.addr.Hex() == InvalidAddr {
+		log.Println("from in approve is an invalidAddr")
 		return ErrInValAddr
 	}
 
@@ -221,7 +239,6 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 			continue
 		}
 
-		log.Println("tx sent ok, checking tx..")
 		err = checkTx(tx)
 		if err == ErrTxFail {
 			checkRetryCount++
@@ -249,6 +266,15 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 		return err
 	}
 
+	if sender.Hex() == InvalidAddr {
+		log.Println("sender is an invalidAddr in transferFrom")
+		return ErrInValAddr
+	}
+	if recipient.Hex() == InvalidAddr {
+		log.Println("recipient is an invalidAddr in transferFrom")
+		return ErrInValAddr
+	}
+
 	// need to determine whether the account allowance is enough to TransferFrom.
 	allo, err := e.Allowance(sender, e.addr)
 	if err != nil {
@@ -257,7 +283,7 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 	log.Println(sender.Hex(), "=>", e.addr.Hex(), "allowance is:", allo)
 	if allo.Cmp(value) < 0 {
 		log.Println("Allowance is not enough, please reconfirm the TransferFrom amount.")
-		return ErrBalNotE
+		return ErrAlloNotE
 	}
 
 	// need to determine whether the sender balance is enough to transfer.
@@ -328,6 +354,11 @@ func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.
 	}
 
 	if recipient.Hex() == InvalidAddr {
+		log.Println("increaseAllowance: recipient is an invalidAddr")
+		return ErrInValAddr
+	}
+	if e.addr.Hex() == InvalidAddr {
+		log.Println("increaseAllowance: sender is an invalidAddr")
 		return ErrInValAddr
 	}
 
@@ -404,7 +435,21 @@ func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.
 	}
 
 	if recipient.Hex() == InvalidAddr {
+		log.Println("decreaseAllowance: recipient is an invalidAddr")
 		return ErrInValAddr
+	}
+	if e.addr.Hex() == InvalidAddr {
+		log.Println("increaseAllowance: sender is an invalidAddr")
+		return ErrInValAddr
+	}
+
+	allo, err := e.Allowance(e.addr, recipient)
+	if err != nil {
+		return err
+	}
+	if allo.Cmp(value) < 0 {
+		log.Println("the allowance is ", allo, ", but you want to decrease allowance ", value)
+		return ErrAlloNotE
 	}
 
 	log.Println("begin DecreaseAllowance to", recipient.Hex(), " with value", value, " in ERC20 contract...")
@@ -472,6 +517,7 @@ func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) er
 	}
 
 	if target.Hex() == InvalidAddr {
+		log.Println("mintToken: target is invalid")
 		return ErrInValAddr
 	}
 
@@ -544,6 +590,7 @@ func (e *ContractModule) Burn(burnValue *big.Int) error {
 		return err
 	}
 	if bal.Cmp(burnValue) < 0 {
+		log.Println("burn: your balance is ", bal, ", but you want to burn ", burnValue)
 		return ErrBalNotE
 	}
 
@@ -616,6 +663,7 @@ func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error
 	for _, t := range targets {
 		tmpAddr = t.Hex()
 		if tmpAddr == InvalidAddr {
+			log.Println("airDrop: targets include invalidAddr, targets:", targets)
 			return ErrInValAddr
 		}
 		tmp = append(tmp, tmpAddr)

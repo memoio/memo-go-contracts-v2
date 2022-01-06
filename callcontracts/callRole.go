@@ -4,6 +4,7 @@
 package callconts
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -106,6 +107,15 @@ func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Addre
 	roleIns, err := newRole(r.contractAddress, client)
 	if err != nil {
 		return err
+	}
+
+	owner, err := r.GetOwner()
+	if err != nil {
+		return err
+	}
+	if owner.Hex() != r.addr.Hex() {
+		log.Println("owner of Role-contract is", owner.Hex(), ", but caller is", r.addr.Hex())
+		return errNotOwner
 	}
 
 	log.Println("begin SetPI in Role contract...")
@@ -249,7 +259,7 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 		return err
 	}
 	if pledge.Cmp(pledgek) < 0 {
-		log.Println("the rindex ", index, " addr:", addr.Hex(), " pledgeMoney:", pledge, " is not enough, shouldn't less than ", pledgek)
+		log.Println("the rindex:", index, ", addr:", addr.Hex(), ", pledgeMoney:", pledge, " is not enough, shouldn't less than ", pledgek)
 		return errPledgeNE
 	}
 
@@ -298,13 +308,6 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 	}
 	log.Println("RegisterKeeper in Role has been successful!")
 
-	// show event info in receipt
-	kIndex, kAddr, err := getRKeeperInfoFromRLogs(tx.Hash())
-	if err != nil {
-		return err
-	}
-	log.Printf("RegisterKeeper in Role, the kIndex is %v, kAddr is %v\n", kIndex, kAddr)
-
 	return nil
 }
 
@@ -326,8 +329,8 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 	if err != nil {
 		return err
 	}
-	log.Println("account roleType is:", roleType)
 	if roleType != 0 { // role already registered
+		log.Println("account roleType is:", roleType)
 		return ErrRoleReg
 	}
 	pp := NewPledgePool(pledgePoolAddr, r.addr, r.hexSk, r.txopts, r.endPoint)
@@ -391,13 +394,6 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 	}
 	log.Println("RegisterProvider in Role has been successful!")
 
-	// show event info in receipt
-	pIndex, pAddr, err := getRProviderInfoFromRLogs(tx.Hash())
-	if err != nil {
-		return err
-	}
-	log.Printf("RegisterProvider in Role, the pIndex is %v, pAddr is %v\n", pIndex, pAddr)
-
 	return nil
 }
 
@@ -421,6 +417,7 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 		return err
 	}
 	if roleType != 0 { // role already registered
+		log.Println("account roleType is:", roleType)
 		return ErrRoleReg
 	}
 
@@ -430,6 +427,7 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 		return err
 	}
 	if !isActive || isBanned {
+		log.Println("group ", gindex, " isActive:", isActive, " isBanned:", isBanned)
 		return ErrInvalidG
 	}
 
@@ -440,8 +438,11 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 		return err
 	}
 	if !isValid {
+		log.Println("tIndex:", tindex)
 		return ErrTIndex
 	}
+
+	// don't need to check fs
 
 	log.Println("begin RegisterUser in Role contract...")
 	tx := &types.Transaction{}
@@ -487,13 +488,6 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 		break
 	}
 	log.Println("RegisterUser in Role has been successful!")
-
-	// show event info in receipt
-	uIndex, uAddr, err := getRUserInfoFromRLogs(tx.Hash())
-	if err != nil {
-		return err
-	}
-	log.Printf("RegisterUser in Role, the uIndex is %v, uAddr is %v\n", uIndex, uAddr)
 
 	return nil
 }
@@ -592,6 +586,16 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 		return 0, err
 	}
 
+	// check caller
+	owner, err := r.GetOwner()
+	if err != nil {
+		return 0, err
+	}
+	if owner.Hex() != r.addr.Hex() {
+		log.Println("owner is", owner.Hex(), "but caller is", r.addr.Hex())
+		return 0, errNotOwner
+	}
+
 	// check kindexes
 	var tmpAddr common.Address
 	for _, kindex := range kindexes {
@@ -601,8 +605,8 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 			return 0, err
 		}
 		if roleType != KeeperRoleType || isActive || isBanned {
-			log.Println("roleType: ", roleType, " isActive: ", isActive, " isBanned: ", isBanned)
-			log.Println(kindex, " in kindexes is invalid, the address is", tmpAddr)
+			log.Println("rindex ", kindex, " in kindexes is invalid, the address is", tmpAddr)
+			log.Println("its roleType:", roleType, " isActive:", isActive, "isBanned: ", isBanned)
 			return 0, ErrIndex
 		}
 	}
@@ -651,13 +655,23 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 	}
 	log.Println("CreateGroup in Role has been successful!")
 
-	// get event info from receipt
-	gIndex, err := getGIndexFromRLogs(tx.Hash())
-	if err != nil {
-		return 0, err
+	var gIndex uint64
+	if tx != nil {
+		// get gIndex by event info from receipt
+		gIndex, err = getGIndexFromRLogs(tx.Hash())
+		if err != nil {
+			return 0, err
+		}
+	} else {
+		// get gIndex from get group info
+		time.Sleep(waitTime)
+		gIndex, err = r.GetGroupsNum()
+		if err != nil {
+			return 0, err
+		}
 	}
-	log.Println("CreateGroup in Role, the gIndex is", gIndex)
 
+	log.Println("CreateGroup in Role, the gIndex is", gIndex)
 	return gIndex, nil
 }
 
@@ -735,13 +749,23 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 		return err
 	}
 
+	// check caller
+	owner, err := r.GetOwner()
+	if err != nil {
+		return err
+	}
+	if owner.Hex() != r.addr.Hex() {
+		log.Println("owner is", owner.Hex(), "but caller is", r.addr.Hex())
+		return errNotOwner
+	}
+
 	// check gIndex
 	num, err := r.GetGroupsNum()
 	if err != nil {
 		return err
 	}
 	if gIndex == 0 || gIndex > num {
-		log.Println("gIndex shouldn't be zero or more than groupsNum", num)
+		log.Println("the gIndex", gIndex, "shouldn't be zero or more than groupsNum", num)
 		return ErrInvalidG
 	}
 	_, isBanned, _, _, _, _, _, err := r.GetGroupInfo(gIndex)
@@ -913,6 +937,16 @@ func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) erro
 		return err
 	}
 
+	// check caller
+	owner, err := r.GetOwner()
+	if err != nil {
+		return err
+	}
+	if owner.Hex() != r.addr.Hex() {
+		log.Println("owner is", owner.Hex(), "but caller is", r.addr.Hex())
+		return errNotOwner
+	}
+
 	log.Println("begin SetPledgeMoney in Role contract...")
 	tx := &types.Transaction{}
 	retryCount := 0
@@ -975,7 +1009,7 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 		return err
 	}
 	log.Println("account address get by rIndex", uIndex, "is:", addr.Hex())
-	_, isBanned, roleType, _, _, _, err := r.GetRoleInfo(addr)
+	_, isBanned, roleType, _, gIndex, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
@@ -992,6 +1026,25 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 	}
 	if !isValid {
 		return ErrTIndex
+	}
+
+	// check allowance
+	_, _, _, _, _, _, fsAddr, err := r.GetGroupInfo(gIndex)
+	if err != nil {
+		return err
+	}
+	tAddr, err := rt.GetTA(tIndex)
+	if err != nil {
+		return err
+	}
+	erc20 := NewERC20(tAddr, r.addr, r.hexSk, r.txopts, r.endPoint)
+	allo, err := erc20.Allowance(addr, fsAddr)
+	if err != nil {
+		return err
+	}
+	if allo.Cmp(money) < 0 {
+		log.Println("uIndex", uIndex, " addr:", addr.Hex(), " allowance to fsAddr", fsAddr.Hex(), "is", allo, "less than recharge money", money)
+		return ErrAlloNotE
 	}
 
 	log.Println("begin Recharge in Role contract...")
@@ -1050,6 +1103,11 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 		return err
 	}
 
+	// check amount
+	if amount.Cmp(big.NewInt(0)) <= 0 {
+		return errors.New("amount shouldn't be 0")
+	}
+
 	// check tindex
 	rt := NewRT(rTokenAddr, r.addr, r.hexSk, r.txopts, r.endPoint)
 	isValid, err := rt.IsValid(tIndex)
@@ -1058,6 +1116,24 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 	}
 	if !isValid {
 		return ErrTIndex
+	}
+
+	// check rIndex
+	addr, err := r.GetAddr(rIndex)
+	if err != nil {
+		return err
+	}
+	_, isBanned, _, _, gIndex, _, err := r.GetRoleInfo(addr)
+	if err != nil {
+		return err
+	}
+	if isBanned {
+		log.Println("rIndex:", rIndex, " addr:", addr.Hex(), " isBanned:", isBanned)
+		return ErrIsBanned
+	}
+	if gIndex == 0 {
+		log.Println("rIndex:", rIndex, " addr:", addr.Hex(), " gIndex:", gIndex)
+		return ErrInvalidG
 	}
 
 	log.Println("begin WithdrawFromFs in Role contract...")

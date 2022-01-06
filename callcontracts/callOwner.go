@@ -38,6 +38,15 @@ func (own *ContractModule) AlterOwner(newOwnerAddr common.Address) error {
 		return ErrInValAddr
 	}
 
+	owner, err := own.GetOwner()
+	if err != nil {
+		return err
+	}
+	if owner.Hex() != own.addr.Hex() {
+		log.Println("own.addr:", own.addr.Hex())
+		return errNotOwner
+	}
+
 	log.Println("begin AlterOwner in Role contract...")
 	tx := &types.Transaction{}
 	retryCount := 0
