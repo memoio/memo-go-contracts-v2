@@ -1,1 +1,142 @@
 package cmd
+
+import (
+	"fmt"
+	"math/big"
+	callconts "memoContract/callcontracts"
+	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/urfave/cli/v2"
+)
+
+// GetERC20Cmd erc20 address and caller address set by flags
+// input of method set by param
+var PPGet = &cli.Command{
+	Name:  "ppget",
+	Usage: "call get methods of pledge pool contract",
+	Flags: []cli.Flag{
+		// pp
+		&cli.StringFlag{
+			Name:    "ppaddr",
+			Aliases: []string{"pp"},
+			Value:   callconts.PledgePoolAddr.Hex(), // default rtoken addr
+			Usage:   "fs address",
+		},
+		// caller
+		&cli.StringFlag{
+			Name:    "caller",
+			Aliases: []string{"c"},
+			Value:   callconts.AdminAddr.Hex(), // default caller = admin
+			Usage:   "tx caller",
+		},
+		// end point
+		&cli.StringFlag{
+			Name:    "endPoint",
+			Aliases: []string{"ep"},
+			Value:   callconts.EndPoint, //默认值为common.go中的endPoint
+			Usage:   "the geth endPoint",
+		},
+	},
+	Subcommands: []*cli.Command{
+		ppbalCmd,
+		plCmd,
+	},
+}
+
+// get balance of acc
+var ppbalCmd = &cli.Command{
+	Name:  "bal",
+	Usage: "get balance of acc",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		ppaddr := common.HexToAddress(cctx.String("ppaddr"))
+		fmt.Println("pledge pool:", ppaddr)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// parse args
+		rindex := cctx.Args().Get(0)
+		i, _ := strconv.Atoi(rindex)
+		r64 := uint64(i)
+		// // default index = 1
+		// if t32 == 0 {
+		// 	t32 = 1
+		// }
+		fmt.Println("rindex:", r64)
+
+		tindex := cctx.Args().Get(1)
+		i, _ = strconv.Atoi(tindex)
+		t32 := uint32(i)
+		// // default index = 1
+		// if t32 == 0 {
+		// 	t32 = 1
+		// }
+		fmt.Println("tindex:", t32)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// pp caller
+		pp := callconts.NewPledgePool(ppaddr, caller, "", txopts, endPoint)
+
+		// call contract
+		b, err := pp.GetBalanceInPPool(r64, t32)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nbalance: %v\n", b)
+
+		return nil
+	},
+}
+
+// GetPledge Get all pledge amount in specified token.
+var plCmd = &cli.Command{
+	Name:  "pl",
+	Usage: "GetPledge Get all pledge amount in specified token.",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		ppaddr := common.HexToAddress(cctx.String("ppaddr"))
+		fmt.Println("pledge pool:", ppaddr)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// parse args
+		tindex := cctx.Args().Get(0)
+		i, _ := strconv.Atoi(tindex)
+		t32 := uint32(i)
+		// // default index = 1
+		// if t32 == 0 {
+		// 	t32 = 1
+		// }
+		fmt.Println("tindex:", t32)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// pp caller
+		pp := callconts.NewPledgePool(ppaddr, caller, "", txopts, endPoint)
+
+		// call contract
+		b, err := pp.GetPledge(t32)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\npledge: %v\n", b)
+
+		return nil
+	},
+}

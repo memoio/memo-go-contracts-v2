@@ -1526,6 +1526,7 @@ func PrePaire() (err error) {
 		if err != nil {
 			log.Fatal("get group1 info failed")
 		}
+		fmt.Println("fs1 addr: ", fsAddr1)
 
 		// test create group 2 with inActive, level=2, but only 1 keeper involved
 		fmt.Println(">>>> begin create group 2")
@@ -1543,6 +1544,7 @@ func PrePaire() (err error) {
 		if err != nil {
 			log.Fatal("get group2 info failed")
 		}
+		fmt.Println("fs2 addr: ", fsAddr2)
 	}
 
 	// register user role
