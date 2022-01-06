@@ -60,10 +60,14 @@ var infoCmd = &cli.Command{
 		fmt.Println("fs:", fs)
 		caller := common.HexToAddress(cctx.String("caller"))
 		fmt.Println("caller:", caller)
-		user := cctx.String("user")
-		fmt.Println("user:", user)
 		endPoint := cctx.String("endPoint")
 		fmt.Println("endPoint:", endPoint)
+
+		// parse args
+		user := cctx.Args().Get(0)
+		i, _ := strconv.Atoi(user)
+		u64 := uint64(i)
+		fmt.Println("user:", u64)
 
 		// send tx
 		txopts := &callconts.TxOpts{
@@ -74,8 +78,6 @@ var infoCmd = &cli.Command{
 
 		// fs caller
 		e := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
-		i, _ := strconv.Atoi(user)
-		u64 := uint64(i)
 		a, tIndex, err := e.GetFsInfo(u64)
 		if err != nil {
 			return err
@@ -103,7 +105,6 @@ var pnCmd = &cli.Command{
 		user := cctx.Args().Get(0)
 		i, _ := strconv.Atoi(user)
 		u64 := uint64(i)
-
 		fmt.Println("user:", u64)
 
 		// send tx

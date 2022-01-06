@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	callconts "memoContract/callcontracts"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli/v2"
@@ -41,6 +42,8 @@ var GetERC20Cmd = &cli.Command{
 		tsCmd,
 		boCmd,
 		alCmd,
+		hrCmd,
+		psCmd,
 	},
 }
 
@@ -256,6 +259,87 @@ var alCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("allowance of %s to %s is : %v\n", owner, spender, al)
+
+		return nil
+	},
+}
+
+// hasrole
+var hrCmd = &cli.Command{
+	Name:  "hr",
+	Usage: "call hasrole method of accesscontrol",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		erc20 := common.HexToAddress(cctx.String("erc20"))
+		fmt.Println("erc20 address:", erc20)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller address:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// parse args
+		rType := cctx.Args().Get(0)
+		rt, _ := strconv.Atoi(rType)
+		r8 := uint8(rt)
+		// type 1 as default
+		if r8 == 0 {
+			r8 = 1
+		}
+		fmt.Println("role type:", r8)
+
+		acc := cctx.Args().Get(1)
+		if len(acc) == 0 {
+			acc = "0x9011B1c901d330A63d029B6B325EdE69aeEe11d4" // acc1 as default
+		} else if len(acc) != 42 || acc == callconts.InvalidAddr {
+			fmt.Println("acc should be with prefix 0x, and shouldn't be 0x0")
+			return nil
+		}
+		fmt.Println("acc address:", acc)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+		// erc20 caller
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		b, err := e.HasRole(r8, common.HexToAddress(acc))
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nhas role: %v\n", b)
+
+		return nil
+	},
+}
+
+// get paused
+var psCmd = &cli.Command{
+	Name:  "ps",
+	Usage: "call getpaused method of accesscontrol",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		erc20 := common.HexToAddress(cctx.String("erc20"))
+		fmt.Println("erc20 address:", erc20)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller address:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+		// erc20 caller
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		b, err := e.GetPaused()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nget paused: %v\n", b)
 
 		return nil
 	},

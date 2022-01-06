@@ -32,6 +32,7 @@ func main() {
 		cmd.RGet,
 		cmd.RTGet,
 		cmd.PPGet,
+		cmd.ISGet,
 	}
 
 	app := &cli.App{

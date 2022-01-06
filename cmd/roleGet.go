@@ -14,7 +14,7 @@ import (
 // input of method set by param
 var RGet = &cli.Command{
 	Name:  "rget",
-	Usage: "call get methods of fs contract",
+	Usage: "call get methods of role contract",
 	Flags: []cli.Flag{
 		// role
 		&cli.StringFlag{
@@ -51,6 +51,7 @@ var RGet = &cli.Command{
 		gkCmd,
 		gpCmd,
 		guCmd,
+		ownerCmd,
 	},
 }
 
@@ -582,6 +583,40 @@ var guCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("\nuser index: %v\n", uIndex)
+
+		return nil
+	},
+}
+
+// get owner
+var ownerCmd = &cli.Command{
+	Name:  "owner",
+	Usage: "get owner",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		role := common.HexToAddress(cctx.String("role"))
+		fmt.Println("role:", role)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// owner use the same address with role
+		o := callconts.NewOwn(role, caller, "", txopts, endPoint)
+
+		// call contract
+		owner, err := o.GetOwner()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nowner: %v\n", owner)
 
 		return nil
 	},
