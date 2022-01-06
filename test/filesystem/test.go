@@ -318,6 +318,7 @@ func main() {
 		log.Fatal(err)
 	}
 	// 调用RoleFS合约中的AddOrder函数,keeper调用
+	callconts.ERC20Addr = test.PrimaryToken
 	rfs = callconts.NewRFS(rolefsAddr, addrs[1], sks[1], txopts, ethEndPoint)
 	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], start, end, size, 0, 0, sprice, nil, nil, [][]byte{[]byte("Hello")})
 	if err != nil {

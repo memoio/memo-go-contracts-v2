@@ -289,7 +289,9 @@ func main() {
 		log.Fatal(err)
 	}
 	// keeper调用addOrder
+	time.Sleep(test.WaitTime)
 	rfs = callconts.NewRFS(rolefsAddr, acc2Addr, test.Sk2, txopts, ethEndPoint)
+	callconts.ERC20Addr = test.PrimaryToken
 	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, nil, nil, [][]byte{[]byte("test")})
 	if err != nil {
 		log.Fatal(err)
