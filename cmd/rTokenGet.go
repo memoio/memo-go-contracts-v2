@@ -49,7 +49,7 @@ var RTGet = &cli.Command{
 // get is valid
 var ivCmd = &cli.Command{
 	Name:  "iv",
-	Usage: "get is valid",
+	Usage: "get is valid. arg0: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		rtoken := common.HexToAddress(cctx.String("rtoken"))
@@ -93,7 +93,7 @@ var ivCmd = &cli.Command{
 // get token addr
 var taCmd = &cli.Command{
 	Name:  "ta",
-	Usage: "get token addr",
+	Usage: "get token addr. arg0: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		rtoken := common.HexToAddress(cctx.String("rtoken"))
@@ -137,7 +137,7 @@ var taCmd = &cli.Command{
 // get token index from addr
 var tiCmd = &cli.Command{
 	Name:  "ti",
-	Usage: "get token index from addr",
+	Usage: "get token index from addr. arg0: token address",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		rtoken := common.HexToAddress(cctx.String("rtoken"))

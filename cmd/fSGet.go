@@ -53,7 +53,7 @@ var FSGet = &cli.Command{
 // get fs info
 var infoCmd = &cli.Command{
 	Name:  "info",
-	Usage: "get fs info. ",
+	Usage: "get fs info. arg0: user index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -91,7 +91,7 @@ var infoCmd = &cli.Command{
 // get fs provider number
 var pnCmd = &cli.Command{
 	Name:  "pn",
-	Usage: "get fs provider number. ",
+	Usage: "get fs provider number. arg0: user index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -130,7 +130,7 @@ var pnCmd = &cli.Command{
 // get fs provider index by array index
 var proCmd = &cli.Command{
 	Name:  "pro",
-	Usage: "get fs provider index. ",
+	Usage: "get fs provider index. arg0: user index, arg1: provider index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -175,7 +175,7 @@ var proCmd = &cli.Command{
 // get provider's aggregate order in FsInfo
 var aoCmd = &cli.Command{
 	Name:  "ao",
-	Usage: "get provider's aggregate order in FsInfo",
+	Usage: "get provider's aggregate order in FsInfo. arg0: user index, arg1: provider index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -220,7 +220,7 @@ var aoCmd = &cli.Command{
 // get storeInfo in fs
 var siCmd = &cli.Command{
 	Name:  "si",
-	Usage: "get storeInfo in fs",
+	Usage: "get storeInfo in fs. arg0: user index, arg1: provider index, arg2: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -240,8 +240,8 @@ var siCmd = &cli.Command{
 
 		index := cctx.Args().Get(1)
 		i, _ = strconv.Atoi(index)
-		i64 := uint64(i)
-		fmt.Println("index:", i64)
+		p64 := uint64(i)
+		fmt.Println("index:", p64)
 
 		t := cctx.Args().Get(2)
 		i, _ = strconv.Atoi(t)
@@ -259,7 +259,7 @@ var siCmd = &cli.Command{
 		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
 
 		// call contract
-		time, size, price, err := f.GetStoreInfo(u64, i64, t32)
+		time, size, price, err := f.GetStoreInfo(u64, p64, t32)
 		if err != nil {
 			return err
 		}
@@ -272,7 +272,7 @@ var siCmd = &cli.Command{
 // get channelInfo in fs
 var ciCmd = &cli.Command{
 	Name:  "ci",
-	Usage: "get channelInfo in fs",
+	Usage: "get channelInfo in fs. arg0: user index, arg1: provider index, arg2: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -297,8 +297,8 @@ var ciCmd = &cli.Command{
 
 		index := cctx.Args().Get(1)
 		i, _ = strconv.Atoi(index)
-		i64 := uint64(i)
-		fmt.Println("index:", i64)
+		p64 := uint64(i)
+		fmt.Println("index:", p64)
 
 		t := cctx.Args().Get(2)
 		i, _ = strconv.Atoi(t)
@@ -309,7 +309,7 @@ var ciCmd = &cli.Command{
 		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
 
 		// call contract
-		amount, nonce, expire, err := f.GetChannelInfo(u64, i64, t32)
+		amount, nonce, expire, err := f.GetChannelInfo(u64, p64, t32)
 		if err != nil {
 			return err
 		}
@@ -322,7 +322,7 @@ var ciCmd = &cli.Command{
 // 获得支付计费相关的信息
 var setiCmd = &cli.Command{
 	Name:  "seti",
-	Usage: "获得支付计费相关的信息",
+	Usage: "get settle info in fs. arg0: provider index, arg1: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -368,7 +368,7 @@ var setiCmd = &cli.Command{
 // 获得账户收益余额
 var balCmd = &cli.Command{
 	Name:  "bal",
-	Usage: "获得账户收益余额",
+	Usage: "get balance of role in fs. arg0: role index, arg1: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		fs := common.HexToAddress(cctx.String("fs"))
@@ -381,8 +381,8 @@ var balCmd = &cli.Command{
 		// parse args
 		index := cctx.Args().Get(0)
 		i, _ := strconv.Atoi(index)
-		i64 := uint64(i)
-		fmt.Println("index:", i64)
+		r64 := uint64(i)
+		fmt.Println("index:", r64)
 
 		t := cctx.Args().Get(1)
 		i, _ = strconv.Atoi(t)
@@ -400,7 +400,7 @@ var balCmd = &cli.Command{
 		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
 
 		// call contract
-		avail, tmp, err := f.GetBalance(i64, t32)
+		avail, tmp, err := f.GetBalance(r64, t32)
 		if err != nil {
 			return err
 		}

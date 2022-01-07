@@ -267,7 +267,7 @@ var alCmd = &cli.Command{
 // hasrole
 var hrCmd = &cli.Command{
 	Name:  "hr",
-	Usage: "call hasrole method of accesscontrol",
+	Usage: "call hasrole method of accesscontrol. arg0: role type, arg1: role address",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		erc20 := common.HexToAddress(cctx.String("erc20"))
