@@ -14,7 +14,7 @@ import (
 // input of method set by param
 var RGet = &cli.Command{
 	Name:  "rget",
-	Usage: "call get methods of fs contract",
+	Usage: "call get methods of role contract",
 	Flags: []cli.Flag{
 		// role
 		&cli.StringFlag{
@@ -51,6 +51,7 @@ var RGet = &cli.Command{
 		gkCmd,
 		gpCmd,
 		guCmd,
+		ownerCmd,
 	},
 }
 
@@ -91,7 +92,7 @@ var anCmd = &cli.Command{
 // get addr
 var addrCmd = &cli.Command{
 	Name:  "addr",
-	Usage: "get addr",
+	Usage: "get acc addr. args0: acc index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -131,7 +132,7 @@ var addrCmd = &cli.Command{
 // get role index
 var riCmd = &cli.Command{
 	Name:  "ri",
-	Usage: "get role index",
+	Usage: "get role index. args0: role address",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -176,7 +177,7 @@ var riCmd = &cli.Command{
 // get role info
 var rinfoCmd = &cli.Command{
 	Name:  "rinfo",
-	Usage: "get role info",
+	Usage: "get role info. args0: role address",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -257,7 +258,7 @@ var gnCmd = &cli.Command{
 // get group info
 var ginfoCmd = &cli.Command{
 	Name:  "ginfo",
-	Usage: "get group info",
+	Usage: "get group info. args0: group index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -299,7 +300,7 @@ var ginfoCmd = &cli.Command{
 // get addr and gindex by acc index
 var faCmd = &cli.Command{
 	Name:  "ag",
-	Usage: "get addr and gindex",
+	Usage: "get addr and gindex. args0: acc index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -343,7 +344,7 @@ var faCmd = &cli.Command{
 // get group's keeper num by index
 var knCmd = &cli.Command{
 	Name:  "kn",
-	Usage: "get group's keeper num by index",
+	Usage: "get group's keeper num by index. args0: group index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -387,7 +388,7 @@ var knCmd = &cli.Command{
 // get group's user and provider num by index
 var upCmd = &cli.Command{
 	Name:  "up",
-	Usage: "get group's user and provider num by index",
+	Usage: "get group's user and provider num by index. args0: group index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -431,7 +432,7 @@ var upCmd = &cli.Command{
 // get group's keeper
 var gkCmd = &cli.Command{
 	Name:  "gk",
-	Usage: "get group's keeper",
+	Usage: "get group's keeper. args0: group index, arg1: keeper index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -484,7 +485,7 @@ var gkCmd = &cli.Command{
 // get group's provider
 var gpCmd = &cli.Command{
 	Name:  "gp",
-	Usage: "get group's provider",
+	Usage: "get group's provider. args0: group index, arg1: provider index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -537,7 +538,7 @@ var gpCmd = &cli.Command{
 // get group's provider
 var guCmd = &cli.Command{
 	Name:  "gu",
-	Usage: "get group's user",
+	Usage: "get group's user. args0: group index, arg1: user index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		role := common.HexToAddress(cctx.String("role"))
@@ -582,6 +583,40 @@ var guCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("\nuser index: %v\n", uIndex)
+
+		return nil
+	},
+}
+
+// get owner
+var ownerCmd = &cli.Command{
+	Name:  "owner",
+	Usage: "get owner",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		role := common.HexToAddress(cctx.String("role"))
+		fmt.Println("role:", role)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// owner use the same address with role
+		o := callconts.NewOwn(role, caller, "", txopts, endPoint)
+
+		// call contract
+		owner, err := o.GetOwner()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nowner: %v\n", owner)
 
 		return nil
 	},

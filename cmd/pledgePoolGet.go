@@ -47,7 +47,7 @@ var PPGet = &cli.Command{
 // get balance of acc
 var ppbalCmd = &cli.Command{
 	Name:  "bal",
-	Usage: "get balance of acc",
+	Usage: "get balance of acc. args0: acc index, arg1: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		ppaddr := common.HexToAddress(cctx.String("ppaddr"))
@@ -100,7 +100,7 @@ var ppbalCmd = &cli.Command{
 // GetPledge Get all pledge amount in specified token.
 var plCmd = &cli.Command{
 	Name:  "pl",
-	Usage: "GetPledge Get all pledge amount in specified token.",
+	Usage: "GetPledge Get all pledge amount in specified token. arg0: token index",
 	Action: func(cctx *cli.Context) error {
 		// parse flags
 		ppaddr := common.HexToAddress(cctx.String("ppaddr"))
