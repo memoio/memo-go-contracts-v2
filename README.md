@@ -58,5 +58,5 @@ tIndex 从 0 开始，tIndex=0 表示主代币；
 
 ## foundation 取回 fs 中的收益
 
-// TODO
-首先取得所有的 group，然后取得所有的 fsAddr,调用 fs 合约中的 withdraw 函数，从而取回在该 fs 合约中的收益。
+foundation 在所有的 filesystem 中都有收益。
+首先选择一个 userIndex（用来确认哪一个 filesystem ），然后由 foundation 自己调用 Role 合约中的 withdrawFromFs 函数，就可以取得在该 filesystem 中的收益了。

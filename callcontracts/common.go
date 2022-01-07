@@ -24,23 +24,24 @@ var (
 	//ERC20 contract address
 	ERC20Addr = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 	// Role contract address
-	RoleAddr = common.HexToAddress("0xFbC6db9ae0f847F99907DA27068254e3482578d9")
+	RoleAddr = common.HexToAddress("0x45d7CAA7bF2c5F872daf3f4C64F3f64CEbb8dFba")
 	// RoleFS contract address
-	RoleFSAddr = common.HexToAddress("0x8851A74D61d4acEaDdD7ec50cDFa65978127E0A8")
+	RoleFSAddr = common.HexToAddress("0x2d66633561e8C882Fd944A064f9c487fF45C471E")
 	// RToken contract address
-	RTokenAddr = common.HexToAddress("0xEA490b38Fb5F872169D917e052D799942440a916")
+	RTokenAddr = common.HexToAddress("0x7F71356B645a7CD4589Ac8d9727edA993c07aaE9")
 	// FileSys contract address
-	FileSysAddr = common.HexToAddress("0x802DC5872692fd5034F3f1Eb3ae60f81e2366644")
+	FileSysAddr = common.HexToAddress("0x57E15F0E06C37458900a7Ad4B0DEa4c6948922E4")
 	// PledgePool contract address
-	PledgePoolAddr = common.HexToAddress("0xEF42eC9Cd7c140ec37D4470A62e95b57aDf24371")
+	PledgePoolAddr = common.HexToAddress("0x2380bDd5a4f8018c7B9981EaC76F90Eb104e24b0")
 	// Issuance contract address
-	IssuanceAddr = common.HexToAddress("0xC8A4a6209d72B7cE48A661CA2fD6168590a0c980")
+	IssuanceAddr = common.HexToAddress("0xcf0b4D81A6E7dA642C68d15D29eEaD44a1c6c976")
 
-	AdminAddr  = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
-	AdminSk    = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
-	Foundation = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
+	AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
+	AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
+	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
+	FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
-	GIndex = uint64(4)
+	GIndex = uint64(1)
 )
 
 const (
@@ -134,6 +135,7 @@ var (
 	errEndNow       = errors.New("end should be more than start,and shouldn't be more than now")
 	errNonce        = errors.New("nonce error")
 	errSprice       = errors.New("sprice error")
+	errCaller       = errors.New("caller error")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction

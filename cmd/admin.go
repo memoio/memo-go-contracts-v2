@@ -98,7 +98,7 @@ var deployERC20Cmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println("ERC20 contract address:", erc20Addr.Hex())
+		fmt.Println("\nERC20 contract address:", erc20Addr.Hex())
 
 		return nil
 	},
