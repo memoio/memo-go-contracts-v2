@@ -71,6 +71,7 @@ var balanceCmd = &cli.Command{
 		fmt.Println("adminSk:", sk)
 		endPoint := cctx.String("endPoint")
 		fmt.Println("endPoint:", endPoint)
+		fmt.Println()
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -83,7 +84,7 @@ var balanceCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println("erc20 balance:", bal)
+		fmt.Println("\nerc20 balance:", bal)
 		return nil
 	},
 }
@@ -107,6 +108,7 @@ var transferCmd = &cli.Command{
 		fmt.Println("adminSk:", sk)
 		endPoint := cctx.String("endPoint")
 		fmt.Println("endPoint:", endPoint)
+		fmt.Println()
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -119,7 +121,7 @@ var transferCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println("admin transfer", transferMoney, " to", acc, " successfully!")
+		fmt.Println("\nadmin transfer", transferMoney, " to", acc, " successfully!")
 		return nil
 	},
 }
@@ -134,6 +136,7 @@ var transferEthCmd = &cli.Command{
 			fmt.Println("account should be with prefix 0x, and shouldn't be 0x0")
 			return nil
 		}
+		fmt.Println()
 
 		err := test.TransferTo(transferEth, common.HexToAddress(acc), callconts.EndPoint, callconts.QEndPoint)
 		if err != nil {
@@ -154,9 +157,10 @@ var balanceEthCmd = &cli.Command{
 			fmt.Println("account should be with prefix 0x, and shouldn't be 0x0")
 			return nil
 		}
+		fmt.Println()
 
 		bal := callconts.QueryEthBalance(acc, callconts.EndPoint)
-		fmt.Println("eth balance:", bal)
+		fmt.Println("\neth balance:", bal)
 
 		return nil
 	},

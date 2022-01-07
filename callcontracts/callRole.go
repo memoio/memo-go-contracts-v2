@@ -1095,6 +1095,7 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 }
 
 // WithdrawFromFs called by memo-role or called by others.
+// foundation、user、keeper withdraw money from filesystem
 func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64, tIndex uint32, amount *big.Int, sign []byte) error {
 	client := getClient(r.endPoint)
 	defer client.Close()
@@ -1123,17 +1124,27 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 	if err != nil {
 		return err
 	}
-	_, isBanned, _, _, gIndex, _, err := r.GetRoleInfo(addr)
+	_, isBanned, rtype, _, gIndex, _, err := r.GetRoleInfo(addr)
 	if err != nil {
 		return err
 	}
-	if isBanned {
-		log.Println("rIndex:", rIndex, " addr:", addr.Hex(), " isBanned:", isBanned)
-		return ErrIsBanned
-	}
+	// 需要存在有效的gIndex
 	if gIndex == 0 {
 		log.Println("rIndex:", rIndex, " addr:", addr.Hex(), " gIndex:", gIndex)
 		return ErrInvalidG
+	}
+	// 非 foundation 取回余额
+	if r.addr.Hex() != Foundation.Hex() {
+		// 账户不能被禁止
+		if isBanned {
+			log.Println("rIndex:", rIndex, " addr:", addr.Hex(), " isBanned:", isBanned)
+			return ErrIsBanned
+		}
+		// 账户不能是provider
+		if rtype == ProviderRoleType {
+			log.Println("rIndex:", rIndex, " addr:", addr.Hex(), " roleType:", rtype, " is a provider, please call proWithdraw rather than this")
+			return ErrIndex
+		}
 	}
 
 	log.Println("begin WithdrawFromFs in Role contract...")

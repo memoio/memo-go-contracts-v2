@@ -93,7 +93,7 @@ func newRoleFS(roleFSAddr common.Address, client *ethclient.Client) (*rolefs.Rol
 	return roleFSIns, nil
 }
 
-func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleType uint8, tIndex uint32, roleAddr, rTokenAddr common.Address) (uint64, error) {
+func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleType uint8, tIndex uint32, roleAddr, rTokenAddr common.Address, label uint8) (uint64, error) {
 	// check whether uIndex is user
 	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
 	uaddr, err := r.GetAddr(uIndex)
@@ -122,13 +122,27 @@ func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleTyp
 		return 0, ErrIndex
 	}
 	// check whether their gIndex is same
-	isActive, isBanned, roleType, _, cgIndex, _, err := r.GetRoleInfo(rfs.addr)
+	isActive, isBanned, roleType, cIndex, cgIndex, _, err := r.GetRoleInfo(rfs.addr)
 	if err != nil {
 		return 0, err
 	}
-	if roleType != KeeperRoleType || !isActive || isBanned {
-		log.Println("caller ", rfs.addr.Hex(), " roleType:", roleType, " isBanned:", isBanned, " isActive:", isActive)
-		return 0, ErrIndex
+	if label == 1 { // addOrder, caller is user
+		if cIndex != uIndex {
+			log.Println("addOrder can only be called by user, but the caller index:", cIndex, " uIndex:", uIndex)
+			return 0, errCaller
+		}
+	} else if label == 2 { // subOrder, caller is user or keeper
+		if cIndex != uIndex {
+			if roleType != KeeperRoleType || !isActive || isBanned {
+				log.Println("caller ", rfs.addr.Hex(), " roleType:", roleType, "(should be keeper) isBanned:", isBanned, "(should not be banned) isActive:", isActive, "(should be active)")
+				return 0, ErrIndex
+			}
+		}
+	} else { // addReapir, subRepair
+		if roleType != KeeperRoleType || !isActive || isBanned {
+			log.Println("caller ", rfs.addr.Hex(), " roleType:", roleType, "(should be keeper) isBanned:", isBanned, "(should not be banned) isActive:", isActive, "(should be active)")
+			return 0, ErrIndex
+		}
 	}
 	if ugIndex != pgIndex || ugIndex != cgIndex {
 		log.Println("uIndex's gIndex:", ugIndex, " pIndex's gIndex:", pgIndex, " caller's gIndex:", cgIndex)
@@ -238,7 +252,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		return errors.New("end should be divisible by 86400(one day)")
 	}
 	// check uIndex,pIndex,gIndex,tIndex
-	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr, 1)
 	if err != nil {
 		return err
 	}
@@ -367,7 +381,7 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		return errEndNow
 	}
 	// check uIndex,pIndex,gIndex,tIndex
-	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr, 2)
 	if err != nil {
 		return err
 	}
@@ -466,7 +480,7 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 	}
 
 	// check pIndex, nPIndex,tIndex,gIndex
-	gIndex, err := rfs.checkParam(pIndex, nPIndex, ProviderRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	gIndex, err := rfs.checkParam(pIndex, nPIndex, ProviderRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr, 3)
 	if err != nil {
 		return err
 	}
@@ -575,7 +589,7 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 	}
 
 	// check pIndex,npIndex,gIndex,tIndex
-	gIndex, err := rfs.checkParam(pIndex, nPIndex, ProviderRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr)
+	gIndex, err := rfs.checkParam(pIndex, nPIndex, ProviderRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr, 3)
 	if err != nil {
 		return err
 	}

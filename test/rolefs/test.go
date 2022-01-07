@@ -290,7 +290,7 @@ func main() {
 	}
 	// keeper调用addOrder
 	time.Sleep(test.WaitTime)
-	rfs = callconts.NewRFS(rolefsAddr, acc2Addr, test.Sk2, txopts, ethEndPoint)
+	rfs = callconts.NewRFS(rolefsAddr, acc1Addr, test.Sk1, txopts, ethEndPoint)
 	callconts.ERC20Addr = test.PrimaryToken
 	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, nil, nil, [][]byte{[]byte("test")})
 	if err != nil {
@@ -407,8 +407,8 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("spaceTime:", st)
-	if st.Cmp(zero) != 0 {
-		log.Fatal("st should be 0")
+	if st.Cmp(big.NewInt(0).Mul(new(big.Int).SetUint64(size), new(big.Int).SetUint64(end-start))) != 0 {
+		log.Fatal("st should be ", big.NewInt(0).Mul(new(big.Int).SetUint64(size), new(big.Int).SetUint64(end-start)))
 	}
 	//size:10, price:10, totalPay:100,上面测试通过的话，这里就不需要再重复测试了
 
@@ -534,7 +534,8 @@ func main() {
 	fmt.Println("params:", pIndex, start+9, start+10, size, nonce, 0, big.NewInt(5), "a")
 	fmt.Println("npSign:", npSig)
 	// 调用AddRepair
-	time.Sleep(2 * time.Second)
+	time.Sleep(test.WaitTime)
+	rfs = callconts.NewRFS(rolefsAddr, acc2Addr, test.Sk2, txopts, ethEndPoint)
 	err = rfs.AddRepair(roleAddr, rTokenAddr, pIndex, p2Index, start+9, start+10, size, nonce, 0, big.NewInt(5), npSig, nil)
 	if err != nil {
 		log.Fatal(err)
