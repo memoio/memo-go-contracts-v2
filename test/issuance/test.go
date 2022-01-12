@@ -35,20 +35,24 @@ func main() {
 
 	txopts := &callconts.TxOpts{
 		Nonce:    nil,
-		GasPrice: big.NewInt(callconts.DefaultGasPrice),
+		GasPrice: nil,
 		GasLimit: callconts.DefaultGasLimit,
 	}
 
 	fmt.Println("============1. begin test deploy Issuance contract============")
-	issu := callconts.NewIssu(rolefsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	status := make(chan error)
+	issu := callconts.NewIssu(rolefsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	issuAddr, _, err := issu.DeployIssuance(rolefsAddr)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The Issuance contract address is ", issuAddr.Hex())
 
 	fmt.Println("============2. begin test MintLevel============")
-	issu = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	issu = callconts.NewIssu(issuAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	mintLevel, err := issu.MintLevel()
 	if err != nil {
 		log.Fatal(err)

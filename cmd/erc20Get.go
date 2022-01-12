@@ -67,7 +67,7 @@ var nameCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		n, err := e.GetName()
 		if err != nil {
 			return err
@@ -98,7 +98,7 @@ var symbolCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		n, err := e.GetSymbol()
 		if err != nil {
 			return err
@@ -129,7 +129,7 @@ var decCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		dec, err := e.GetDecimals()
 		if err != nil {
 			return err
@@ -160,7 +160,7 @@ var tsCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		ts, err := e.GetTotalSupply()
 		if err != nil {
 			return err
@@ -205,7 +205,7 @@ var boCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		b, err := e.BalanceOf(common.HexToAddress(acc))
 		if err != nil {
 			return err
@@ -253,7 +253,7 @@ var alCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		al, err := e.Allowance(common.HexToAddress(owner), common.HexToAddress(spender))
 		if err != nil {
 			return err
@@ -303,7 +303,7 @@ var hrCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		b, err := e.HasRole(r8, common.HexToAddress(acc))
 		if err != nil {
 			return err
@@ -334,7 +334,7 @@ var psCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		// erc20 caller
-		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint)
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
 		b, err := e.GetPaused()
 		if err != nil {
 			return err

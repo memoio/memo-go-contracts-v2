@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// GetERC20Cmd erc20 address and caller address set by flags
+// RTGet rtoken address set by flags
 // input of method set by param
 var RTGet = &cli.Command{
 	Name:  "rtget",

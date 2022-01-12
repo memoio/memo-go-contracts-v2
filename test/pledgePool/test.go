@@ -38,12 +38,13 @@ func main() {
 
 	txopts := &callconts.TxOpts{
 		Nonce:    nil,
-		GasPrice: big.NewInt(callconts.DefaultGasPrice),
+		GasPrice: nil,
 		GasLimit: callconts.DefaultGasLimit,
 	}
 
 	// 查询在erc20代币上的余额
-	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	status := make(chan error)
+	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	bal, err := erc20.BalanceOf(adminAddr)
 	if err != nil {
 		log.Fatal(err)
@@ -55,6 +56,9 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if err = <-status; err != nil {
+			log.Fatal(err)
+		}
 		bal, err = erc20.BalanceOf(adminAddr)
 		if err != nil {
 			log.Fatal(err)
@@ -62,11 +66,14 @@ func main() {
 		fmt.Println("after mint, admin balance in primaryToken is ", bal)
 	}
 
-	pp := callconts.NewPledgePool(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	pp := callconts.NewPledgePool(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 
 	fmt.Println("============1. begin test deploy PledgePool contract============")
 	ppAddr, _, err := pp.DeployPledgePool(test.PrimaryToken, test.RTokenAddr, roleAddr)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The PledgePool contract address is ", ppAddr.Hex())
@@ -77,10 +84,16 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
 	// 然后质押账户需要在Role合约中Register从而获得rindex
-	r := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	r := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	err = r.Register(adminAddr, nil)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
 	rIndex, err := r.GetRoleIndex(adminAddr)
@@ -92,9 +105,12 @@ func main() {
 		log.Fatal("rIndex should be ", addrsNum)
 	}
 	// 开始pledge
-	pp = callconts.NewPledgePool(ppAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	pp = callconts.NewPledgePool(ppAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, rIndex, pledgeMoney, nil)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
 
@@ -152,12 +168,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
 	p, err = pp.GetBalanceInPPool(rIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("After Withdraw, the balance value of token0 in PledgePool contract is ", p)
-	if p.Cmp(big.NewInt(0))!=0 {
+	if p.Cmp(big.NewInt(0)) != 0 {
 		log.Fatal("After Withdraw, the balance in PledgePool should be 0")
 	}
 

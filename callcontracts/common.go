@@ -140,9 +140,9 @@ var (
 
 // TxOpts contains some general parameters about sending ethereum transaction
 type TxOpts struct {
-	Nonce    *big.Int
-	GasPrice *big.Int
-	GasLimit uint64
+	Nonce    *big.Int // 赋值nil
+	GasPrice *big.Int // 赋值nil，从而使用推荐值
+	GasLimit uint64   // 赋值默认值
 }
 
 // ContractModule  The basic information of node used for contract.
@@ -152,7 +152,8 @@ type ContractModule struct {
 	hexSk           string         //local privateKey
 	txopts          *TxOpts
 	contractAddress common.Address
-	endPoint        string // ethClient endPoint
+	endPoint        string     // ethClient endPoint
+	Status          chan error // 上层调用函数需要监听该通道，持续从该通道中读取数据
 }
 
 // getClient get rpc-client based the endPoint
@@ -186,7 +187,7 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 }
 
 //CheckTx check whether transaction is successful through receipt
-func checkTx(tx *types.Transaction) error {
+func checkTx(tx *types.Transaction, status chan error, name string) {
 	log.Println("Check Tx hash:", tx.Hash().Hex(), "nonce:", tx.Nonce(), "gasPrice:", tx.GasPrice())
 	log.Println("waiting for miner...")
 
@@ -205,27 +206,36 @@ func checkTx(tx *types.Transaction) error {
 		}
 	}
 
+	// 矿工挂掉等情况导致交易无法被打包
 	if receipt == nil { //231s获取不到交易信息，判定交易失败
-		log.Println("get tx receipt nil, tx not packaged")
-		return ErrTxFail
+		log.Println(name, ": cann't get tx receipt, tx not packaged")
+		status <- ErrTxFail
+		return
 	}
 
 	log.Println("GasUsed:", receipt.GasUsed, "CumulativeGasUsed:", receipt.CumulativeGasUsed)
 
 	if receipt.Status == 0 { //等于0表示交易失败，等于1表示成功
-		log.Println("Transaction mined but execution failed, please check your tx input")
-		// txReceipt, err := receipt.MarshalJSON()
-		// if err != nil {
-		// 	return err
-		// }
-		// log.Println("TxReceipt:", string(txReceipt))
+		log.Println(name, ": transaction mined but execution failed, please check your tx input")
 		if receipt.GasUsed != receipt.CumulativeGasUsed {
-			log.Println("Err: tx exceed gas limit")
+			log.Println(name, ": tx exceed gas limit")
 		}
-		return ErrTxExecu
+		status <- ErrTxExecu
+		return
 	}
 
-	return nil
+	// 交易成功
+	status <- nil
+	log.Println(name, "has been successful!")
+
+	// 获取withdraw money,输出到日志中
+	if name == "Withdraw" {
+		_, wd, err := getWithdrawInfoFromRLogs(tx.Hash())
+		if err != nil {
+			log.Println("getWithdrawInfoFromRLogs error:", err)
+		}
+		log.Println("tx:", tx.Hash().Hex(), ", account withdraw money:", wd)
+	}
 }
 
 //GetTransactionReceipt 通过交易hash获得交易详情

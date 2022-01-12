@@ -67,7 +67,7 @@ var mlCmd = &cli.Command{
 		}
 
 		// caller
-		e := callconts.NewIssu(issu, caller, "", txopts, endPoint)
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
 		ml, err := e.MintLevel()
 		if err != nil {
 			return err
@@ -99,7 +99,7 @@ var lmCmd = &cli.Command{
 		}
 
 		// caller
-		e := callconts.NewIssu(issu, caller, "", txopts, endPoint)
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
 		lm, err := e.LastMint()
 		if err != nil {
 			return err
@@ -130,7 +130,7 @@ var prCmd = &cli.Command{
 		}
 
 		// caller
-		e := callconts.NewIssu(issu, caller, "", txopts, endPoint)
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
 		pr, err := e.Price()
 		if err != nil {
 			return err
@@ -161,7 +161,7 @@ var szCmd = &cli.Command{
 		}
 
 		// caller
-		e := callconts.NewIssu(issu, caller, "", txopts, endPoint)
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
 		sz, err := e.Size()
 		if err != nil {
 			return err
@@ -192,7 +192,7 @@ var stCmd = &cli.Command{
 		}
 
 		// caller
-		e := callconts.NewIssu(issu, caller, "", txopts, endPoint)
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
 		st, err := e.SpaceTime()
 		if err != nil {
 			return err

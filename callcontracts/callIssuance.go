@@ -9,19 +9,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewIssu new a instance of ContractModule. issuAddr: Issuance contract address
-func NewIssu(issuAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.IssuanceInfo {
+func NewIssu(issuAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string, status chan error) iface.IssuanceInfo {
 	issu := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: issuAddr,
 		endPoint:        endPoint,
+		Status:          status, // 用于接收：后台goroutine检查交易是否执行成功， nil代表成功
 	}
 
 	return issu
@@ -29,60 +28,34 @@ func NewIssu(issuAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoi
 
 // DeployIssuance deploy an Issuance contract, called by admin
 func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Address, *role.Issuance, error) {
-	var issuAddr, issuAddress common.Address
-	var issuInstance, issuIns *role.Issuance
-	var err error
+	var issuAddr common.Address
+	var issuIns *role.Issuance
 
 	log.Println("begin deploy Issuance contract...")
 	client := getClient(issu.endPoint)
 	defer client.Close()
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(issu.hexSk, nil, issu.txopts)
-		if errMA != nil {
-			return issuAddr, nil, errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		issuAddress, tx, issuInstance, err = role.DeployIssuance(auth, client, rolefsAddr)
-		if issuAddress.String() != InvalidAddr {
-			issuAddr = issuAddress
-			issuIns = issuInstance
-		}
-		if err != nil {
-			retryCount++
-			log.Println("deploy Issuance Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return issuAddr, issuIns, err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("deploy Issuance transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return issuAddr, issuIns, err
-			}
-			continue
-		}
-		if err != nil {
-			return issuAddr, issuIns, err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(issu.hexSk, nil, issu.txopts)
+	if errMA != nil {
+		return issuAddr, nil, errMA
 	}
-	log.Println("Issuance has been successfully deployed! The address is ", issuAddr.Hex())
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	issuAddr, tx, issuIns, err := role.DeployIssuance(auth, client, rolefsAddr)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("DeployIssuance Err:", err)
+		return issuAddr, nil, err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, issu.Status, "DeployIssuance")
+
+	log.Println("Issuance address is ", issuAddr.Hex())
 	return issuAddr, issuIns, nil
 }
 
