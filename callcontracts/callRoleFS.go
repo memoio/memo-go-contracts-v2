@@ -9,19 +9,18 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewRFS new a instance of ContractModule
-func NewRFS(roleFSAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.RoleFSInfo {
+func NewRFS(roleFSAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string, status chan error) iface.RoleFSInfo {
 	rfs := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: roleFSAddr,
 		endPoint:        endPoint,
+		Status:          status, // 用于接收：后台goroutine检查交易是否执行成功， nil代表成功
 	}
 
 	return rfs
@@ -29,59 +28,34 @@ func NewRFS(roleFSAddr, addr common.Address, hexSk string, txopts *TxOpts, endPo
 
 // DeployRoleFS deploy an RoleFS contract, called by admin
 func (rfs *ContractModule) DeployRoleFS() (common.Address, *rolefs.RoleFS, error) {
-	var roleFSAddr, roleFSAddress common.Address
-	var roleFSInstance, roleFSIns *rolefs.RoleFS
-	var err error
+	var roleFSAddr common.Address
+	var roleFSIns *rolefs.RoleFS
 
 	log.Println("begin deploy RoleFS contract...")
 	client := getClient(rfs.endPoint)
 	defer client.Close()
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
-	for {
-		auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
-		if errMA != nil {
-			return roleFSAddr, nil, errMA
-		}
 
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		roleFSAddress, tx, roleFSInstance, err = rolefs.DeployRoleFS(auth, client)
-		if roleFSAddress.String() != InvalidAddr {
-			roleFSAddr = roleFSAddress
-			roleFSIns = roleFSInstance
-		}
-		if err != nil {
-			retryCount++
-			log.Println("deploy RoleFS Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return roleFSAddr, roleFSIns, err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("deploy RoleFS transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return roleFSAddr, roleFSIns, err
-			}
-			continue
-		}
-		if err != nil {
-			return roleFSAddr, roleFSIns, err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	if errMA != nil {
+		return roleFSAddr, roleFSIns, errMA
 	}
-	log.Println("RoleFS has been successfully deployed! The address is ", roleFSAddr.Hex())
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	roleFSAddr, tx, roleFSIns, err := rolefs.DeployRoleFS(auth, client)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("DeployRoleFS Err:", err)
+		return roleFSAddr, roleFSIns, err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, rfs.Status, "DeployRoleFS")
+
+	log.Println("RoleFS address is ", roleFSAddr.Hex())
 	return roleFSAddr, roleFSIns, nil
 }
 
@@ -95,7 +69,7 @@ func newRoleFS(roleFSAddr common.Address, client *ethclient.Client) (*rolefs.Rol
 
 func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleType uint8, tIndex uint32, roleAddr, rTokenAddr common.Address, label uint8) (uint64, error) {
 	// check whether uIndex is user
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	uaddr, err := r.GetAddr(uIndex)
 	if err != nil {
 		return 0, err
@@ -134,7 +108,7 @@ func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleTyp
 	} else if label == 2 { // subOrder, caller is user or keeper
 		if cIndex != uIndex {
 			if roleType != KeeperRoleType || !isActive || isBanned {
-				log.Println("caller ", rfs.addr.Hex(), " roleType:", roleType, "(should be keeper) isBanned:", isBanned, "(should not be banned) isActive:", isActive, "(should be active)")
+				log.Println("SubOrder: caller:", rfs.addr.Hex(), " roleType:", roleType, "(should be keeper) isBanned:", isBanned, "(should not be banned) isActive:", isActive, "(should be active)")
 				return 0, ErrIndex
 			}
 		}
@@ -170,7 +144,7 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 	}
 
 	// check caller
-	r := NewOwn(role, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	r := NewOwn(role, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	owner, err := r.GetOwner()
 	if err != nil {
 		return err
@@ -181,49 +155,27 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 	}
 
 	log.Println("begin SetAddr in RoleFS contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleFSIns.SetAddr(auth, issuan, role, fileSys, rtoken)
-		if err != nil {
-			retryCount++
-			log.Println("setAddr Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("SetAddr in RoleFS transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("SetAddr in RoleFS has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleFSIns.SetAddr(auth, issuan, role, fileSys, rtoken)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("SetAddr Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, rfs.Status, "SetAddr")
+
 	return nil
 }
 
@@ -257,7 +209,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		return err
 	}
 	// check ksigns's length
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	gkNum, err := r.GetGKNum(gIndex)
 	if err != nil {
 		return err
@@ -273,7 +225,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if err != nil {
 		return err
 	}
-	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	avail, _, err := fs.GetBalance(uIndex, tIndex)
 	if err != nil {
 		return err
@@ -302,7 +254,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	}
 	// check whether rolefsAddr has Minter-Role
 	if tIndex == 0 {
-		erc20 := NewERC20(ERC20Addr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+		erc20 := NewERC20(ERC20Addr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 		has, err := erc20.HasRole(MinterRole, rfs.contractAddress)
 		if err != nil {
 			return err
@@ -314,49 +266,27 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	}
 
 	log.Println("begin AddOrder in RoleFS contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleFSIns.AddOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
-		if err != nil {
-			retryCount++
-			log.Println("AddOrder Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("AddOrder in RoleFS transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("AddOrder in RoleFS has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleFSIns.AddOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("AddOrder Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, rfs.Status, "AddOrder")
+
 	return nil
 }
 
@@ -386,7 +316,7 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		return err
 	}
 	// check ksigns's length
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	gkNum, err := r.GetGKNum(gIndex)
 	if err != nil {
 		return err
@@ -399,7 +329,7 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if err != nil {
 		return err
 	}
-	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	_, _subNonce, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
 	if err != nil {
 		return err
@@ -423,49 +353,27 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	}
 
 	log.Println("begin SubOrder in RoleFS contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleFSIns.SubOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
-		if err != nil {
-			retryCount++
-			log.Println("SubOrder Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("SubOrder in RoleFS transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("SubOrder in RoleFS has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleFSIns.SubOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("SubOrder Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, rfs.Status, "SubOrder")
+
 	return nil
 }
 
@@ -485,7 +393,7 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 		return err
 	}
 	// check ksigns's length
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	gkNum, err := r.GetGKNum(gIndex)
 	if err != nil {
 		return err
@@ -506,7 +414,7 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 	if err != nil {
 		return err
 	}
-	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	_, _, _, _, _, _, _lost, _lostPaid, _, _, _, err := fs.GetSettleInfo(pIndex, tIndex)
 	if err != nil {
 		return err
@@ -532,49 +440,27 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 	}
 
 	log.Println("begin AddRepair in RoleFS contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleFSIns.AddRepair(auth, pIndex, nPIndex, start, end, size, nonce, tIndex, sprice, psign, ksigns)
-		if err != nil {
-			retryCount++
-			log.Println("AddRepair Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("AddRepair in RoleFS transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("AddRepair in RoleFS has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleFSIns.AddRepair(auth, pIndex, nPIndex, start, end, size, nonce, tIndex, sprice, psign, ksigns)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("AddRepair Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, rfs.Status, "AddRepair")
+
 	return nil
 }
 
@@ -594,7 +480,7 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 		return err
 	}
 	// check ksigns's length
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	gkNum, err := r.GetGKNum(gIndex)
 	if err != nil {
 		return err
@@ -616,7 +502,7 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 	if err != nil {
 		return err
 	}
-	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	_, _subNonce, err := fs.GetFsInfoAggOrder(0, nPIndex)
 	if err != nil {
 		return err
@@ -640,49 +526,27 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 	}
 
 	log.Println("begin SubRepair in RoleFS contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleFSIns.SubRepair(auth, pIndex, nPIndex, start, end, size, nonce, tIndex, sprice, psign, ksigns)
-		if err != nil {
-			retryCount++
-			log.Println("SubRepair Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("SubRepair in RoleFS transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("SubRepair in RoleFS has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleFSIns.SubRepair(auth, pIndex, nPIndex, start, end, size, nonce, tIndex, sprice, psign, ksigns)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("SubRepair Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, rfs.Status, "SubRepair")
+
 	return nil
 }
 
@@ -697,7 +561,7 @@ func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pInd
 	}
 
 	// check pIndex
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	addr, err := r.GetAddr(pIndex)
 	if err != nil {
 		return err
@@ -724,48 +588,26 @@ func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pInd
 	}
 
 	log.Println("begin call ProWithdraw in RoleFS contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleFSIns.ProWithdraw(auth, pIndex, tIndex, pay, lost, ksigns)
-		if err != nil {
-			retryCount++
-			log.Println("ProWithdraw Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("ProWithdraw in RoleFS transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("ProWithdraw in RoleFS has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleFSIns.ProWithdraw(auth, pIndex, tIndex, pay, lost, ksigns)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("ProWithdraw Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, rfs.Status, "ProWithdraw")
+
 	return nil
 }

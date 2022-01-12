@@ -38,15 +38,20 @@ func main() {
 		GasLimit: callconts.DefaultGasLimit,
 	}
 
+	status := make(chan error)
+
 	fmt.Println("============1. begin test deploy RToken contract ============")
 	// 注意：RToken合约是由Role合约部署的.在Role合约被admin部署时，Role合约通过create2创建RToken合约
-	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeKP, pledgeKP)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("The Role contract address is ", roleAddr)
-	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint)
+	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	rTokenAddr, err := r.RToken()
 	if err != nil {
 		log.Fatal(err)

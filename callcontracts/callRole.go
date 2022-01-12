@@ -14,19 +14,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewR new a instance of ContractModule. 'roleAddr' indicates Role contract address
-func NewR(roleAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.RoleInfo {
+func NewR(roleAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string, status chan error) iface.RoleInfo {
 	r := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: roleAddr,
 		endPoint:        endPoint,
+		Status:          status, // 用于接收：后台goroutine检查交易是否执行成功， nil代表成功
 	}
 
 	return r
@@ -34,60 +33,34 @@ func NewR(roleAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint 
 
 // DeployRole deploy a Role contract, called by admin, specify foundation、primaryToken、pledgeK、pledgeP
 func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, pledgeKeeper, pledgeProvider *big.Int) (common.Address, *role.Role, error) {
-	var roleAddr, roleAddress common.Address
-	var roleInstance, roleIns *role.Role
-	var err error
+	var roleAddr common.Address
+	var roleIns *role.Role
 
 	log.Println("begin deploy Role contract...")
 	client := getClient(r.endPoint)
 	defer client.Close()
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return roleAddr, nil, errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		roleAddress, tx, roleInstance, err = role.DeployRole(auth, client, foundation, primaryToken, pledgeKeeper, pledgeProvider)
-		if roleAddress.String() != InvalidAddr {
-			roleAddr = roleAddress
-			roleIns = roleInstance
-		}
-		if err != nil {
-			retryCount++
-			log.Println("deploy Role Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return roleAddr, roleIns, err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("deploy Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return roleAddr, roleIns, err
-			}
-			continue
-		}
-		if err != nil {
-			return roleAddr, roleIns, err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return roleAddr, roleIns, errMA
 	}
-	log.Println("Role has been successfully deployed! The address is ", roleAddr.Hex())
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	roleAddr, tx, roleIns, err := role.DeployRole(auth, client, foundation, primaryToken, pledgeKeeper, pledgeProvider)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("DeployRole Err:", err)
+		return roleAddr, roleIns, err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "DeployRole")
+
+	log.Println("Role address is ", roleAddr.Hex())
 	return roleAddr, roleIns, nil
 }
 
@@ -119,49 +92,27 @@ func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Addre
 	}
 
 	log.Println("begin SetPI in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.SetPI(auth, pledgePoolAddr, issuAddr, rolefsAddr)
-		if err != nil {
-			retryCount++
-			log.Println("setPI Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("SetPI in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("SetPI in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.SetPI(auth, pledgePoolAddr, issuAddr, rolefsAddr)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("SetPI Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "SetPI")
+
 	return nil
 }
 
@@ -178,53 +129,34 @@ func (r *ContractModule) Register(addr common.Address, sign []byte) error {
 	_, _, _, index, _, _, err := r.GetRoleInfo(addr)
 	if index > 0 { // has registered already
 		log.Println("Has registered, index is ", index)
+		go func() {
+			r.Status <- nil
+		}()
 		return nil
 	}
 
 	log.Println("begin Register in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.Register(auth, addr, sign)
-		if err != nil {
-			retryCount++
-			log.Println("register Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("Register in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Register in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.Register(auth, addr, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("Register Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "Register")
+
 	return nil
 }
 
@@ -249,7 +181,7 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 	if roleType != 0 { // role already registered
 		return ErrRoleReg
 	}
-	pp := NewPledgePool(pledgePoolAddr, r.addr, r.hexSk, r.txopts, r.endPoint)
+	pp := NewPledgePool(pledgePoolAddr, r.addr, r.hexSk, r.txopts, r.endPoint, r.Status)
 	pledge, err := pp.GetBalanceInPPool(index, 0) // tindex:0 表示主代币
 	if err != nil {
 		return err
@@ -264,49 +196,26 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 	}
 
 	log.Println("begin RegisterKeeper in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.RegisterKeeper(auth, index, blskey, sign)
-		if err != nil {
-			retryCount++
-			log.Println("registerKeeper Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("RegisterKeeper in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("RegisterKeeper in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.RegisterKeeper(auth, index, blskey, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("RegisterKeeper Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "RegisterKeeper")
 
 	return nil
 }
@@ -333,7 +242,7 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 		log.Println("account roleType is:", roleType)
 		return ErrRoleReg
 	}
-	pp := NewPledgePool(pledgePoolAddr, r.addr, r.hexSk, r.txopts, r.endPoint)
+	pp := NewPledgePool(pledgePoolAddr, r.addr, r.hexSk, r.txopts, r.endPoint, r.Status)
 	pledge, err := pp.GetBalanceInPPool(index, 0) // tindex:0 表示主代币
 	if err != nil {
 		return err
@@ -350,49 +259,26 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 	}
 
 	log.Println("begin RegisterProvider in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.RegisterProvider(auth, index, sign)
-		if err != nil {
-			retryCount++
-			log.Println("registerProvider Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("RegisterProvider in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("RegisterProvider in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.RegisterProvider(auth, index, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("RegisterProvider Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "RegisterProvider")
 
 	return nil
 }
@@ -445,49 +331,26 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 	// don't need to check fs
 
 	log.Println("begin RegisterUser in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.RegisterUser(auth, index, gindex, tindex, blskey, sign)
-		if err != nil {
-			retryCount++
-			log.Println("registerUser Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("RegisterUser in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("RegisterUser in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.RegisterUser(auth, index, gindex, tindex, blskey, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("RegisterUser Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "RegisterUser")
 
 	return nil
 }
@@ -511,49 +374,27 @@ func (r *ContractModule) RegisterToken(tokenAddr common.Address) error {
 	}
 
 	log.Println("begin RegisterToken in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.RegisterToken(auth, tokenAddr)
-		if err != nil {
-			retryCount++
-			log.Println("registerToken Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("RegisterToken in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("RegisterToken in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.RegisterToken(auth, tokenAddr)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("RegisterToken Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "RegisterToken")
+
 	return nil
 }
 
@@ -577,8 +418,6 @@ func (r *ContractModule) CreateGroup(rfsAddr common.Address, founder uint64, kin
 
 // CreateGroup called by admin to create a group.
 func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, error) {
-	tx := &types.Transaction{}
-
 	client := getClient(r.endPoint)
 	defer client.Close()
 	roleIns, err := newRole(r.contractAddress, client)
@@ -612,65 +451,30 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 	}
 
 	log.Println("begin CreateGroup in Role contract...")
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return 0, errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.CreateGroup(auth, kindexes, level)
-		if err != nil {
-			retryCount++
-			log.Println("CreateGroup Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return 0, err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("CreateGroup in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return 0, err
-			}
-			continue
-		}
-		if err != nil {
-			return 0, err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return 0, errMA
 	}
-	log.Println("CreateGroup in Role has been successful!")
-
-	var gIndex uint64
-	if tx != nil {
-		// get gIndex by event info from receipt
-		gIndex, err = getGIndexFromRLogs(tx.Hash())
-		if err != nil {
-			return 0, err
-		}
-	} else {
-		// get gIndex from get group info
-		time.Sleep(waitTime)
-		gIndex, err = r.GetGroupsNum()
-		if err != nil {
-			return 0, err
-		}
+	tx, err := roleIns.CreateGroup(auth, kindexes, level)
+	if err != nil {
+		log.Println("CreateGroup Err:", err)
+		return 0, err
 	}
 
+	cg := make(chan error)
+	// NOTE： 此处需等待checkTx执行完毕,从而获取gIndex
+	go checkTx(tx, cg, "CreateGroup")
+	err = <-cg
+	if err != nil {
+		return 0, err
+	}
+
+	gIndex, err := getGIndexFromRLogs(tx.Hash())
+	if err != nil {
+		return 0, err
+	}
 	log.Println("CreateGroup in Role, the gIndex is", gIndex)
 	return gIndex, nil
 }
@@ -694,49 +498,27 @@ func (r *ContractModule) SetGF(fsAddr common.Address, gIndex uint64) error {
 	}
 
 	log.Println("begin SetGF in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.SetGF(auth, gIndex, fsAddr)
-		if err != nil {
-			retryCount++
-			log.Println("SetGF Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("SetGF in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("SetGF in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.SetGF(auth, gIndex, fsAddr)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("SetGF Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "SetGF")
+
 	return nil
 }
 
@@ -793,49 +575,27 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 	}
 
 	log.Println("begin AddKeeperToGroup in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.AddKeeperToGroup(auth, kIndex, gIndex)
-		if err != nil {
-			retryCount++
-			log.Println("AddKeeperToGroup Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("AddKeeperToGroup in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("AddKeeperToGroup in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.AddKeeperToGroup(auth, kIndex, gIndex)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("AddKeeperToGroup Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "AddKeeperToGroup")
+
 	return nil
 }
 
@@ -882,49 +642,27 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 	}
 
 	log.Println("begin AddProviderToGroup in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.AddProviderToGroup(auth, pIndex, gIndex, sign)
-		if err != nil {
-			retryCount++
-			log.Println("AddProviderToGroup Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("AddProviderToGroup in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("AddProviderToGroup in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.AddProviderToGroup(auth, pIndex, gIndex, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("AddProviderToGroup Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "AddProviderToGroup")
+
 	return nil
 }
 
@@ -948,49 +686,27 @@ func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) erro
 	}
 
 	log.Println("begin SetPledgeMoney in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.SetPledgeMoney(auth, kpledge, ppledge)
-		if err != nil {
-			retryCount++
-			log.Println("SetPledgeMoney Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("SetPledgeMoney in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("SetPledgeMoney in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.SetPledgeMoney(auth, kpledge, ppledge)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("SetPledgeMoney Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "SetPledgeMoney")
+
 	return nil
 }
 
@@ -1037,7 +753,7 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 	if err != nil {
 		return err
 	}
-	erc20 := NewERC20(tAddr, r.addr, r.hexSk, r.txopts, r.endPoint)
+	erc20 := NewERC20(tAddr, r.addr, r.hexSk, r.txopts, r.endPoint, r.Status)
 	allo, err := erc20.Allowance(addr, fsAddr)
 	if err != nil {
 		return err
@@ -1048,49 +764,27 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 	}
 
 	log.Println("begin Recharge in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.Recharge(auth, uIndex, tIndex, money, sign)
-		if err != nil {
-			retryCount++
-			log.Println("Recharge Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("Recharge in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Recharge in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.Recharge(auth, uIndex, tIndex, money, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("Recharge Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "Recharge")
+
 	return nil
 }
 
@@ -1148,49 +842,27 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 	}
 
 	log.Println("begin WithdrawFromFs in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.WithdrawFromFs(auth, rIndex, tIndex, amount, sign)
-		if err != nil {
-			retryCount++
-			log.Println("WithdrawFromFs Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("WithdrawFromFs in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("WithdrawFromFs in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.WithdrawFromFs(auth, rIndex, tIndex, amount, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("WithdrawFromFs Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, r.Status, "WithdrawFromFs")
+
 	return nil
 }
 

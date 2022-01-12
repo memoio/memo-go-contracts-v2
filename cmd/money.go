@@ -71,7 +71,6 @@ var balanceCmd = &cli.Command{
 		fmt.Println("adminSk:", sk)
 		endPoint := cctx.String("endPoint")
 		fmt.Println("endPoint:", endPoint)
-		fmt.Println()
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -79,7 +78,7 @@ var balanceCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint, make(chan error))
 		bal, err := e.BalanceOf(common.HexToAddress(acc))
 		if err != nil {
 			return err
@@ -108,7 +107,6 @@ var transferCmd = &cli.Command{
 		fmt.Println("adminSk:", sk)
 		endPoint := cctx.String("endPoint")
 		fmt.Println("endPoint:", endPoint)
-		fmt.Println()
 
 		txopts := &callconts.TxOpts{
 			Nonce:    nil,
@@ -116,7 +114,7 @@ var transferCmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint)
+		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint, make(chan error))
 		err := e.Transfer(common.HexToAddress(acc), transferMoney)
 		if err != nil {
 			return err
@@ -157,7 +155,6 @@ var balanceEthCmd = &cli.Command{
 			fmt.Println("account should be with prefix 0x, and shouldn't be 0x0")
 			return nil
 		}
-		fmt.Println()
 
 		bal := callconts.QueryEthBalance(acc, callconts.EndPoint)
 		fmt.Println("\neth balance:", bal)

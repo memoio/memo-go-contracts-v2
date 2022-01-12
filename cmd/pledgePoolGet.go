@@ -84,7 +84,7 @@ var ppbalCmd = &cli.Command{
 		}
 
 		// pp caller
-		pp := callconts.NewPledgePool(ppaddr, caller, "", txopts, endPoint)
+		pp := callconts.NewPledgePool(ppaddr, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		b, err := pp.GetBalanceInPPool(r64, t32)
@@ -128,7 +128,7 @@ var plCmd = &cli.Command{
 		}
 
 		// pp caller
-		pp := callconts.NewPledgePool(ppaddr, caller, "", txopts, endPoint)
+		pp := callconts.NewPledgePool(ppaddr, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		b, err := pp.GetPledge(t32)

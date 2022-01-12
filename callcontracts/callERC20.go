@@ -9,19 +9,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewERC20 new a instance of ContractModule
-func NewERC20(erc20Addr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.ERC20Info {
+func NewERC20(erc20Addr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string, status chan error) iface.ERC20Info {
 	e := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: erc20Addr,
 		endPoint:        endPoint,
+		Status:          status, // 用于接收：后台goroutine检查交易是否执行成功， nil代表成功
 	}
 
 	return e
@@ -29,59 +28,34 @@ func NewERC20(erc20Addr, addr common.Address, hexSk string, txopts *TxOpts, endP
 
 // DeployERC20 deploy an ERC20 contract, called by admin, specify name and symbol.
 func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc20.ERC20, error) {
-	var erc20Addr, erc20Address common.Address
-	var erc20Instance, erc20Ins *erc20.ERC20
-	var err error
+	var erc20Addr common.Address
+	var erc20Ins *erc20.ERC20
 
 	log.Println("begin deploy ERC20 contract...")
 	client := getClient(e.endPoint)
 	defer client.Close()
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return erc20Addr, nil, errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		erc20Address, tx, erc20Instance, err = erc20.DeployERC20(auth, client, name, symbol)
-		if erc20Address.String() != InvalidAddr {
-			erc20Addr = erc20Address
-			erc20Ins = erc20Instance
-		}
-		if err != nil {
-			retryCount++
-			log.Println("deploy ERC20 Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return erc20Addr, erc20Ins, err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("deploy ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return erc20Addr, erc20Ins, err
-			}
-			continue
-		} else if err != nil {
-			return erc20Addr, erc20Ins, err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return erc20Addr, nil, errMA
 	}
-	log.Println("ERC20 has been successfully deployed! The address is ", erc20Addr.Hex())
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	erc20Addr, tx, erc20Ins, err := erc20.DeployERC20(auth, client, name, symbol)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("DeployERC20 Err:", err)
+		return erc20Addr, nil, err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "DeployERC20")
+
+	log.Println("ERC20 address is ", erc20Addr.Hex())
 	return erc20Addr, erc20Ins, nil
 }
 
@@ -132,49 +106,27 @@ func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) erro
 	}
 
 	log.Println("begin Transfer to", recipient.Hex(), " with value", value, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = erc20Ins.Transfer(auth, recipient, value)
-		if err != nil {
-			retryCount++
-			log.Println("Transfer Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("Transfer in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Transfer in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.Transfer(auth, recipient, value)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("Transfer Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "Transfer")
+
 	return nil
 }
 
@@ -208,52 +160,27 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 	}
 
 	log.Println("begin Approve", addr.Hex(), " with value", value, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		if err != nil {
-			rebuild(err, tx, auth)
-		}
-
-		log.Println("call Approve in erc20.")
-		tx, err = erc20Ins.Approve(auth, addr, value)
-		if err != nil {
-			retryCount++
-			log.Println("Approve Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("Approve in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Approve in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.Approve(auth, addr, value)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("Approve Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "Approve")
+
 	return nil
 }
 
@@ -298,49 +225,27 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 	}
 
 	log.Println("begin TransferFrom from", sender.Hex(), "to", recipient.Hex(), " with value", value, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = erc20Ins.TransferFrom(auth, sender, recipient, value)
-		if err != nil {
-			retryCount++
-			log.Println("TransferFrom Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("TransferFrom in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("TransferFrom in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.TransferFrom(auth, sender, recipient, value)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("TransferFrom Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "TransferFrom")
+
 	return nil
 }
 
@@ -379,49 +284,27 @@ func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.
 	}
 
 	log.Println("begin IncreaseAllowance to", recipient.Hex(), " with value", value, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = erc20Ins.IncreaseAllowance(auth, recipient, value)
-		if err != nil {
-			retryCount++
-			log.Println("IncreaseAllowance Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("IncreaseAllowance in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("IncreaseAllowance in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.IncreaseAllowance(auth, recipient, value)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("IncreaseAllowance Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "IncreaseAllowance")
+
 	return nil
 }
 
@@ -453,49 +336,27 @@ func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.
 	}
 
 	log.Println("begin DecreaseAllowance to", recipient.Hex(), " with value", value, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = erc20Ins.DecreaseAllowance(auth, recipient, value)
-		if err != nil {
-			retryCount++
-			log.Println("DecreaseAllowance Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("DecreaseAllowance in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("DecreaseAllowance in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.DecreaseAllowance(auth, recipient, value)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("DecreaseAllowance Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "DecreaseAllowance")
+
 	return nil
 }
 
@@ -522,49 +383,27 @@ func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) er
 	}
 
 	log.Println("begin MintToken to", target.Hex(), " with value", mintValue, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = erc20Ins.MintToken(auth, target, mintValue)
-		if err != nil {
-			retryCount++
-			log.Println("MintToken Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("MintToken in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("MintToken in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.MintToken(auth, target, mintValue)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("MintToken Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "MintToken")
+
 	return nil
 }
 
@@ -595,49 +434,27 @@ func (e *ContractModule) Burn(burnValue *big.Int) error {
 	}
 
 	log.Println("begin Burn with value", burnValue, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = erc20Ins.Burn(auth, burnValue)
-		if err != nil {
-			retryCount++
-			log.Println("Burn Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("Burn in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Burn in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.Burn(auth, burnValue)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("Burn Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "Burn")
+
 	return nil
 }
 
@@ -670,49 +487,27 @@ func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error
 	}
 
 	log.Println("begin AirDrop to", tmp, " with value", value, " in ERC20 contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = erc20Ins.AirDrop(auth, targets, value)
-		if err != nil {
-			retryCount++
-			log.Println("AirDrop Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("AirDrop in ERC20 transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("AirDrop in ERC20 has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := erc20Ins.AirDrop(auth, targets, value)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("AirDrop Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, e.Status, "AirDrop")
+
 	return nil
 }
 

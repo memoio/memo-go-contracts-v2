@@ -76,7 +76,7 @@ var anCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		n, err := r.GetAddrsNum()
@@ -116,7 +116,7 @@ var addrCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		addr, err := r.GetAddr(i64)
@@ -161,7 +161,7 @@ var riCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		index, err := r.GetRoleIndex(common.HexToAddress(addr))
@@ -206,7 +206,7 @@ var rinfoCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		// info[acc].isActive, info[acc].isBanned, info[acc].roleType, info[acc].index, info[acc].gIndex, info[acc].extra
@@ -242,7 +242,7 @@ var gnCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		n, err := r.GetGroupsNum()
@@ -282,7 +282,7 @@ var ginfoCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		// groups[i].isActive, groups[i].isBanned, groups[i].isReady, groups[i].level, groups[i].size, groups[i].price, groups[i].fsAddr
@@ -328,7 +328,7 @@ var faCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		addr, gi, err := r.GetAddrGindex(i64)
@@ -372,7 +372,7 @@ var knCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		n, err := r.GetGKNum(i64)
@@ -416,7 +416,7 @@ var upCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		u, p, err := r.GetGUPNum(i64)
@@ -469,7 +469,7 @@ var gkCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		kIndex, err := r.GetGroupK(g64, k64)
@@ -522,7 +522,7 @@ var gpCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		pIndex, err := r.GetGroupP(g64, p64)
@@ -575,7 +575,7 @@ var guCmd = &cli.Command{
 		}
 
 		// role caller
-		r := callconts.NewR(role, caller, "", txopts, endPoint)
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		uIndex, err := r.GetGroupP(g64, u64)
@@ -609,7 +609,7 @@ var ownerCmd = &cli.Command{
 		}
 
 		// owner use the same address with role
-		o := callconts.NewOwn(role, caller, "", txopts, endPoint)
+		o := callconts.NewOwn(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		owner, err := o.GetOwner()

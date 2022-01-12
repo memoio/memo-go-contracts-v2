@@ -13,19 +13,18 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 // NewPledgePool new an instance of ContractModule. 'pledgePoolAddr' indicates PledgePool contract address.
-func NewPledgePool(pledgePoolAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.PledgePoolInfo {
+func NewPledgePool(pledgePoolAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string, status chan error) iface.PledgePoolInfo {
 	p := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: pledgePoolAddr,
 		endPoint:        endPoint,
+		Status:          status, // 用于接收：后台goroutine检查交易是否执行成功， nil代表成功
 	}
 
 	return p
@@ -43,59 +42,34 @@ func newPledgePool(pledgepAddr common.Address, client *ethclient.Client) (*pledg
 // DeployPledgePool deploy a PledgePool contract, called by admin.
 // primeToken、rToken contract address、role contract address.
 func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken common.Address, role common.Address) (common.Address, *pledgepool.PledgePool, error) {
-	var pledgepAddr, pledgepAddress common.Address
-	var pledgepInstance, pledgepIns *pledgepool.PledgePool
-	var err error
+	var pledgepAddr common.Address
+	var pledgepIns *pledgepool.PledgePool
 
 	log.Println("begin deploy PledgePool contract...")
 	client := getClient(p.endPoint)
 	defer client.Close()
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
-	for {
-		auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
-		if errMA != nil {
-			return pledgepAddr, nil, errMA
-		}
 
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		pledgepAddress, tx, pledgepInstance, err = pledgepool.DeployPledgePool(auth, client, primeToken, rToken, role)
-		if pledgepAddress.String() != InvalidAddr {
-			pledgepAddr = pledgepAddress
-			pledgepIns = pledgepInstance
-		}
-		if err != nil {
-			retryCount++
-			log.Println("deploy PledgePool Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return pledgepAddr, pledgepIns, err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("deploy PledgePool transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return pledgepAddr, pledgepIns, err
-			}
-			continue
-		}
-		if err != nil {
-			return pledgepAddr, pledgepIns, err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
+	if errMA != nil {
+		return pledgepAddr, pledgepIns, errMA
 	}
-	log.Println("PledgePool has been successfully deployed! The address is ", pledgepAddr.Hex())
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	pledgepAddr, tx, pledgepIns, err := pledgepool.DeployPledgePool(auth, client, primeToken, rToken, role)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("DeployPledgePool Err:", err)
+		return pledgepAddr, pledgepIns, err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, p.Status, "DeployPledgePool")
+
+	log.Println("PledgePool address is ", pledgepAddr.Hex())
 	return pledgepAddr, pledgepIns, nil
 }
 
@@ -110,7 +84,7 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 		return err
 	}
 
-	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts, p.endPoint)
+	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts, p.endPoint, p.Status)
 	addr, err := r.GetAddr(rindex)
 	if err != nil {
 		return err
@@ -127,7 +101,7 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 	}
 
 	// check whether the allowance[addr][pledgePoolAddr] is not less than value, if not, will approve automatically by code.
-	e := NewERC20(erc20Addr, p.addr, p.hexSk, p.txopts, p.endPoint)
+	e := NewERC20(erc20Addr, p.addr, p.hexSk, p.txopts, p.endPoint, p.Status)
 	allo, err := e.Allowance(addr, p.contractAddress)
 	if err != nil {
 		return err
@@ -140,6 +114,9 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 		if sign == nil && p.addr.Hex() == addr.Hex() {
 			err = e.IncreaseAllowance(p.contractAddress, tmp)
 			if err != nil {
+				return err
+			}
+			if err = <-p.Status; err != nil {
 				return err
 			}
 		} else { // otherwise, quit Pledge
@@ -160,49 +137,25 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 
 	log.Println("begin Pledge in PledgePool contract with value", value, " and rindex", rindex, " ...")
 
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
-	for {
-		auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = pledgepIns.Pledge(auth, rindex, value, sign)
-		if err != nil {
-			retryCount++
-			log.Println("Pledge Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("Pledge transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		// check ok, tx success
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Pledge in PledgePool contract has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := pledgepIns.Pledge(auth, rindex, value, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("Pledge Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, p.Status, "Pledge")
 
 	return nil
 }
@@ -218,7 +171,7 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 	}
 
 	// check if rindex is banned
-	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts, p.endPoint)
+	r := NewR(roleAddr, p.addr, p.hexSk, p.txopts, p.endPoint, p.Status)
 	addr, err := r.GetAddr(rindex)
 	if err != nil {
 		return err
@@ -243,56 +196,25 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 
 	log.Println("begin Withdraw in PledgePool contract with value", value, " and rindex", rindex, " and tindex", tindex, " ...")
 
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
-	for {
-		auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = pledgepIns.Withdraw(auth, rindex, tindex, value, sign)
-		if err != nil {
-			retryCount++
-			log.Println("Withdraw Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("Withdraw transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Withdraw in PledgePool contract has been successful!")
-
-	if tx != nil {
-		_, wd, err := getWithdrawInfoFromRLogs(tx.Hash())
-		if err != nil {
-			return err
-		}
-		log.Println("account withdraw money:", wd)
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := pledgepIns.Withdraw(auth, rindex, tindex, value, sign)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("Withdraw Err:", err)
+		return err
 	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, p.Status, "Withdraw")
 
 	return nil
 }

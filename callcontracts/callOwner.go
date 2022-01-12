@@ -2,24 +2,22 @@ package callconts
 
 import (
 	"log"
-	"math/big"
 	iface "memoContract/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // NewOwn new a instance of ContractModule. roleAddr: Role contract address
-func NewOwn(roleAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string) iface.OwnerInfo {
+func NewOwn(roleAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint string, status chan error) iface.OwnerInfo {
 	own := &ContractModule{
 		addr:            addr,
 		hexSk:           hexSk,
 		txopts:          txopts,
 		contractAddress: roleAddr,
 		endPoint:        endPoint,
+		Status:          status, // 用于接收：后台goroutine检查交易是否执行成功， nil代表成功
 	}
 
 	return own
@@ -48,49 +46,27 @@ func (own *ContractModule) AlterOwner(newOwnerAddr common.Address) error {
 	}
 
 	log.Println("begin AlterOwner in Role contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(own.hexSk, nil, own.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = roleIns.AlterOwner(auth, newOwnerAddr)
-		if err != nil {
-			retryCount++
-			log.Println("alterOwner Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err == ErrTxFail {
-			checkRetryCount++
-			log.Println("AlterOwner in Role transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		if err != nil {
-			return err
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(own.hexSk, nil, own.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("AlterOwner in Role has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := roleIns.AlterOwner(auth, newOwnerAddr)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("AlterOwner Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(tx, own.Status, "AlterOwner")
+
 	return nil
 }
 

@@ -77,7 +77,7 @@ var infoCmd = &cli.Command{
 		}
 
 		// fs caller
-		e := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		e := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 		a, tIndex, err := e.GetFsInfo(u64)
 		if err != nil {
 			return err
@@ -115,7 +115,7 @@ var pnCmd = &cli.Command{
 		}
 
 		// fs caller
-		e := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		e := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 
 		pn, err := e.GetFsProviderSum(u64)
 		if err != nil {
@@ -159,7 +159,7 @@ var proCmd = &cli.Command{
 		}
 
 		// fs caller
-		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		pIndex, err := f.GetFsProvider(u64, p64)
@@ -204,7 +204,7 @@ var aoCmd = &cli.Command{
 		}
 
 		// fs caller
-		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		nonce, subnonce, err := f.GetFsInfoAggOrder(u64, p64)
@@ -256,7 +256,7 @@ var siCmd = &cli.Command{
 		}
 
 		// fs caller
-		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		time, size, price, err := f.GetStoreInfo(u64, p64, t32)
@@ -306,7 +306,7 @@ var ciCmd = &cli.Command{
 		fmt.Println("token:", t32)
 
 		// fs caller
-		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		amount, nonce, expire, err := f.GetChannelInfo(u64, p64, t32)
@@ -351,7 +351,7 @@ var setiCmd = &cli.Command{
 		}
 
 		// fs caller
-		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		// se.time,se.size,se.price,se.maxPay,se.hasPaid,se.canPay,se.lost,se.lostPaid,se.managePay,se.endPaid,se.linearPaid
@@ -397,7 +397,7 @@ var balCmd = &cli.Command{
 		}
 
 		// fs caller
-		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint)
+		f := callconts.NewFileSys(fs, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
 		avail, tmp, err := f.GetBalance(r64, t32)
