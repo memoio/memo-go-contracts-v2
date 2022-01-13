@@ -330,9 +330,13 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		return err
 	}
 	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
-	_, _subNonce, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
+	_nonce, _subNonce, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
 	if err != nil {
 		return err
+	}
+	if _nonce <= nonce {
+		log.Println("nonce:", nonce, " should less than addNonce:", _nonce, ", you should call addOrder first")
+		return errNonce
 	}
 	if _subNonce != nonce {
 		log.Println("nonce:", nonce, " should be", _subNonce)
