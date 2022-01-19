@@ -41,6 +41,7 @@ var PPGet = &cli.Command{
 	Subcommands: []*cli.Command{
 		ppbalCmd,
 		plCmd,
+		tpCmd,
 	},
 }
 
@@ -136,6 +137,43 @@ var plCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("\npledge: %v\n", b)
+
+		return nil
+	},
+}
+
+// TotalPledge Get total pledge amount in pledge pool.
+
+var tpCmd = &cli.Command{
+	Name:  "tp",
+	Usage: "TotalPledge Get total pledge amount in pledge pool",
+	Action: func(cctx *cli.Context) error {
+
+		// parse flags
+		ppaddr := common.HexToAddress(cctx.String("ppaddr"))
+		fmt.Println("pledge pool:", ppaddr)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// pp caller
+		pp := callconts.NewPledgePool(ppaddr, caller, "", txopts, endPoint, make(chan error))
+
+		// call contract
+		tt, err := pp.TotalPledge()
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("\ntotal pledge: %v\n", tt)
 
 		return nil
 	},
