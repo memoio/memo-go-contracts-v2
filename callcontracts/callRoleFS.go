@@ -187,10 +187,12 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
 	client := getClient(rfs.endPoint)
 	defer client.Close()
+
 	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
+
 	// check start,end,size
 	if size == 0 {
 		return errSize
