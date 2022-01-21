@@ -187,83 +187,88 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
 	client := getClient(rfs.endPoint)
 	defer client.Close()
+
 	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
-	// check start,end,size
-	if size == 0 {
-		return errSize
-	}
-	if end <= start {
-		log.Println("start:", start, " end:", end)
-		return errEnd
-	}
-	if (end/86400)*86400 != end {
-		log.Println("end:", end)
-		return errors.New("end should be divisible by 86400(one day)")
-	}
-	// check uIndex,pIndex,gIndex,tIndex
-	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr, 1)
-	if err != nil {
-		return err
-	}
-	// check ksigns's length
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
-	gkNum, err := r.GetGKNum(gIndex)
-	if err != nil {
-		return err
-	}
-	if len(ksigns) < int(gkNum*2/3) {
-		return ErrKSignsNE
-	}
-	// check balance
-	pay := big.NewInt(0).Mul(sprice, new(big.Int).SetUint64(end-start))
-	manageAndTax := big.NewInt(0).Div(pay, big.NewInt(20)) // pay/100*4 + pay/100*1
-	payAndTax := big.NewInt(0).Add(pay, manageAndTax)
-	_, _, _, _, _, _, fsAddr, err := r.GetGroupInfo(gIndex)
-	if err != nil {
-		return err
-	}
-	fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
-	avail, _, err := fs.GetBalance(uIndex, tIndex)
-	if err != nil {
-		return err
-	}
-	if avail.Cmp(payAndTax) < 0 {
-		log.Println("payAndTax is", payAndTax, " but avail is", avail)
-		return ErrBalNotE
-	}
-	// check nonce
-	_nonce, _, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
-	if err != nil {
-		return err
-	}
-	if _nonce != nonce {
-		log.Println("nonce:", nonce, " should be", _nonce)
-		return errNonce
-	}
-	// check start
-	_time, _, _, err := fs.GetStoreInfo(uIndex, pIndex, tIndex)
-	if err != nil {
-		return err
-	}
-	if start < _time {
-		log.Println("start:", start, " should be less than time:", _time)
-		return errors.New("start error")
-	}
-	// check whether rolefsAddr has Minter-Role
-	if tIndex == 0 {
-		erc20 := NewERC20(ERC20Addr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
-		has, err := erc20.HasRole(MinterRole, rfs.contractAddress)
+
+	/*
+		// check start,end,size
+		if size == 0 {
+			return errSize
+		}
+		if end <= start {
+			log.Println("start:", start, " end:", end)
+			return errEnd
+		}
+		if (end/86400)*86400 != end {
+			log.Println("end:", end)
+			return errors.New("end should be divisible by 86400(one day)")
+		}
+		// check uIndex,pIndex,gIndex,tIndex
+		gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr, 1)
 		if err != nil {
 			return err
 		}
-		if !has {
-			log.Println("rolefsAddr:", rfs.contractAddress.Hex(), " hasn't MinterRole, please setUpRole first")
-			return errors.New("rolefsAddr has not MinterRole")
+		// check ksigns's length
+		r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
+		gkNum, err := r.GetGKNum(gIndex)
+		if err != nil {
+			return err
 		}
-	}
+		if len(ksigns) < int(gkNum*2/3) {
+			return ErrKSignsNE
+		}
+		// check balance
+		pay := big.NewInt(0).Mul(sprice, new(big.Int).SetUint64(end-start))
+		manageAndTax := big.NewInt(0).Div(pay, big.NewInt(20)) // pay/100*4 + pay/100*1
+		payAndTax := big.NewInt(0).Add(pay, manageAndTax)
+		_, _, _, _, _, _, fsAddr, err := r.GetGroupInfo(gIndex)
+		if err != nil {
+			return err
+		}
+		fs := NewFileSys(fsAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
+		avail, _, err := fs.GetBalance(uIndex, tIndex)
+		if err != nil {
+			return err
+		}
+		if avail.Cmp(payAndTax) < 0 {
+			log.Println("payAndTax is", payAndTax, " but avail is", avail)
+			return ErrBalNotE
+		}
+		// check nonce
+		_nonce, _, err := fs.GetFsInfoAggOrder(uIndex, pIndex)
+		if err != nil {
+			return err
+		}
+		if _nonce != nonce {
+			log.Println("nonce:", nonce, " should be", _nonce)
+			return errNonce
+		}
+		// check start
+		_time, _, _, err := fs.GetStoreInfo(uIndex, pIndex, tIndex)
+		if err != nil {
+			return err
+		}
+		if start < _time {
+			log.Println("start:", start, " should be less than time:", _time)
+			return errors.New("start error")
+		}
+		// check whether rolefsAddr has Minter-Role
+		if tIndex == 0 {
+			erc20 := NewERC20(ERC20Addr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
+			has, err := erc20.HasRole(MinterRole, rfs.contractAddress)
+			if err != nil {
+				return err
+			}
+			if !has {
+				log.Println("rolefsAddr:", rfs.contractAddress.Hex(), " hasn't MinterRole, please setUpRole first")
+				return errors.New("rolefsAddr has not MinterRole")
+			}
+		}
+
+	*/
 
 	log.Println("begin AddOrder in RoleFS contract...")
 
