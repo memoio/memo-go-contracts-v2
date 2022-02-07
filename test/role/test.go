@@ -975,7 +975,7 @@ func main() {
 		roleCaller := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 		// rIndex = 8
 		//roleAddr, rTokenAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte
-		err = roleCaller.RegisterUser(rtokenAddr, 9, 1, 0, nil, sig)
+		err = roleCaller.RegisterUser(rtokenAddr, 9, 1, nil, sig)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -1690,7 +1690,7 @@ func PrePaire() (err error) {
 
 		// register user
 		if roleType == 0 {
-			err = rUser.RegisterUser(rtokenAddr, rIndexes[0], 1, 0, nil, nil)
+			err = rUser.RegisterUser(rtokenAddr, rIndexes[0], 1, nil, nil)
 			if err != nil {
 				log.Fatal(err)
 			}
