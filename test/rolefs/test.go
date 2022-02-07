@@ -37,13 +37,17 @@ func main() {
 	start := uint64(time.Now().Unix())
 	fmt.Println("start:", start)
 	end := 86400 - start%86400 + start + 100*86400
+	fmt.Println("end:", end)
 	size := uint64(1000000)
 	nonce := uint64(0)
 	sprice := big.NewInt(1e11) // 1e11 1e6 1e2 1e7
 	addOrderpay := big.NewInt(0).Mul(big.NewInt(int64(end-start)), sprice)
+	fmt.Println("addOrderPay:", addOrderpay)
 	rechargeValue := big.NewInt(0).Mul(addOrderpay, big.NewInt(2)) // need not less than (end - start)*sprice + managePay + taxPay
+	fmt.Println("rechargeValue:", rechargeValue)
 	zero := big.NewInt(0)
 	managePay := big.NewInt(1).Div(addOrderpay, big.NewInt(25))
+	fmt.Println("managePay:", managePay)
 	reduceBal := big.NewInt(1).Add(addOrderpay, big.NewInt(1).Div(addOrderpay, big.NewInt(20)))
 
 	//start := 1639911209
@@ -83,7 +87,7 @@ func main() {
 	}
 	fmt.Println("admin balance in primaryToken is ", bal)
 	// 余额不足，自动充值
-	mintValue := big.NewInt(1).Add(big.NewInt(test.MoneyTo), rechargeValue)
+	mintValue := big.NewInt(1).Add(big.NewInt(test.MoneyTo), new(big.Int).Mul(rechargeValue, big.NewInt(2)))
 	if bal.Cmp(mintValue) < 0 {
 		// mintToken
 		err = erc20.MintToken(adminAddr, mintValue)
@@ -108,8 +112,8 @@ func main() {
 		}
 		fmt.Println("acc", i, " balance in primaryToken is ", bal)
 		if i == 0 {
-			if bal.Cmp(rechargeValue) < 0 {
-				err = erc20.Transfer(acc, rechargeValue)
+			if bal.Cmp(new(big.Int).Mul(rechargeValue, big.NewInt(2))) < 0 {
+				err = erc20.Transfer(acc, new(big.Int).Mul(rechargeValue, big.NewInt(2)))
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -268,7 +272,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("uIndex ", uIndex)
-	err = r.RegisterUser(rTokenAddr, uIndex, gIndex, 0, []byte("test"), nil)
+	err = r.RegisterUser(rTokenAddr, uIndex, gIndex, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -399,8 +403,8 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("After addOrder: storeinfo time", _time, ",size", _size, ",price", _price)
-	if _price.Cmp(sprice) != 0 || _size != size || _time != 0 {
-		log.Fatal("price in storeInfo after addOrder should be ", sprice, ", size in storeInfo should be ", size)
+	if _price.Cmp(sprice) != 0 || _size != size || _time != end {
+		log.Fatal("price in storeInfo after addOrder should be ", sprice, ", size in storeInfo should be ", size, ", time should be ", end)
 	}
 	// 获取addOrder后proInfo中的Settlement的信息，并测试正确性
 	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(pIndex, 0)
@@ -553,8 +557,8 @@ func main() {
 	if _avail.Cmp(zero) != 0 {
 		log.Fatal("avail should be 0")
 	}
-	if _tmp.Cmp(big.NewInt(0).Sub(_canPay, _hasPaid)) != 0 {
-		log.Fatal("tmp should be ", big.NewInt(0).Sub(_canPay, _hasPaid))
+	if _tmp.Cmp(big.NewInt(0).Sub(_canPay, _hasPaid)) < 0 {
+		log.Fatal("tmp should not be less than", big.NewInt(0).Sub(_canPay, _hasPaid))
 	}
 	// 获取provider在tIndex上的代币余额
 	bal, err = erc20.BalanceOf(acc3Addr)

@@ -35,7 +35,7 @@ type RoleInfo interface {
 	RegisterProvider(common.Address, uint64, []byte) error
 
 	// called by anyone to register User
-	RegisterUser(common.Address, uint64, uint64, uint32, []byte, []byte) error
+	RegisterUser(common.Address, uint64, uint64, []byte, []byte) error
 
 	// called by owner to add token
 	RegisterToken(common.Address) error

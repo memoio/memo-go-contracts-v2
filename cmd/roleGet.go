@@ -52,6 +52,8 @@ var RGet = &cli.Command{
 		gpCmd,
 		guCmd,
 		ownerCmd,
+		ppCmd,
+		pkCmd,
 	},
 }
 
@@ -617,6 +619,74 @@ var ownerCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("\nowner: %v\n", owner)
+
+		return nil
+	},
+}
+
+// get money when pledge Provider
+var ppCmd = &cli.Command{
+	Name:  "pp",
+	Usage: "get pledge money for Provider",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		role := common.HexToAddress(cctx.String("role"))
+		fmt.Println("role:", role)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// owner use the same address with role
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
+
+		// call contract
+		pledge, err := r.PledgeP()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\npledgeProvider: %v\n", pledge)
+
+		return nil
+	},
+}
+
+// get money when pledge Keeper
+var pkCmd = &cli.Command{
+	Name:  "pk",
+	Usage: "get pledge money for Keeper",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		role := common.HexToAddress(cctx.String("role"))
+		fmt.Println("role:", role)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// owner use the same address with role
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
+
+		// call contract
+		pledge, err := r.PledgeK()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\npledgekeeper: %v\n", pledge)
 
 		return nil
 	},

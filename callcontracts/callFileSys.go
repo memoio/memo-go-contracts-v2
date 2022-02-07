@@ -93,7 +93,7 @@ func (fs *ContractModule) GetFsInfo(uIndex uint64) (bool, uint32, error) {
 	for {
 		retryCount++
 		// multiple return values are returned as a structure because named return values are used in the contract function
-		isActive, tokenIndex, err = fsIns.GetFsInfo(&bind.CallOpts{
+		isActive, err = fsIns.GetFsInfo(&bind.CallOpts{
 			From: fs.addr,
 		}, uIndex)
 		if err != nil {
