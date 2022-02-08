@@ -248,9 +248,9 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if err != nil {
 		return err
 	}
-	if start < _time {
-		log.Println("start:", start, " should be less than time:", _time)
-		return errors.New("start error")
+	if end < _time {
+		log.Println("end:", start, " should be more than time:", _time)
+		return errors.New("end error")
 	}
 	// check whether rolefsAddr has Minter-Role
 	if tIndex == 0 {
