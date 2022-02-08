@@ -2,11 +2,12 @@ package callconts
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
 	"time"
+
+	"golang.org/x/xerrors"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -91,51 +92,51 @@ const (
 
 var (
 	// ErrTxFail indicates that the transaction is not packaged or an error occurred during the packaging process
-	ErrTxFail = errors.New("transaction not packaged")
+	ErrTxFail = xerrors.New("transaction not packaged")
 	// ErrTxExecu indicates that an error occurred during packaging
-	ErrTxExecu = errors.New("transaction mined but execution failed")
+	ErrTxExecu = xerrors.New("transaction mined but execution failed")
 	// ErrBalNotE indicates that the account's balance is not enough to do something
-	ErrBalNotE = errors.New("balance is not enough")
+	ErrBalNotE = xerrors.New("balance is not enough")
 	// ErrAlloNotE indicates that the account's allowance is not enough to transferfrom
-	ErrAlloNotE = errors.New("allowance is not enough")
+	ErrAlloNotE = xerrors.New("allowance is not enough")
 	// ErrInValAddr indicates that the account address is invalid
-	ErrInValAddr = errors.New("invalid address")
+	ErrInValAddr = xerrors.New("invalid address")
 	// ErrNoMintRight indicates that the account has not Mint right in erc20 contract
-	ErrNoMintRight = errors.New("the account has not Mint right")
+	ErrNoMintRight = xerrors.New("the account has not Mint right")
 	// ErrNoPauseRight indicates that the account has not Pause right in erc20 contract
-	ErrNoPauseRight = errors.New("the account has not Pause right")
+	ErrNoPauseRight = xerrors.New("the account has not Pause right")
 	// ErrNoAdminRight indicates that the account has not Admin right in erc20 contract
-	ErrNoAdminRight      = errors.New("the account has not Admin right")
-	errAccessControlRole = errors.New("the role in accessControl is invalid")
+	ErrNoAdminRight      = xerrors.New("the account has not Admin right")
+	errAccessControlRole = xerrors.New("the role in accessControl is invalid")
 	// ErrIndex indicates that the rindex does not meet the requirements
-	ErrIndex = errors.New("the role index is invalid")
+	ErrIndex = xerrors.New("the role index is invalid")
 	// ErrIndexZero shouldn't be zero
-	ErrIndexZero = errors.New("the roleIndex or groupIndex should not be 0")
+	ErrIndexZero = xerrors.New("the roleIndex or groupIndex should not be 0")
 	// ErrOARange index out of range
-	ErrOARange = errors.New("the index out of array range")
+	ErrOARange = xerrors.New("the index out of array range")
 	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
-	ErrIsBanned = errors.New("the account is banned in Role contract")
+	ErrIsBanned = xerrors.New("the account is banned in Role contract")
 	// ErrTIndex tindex invalid
-	ErrTIndex = errors.New("the token index is invalid")
+	ErrTIndex = xerrors.New("the token index is invalid")
 	// ErrRoleReg has registered
-	ErrRoleReg = errors.New("the account has already registered a role")
+	ErrRoleReg = xerrors.New("the account has already registered a role")
 	// ErrInvalidG invalid gindex
-	ErrInvalidG = errors.New("invalid group index")
+	ErrInvalidG = xerrors.New("invalid group index")
 	// ErrNotSetPP need set PledgePool address in Role contract
-	ErrNotSetPP = errors.New("haven't set pledgePool address in Role contract before call RegisterToken")
+	ErrNotSetPP = xerrors.New("haven't set pledgePool address in Role contract before call RegisterToken")
 	// ErrKSignsNE ksigns err
-	ErrKSignsNE     = errors.New("the account of kSigns is not enough")
-	errAllowanceExc = errors.New("the account's allowance to other account excess balance")
-	errPledgeNE     = errors.New("the pledge money is not enough to pledgeKeeper or pledgeProvider")
-	errHexskFormat  = errors.New("the hexsk'format is wrong")
-	errPaused       = errors.New("transfer is paused now")
-	errNotOwner     = errors.New("the caller is not owner")
-	errSize         = errors.New("size should be greater than 0, or size err")
-	errEnd          = errors.New("end should be greater than start")
-	errEndNow       = errors.New("end should be more than start,and shouldn't be more than now")
-	errNonce        = errors.New("nonce error")
-	errSprice       = errors.New("sprice error")
-	errCaller       = errors.New("caller error")
+	ErrKSignsNE     = xerrors.New("the account of kSigns is not enough")
+	errAllowanceExc = xerrors.New("the account's allowance to other account excess balance")
+	errPledgeNE     = xerrors.New("the pledge money is not enough to pledgeKeeper or pledgeProvider")
+	errHexskFormat  = xerrors.New("the hexsk'format is wrong")
+	errPaused       = xerrors.New("transfer is paused now")
+	errNotOwner     = xerrors.New("the caller is not owner")
+	errSize         = xerrors.New("size should be greater than 0, or size err")
+	errEnd          = xerrors.New("end should be greater than start")
+	errEndNow       = xerrors.New("end should be more than start,and shouldn't be more than now")
+	errNonce        = xerrors.New("nonce error")
+	errSprice       = xerrors.New("sprice error")
+	errCaller       = xerrors.New("caller error")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
@@ -177,7 +178,7 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 	chainID := new(big.Int).SetUint64(35896)
 	auth, err = bind.NewKeyedTransactorWithChainID(sk, chainID)
 	if err != nil {
-		return nil, errors.New("new keyed transaction failed")
+		return nil, xerrors.New("new keyed transaction failed")
 	}
 	auth.GasPrice = txopts.GasPrice
 	auth.Value = moneyToContract //放进合约里的钱

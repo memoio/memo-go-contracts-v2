@@ -3,7 +3,6 @@ package test
 import (
 	"context"
 	"crypto/ecdsa"
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -15,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -83,7 +83,7 @@ func TransferTo(value *big.Int, addr common.Address, eth, qeth string) error {
 	retry := 0
 	for {
 		if retry > 10 {
-			return errors.New("fail to transfer")
+			return xerrors.New("fail to transfer")
 		}
 		retry++
 		nonce, err := client.PendingNonceAt(context.Background(), fromAddress)

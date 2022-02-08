@@ -1,7 +1,6 @@
 package callconts
 
 import (
-	"errors"
 	"log"
 	"math/big"
 	"memoContract/contracts/pledgepool"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"golang.org/x/xerrors"
 )
 
 // get gIndex from logs in receipt
@@ -17,7 +17,7 @@ func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
 	receipt := getTransactionReceipt(hash)
 
 	if len(receipt.Logs) != 1 {
-		return 0, errors.New("length of logs in receipt is error")
+		return 0, xerrors.New("length of logs in receipt is error")
 	}
 
 	contractAbi, err := abi.JSON(strings.NewReader(string(role.RoleABI)))
@@ -39,7 +39,7 @@ func getRUserInfoFromRLogs(hash common.Hash) (uint64, common.Address, error) {
 	receipt := getTransactionReceipt(hash)
 
 	if len(receipt.Logs) != 1 {
-		return 0, common.Address{}, errors.New("length of logs in receipt is error")
+		return 0, common.Address{}, xerrors.New("length of logs in receipt is error")
 	}
 
 	// get role contract abi
@@ -65,7 +65,7 @@ func getRKeeperInfoFromRLogs(hash common.Hash) (uint64, common.Address, error) {
 	receipt := getTransactionReceipt(hash)
 
 	if len(receipt.Logs) != 1 {
-		return 0, common.Address{}, errors.New("length of logs in receipt is error")
+		return 0, common.Address{}, xerrors.New("length of logs in receipt is error")
 	}
 
 	// get role contract abi
@@ -91,7 +91,7 @@ func getRProviderInfoFromRLogs(hash common.Hash) (uint64, common.Address, error)
 	receipt := getTransactionReceipt(hash)
 
 	if len(receipt.Logs) != 1 {
-		return 0, common.Address{}, errors.New("length of logs in receipt is error")
+		return 0, common.Address{}, xerrors.New("length of logs in receipt is error")
 	}
 
 	// get role contract abi
@@ -119,7 +119,7 @@ func getPledgeInfoFromRLogs(hash common.Hash) (common.Address, *big.Int, error) 
 	log.Println("tx logs count: ", len(receipt.Logs))
 
 	if len(receipt.Logs) != 3 {
-		return common.Address{}, nil, errors.New("length of logs in receipt is error")
+		return common.Address{}, nil, xerrors.New("length of logs in receipt is error")
 	}
 
 	// get role contract abi
@@ -158,7 +158,7 @@ func getWithdrawInfoFromRLogs(hash common.Hash) (common.Address, *big.Int, error
 	log.Println("tx logs count: ", len(receipt.Logs))
 
 	if len(receipt.Logs) != 2 {
-		return common.Address{}, nil, errors.New("length of logs in receipt is error")
+		return common.Address{}, nil, xerrors.New("length of logs in receipt is error")
 	}
 
 	// get role contract abi
