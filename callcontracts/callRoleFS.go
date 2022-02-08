@@ -1,7 +1,6 @@
 package callconts
 
 import (
-	"errors"
 	"log"
 	"math/big"
 	rolefs "memoContract/contracts/rolefs"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"golang.org/x/xerrors"
 )
 
 // NewRFS new a instance of ContractModule
@@ -201,7 +201,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	}
 	if (end/86400)*86400 != end {
 		log.Println("end:", end)
-		return errors.New("end should be divisible by 86400(one day)")
+		return xerrors.New("end should be divisible by 86400(one day)")
 	}
 	// check uIndex,pIndex,gIndex,tIndex
 	gIndex, err := rfs.checkParam(uIndex, pIndex, UserRoleType, ProviderRoleType, tIndex, roleAddr, rTokenAddr, 1)
@@ -250,7 +250,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	}
 	if end < _time {
 		log.Println("end:", start, " should be more than time:", _time)
-		return errors.New("end error")
+		return xerrors.New("end error")
 	}
 	// check whether rolefsAddr has Minter-Role
 	if tIndex == 0 {
@@ -261,7 +261,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		}
 		if !has {
 			log.Println("rolefsAddr:", rfs.contractAddress.Hex(), " hasn't MinterRole, please setUpRole first")
-			return errors.New("rolefsAddr has not MinterRole")
+			return xerrors.New("rolefsAddr has not MinterRole")
 		}
 	}
 
@@ -425,13 +425,13 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 	}
 	if _lost.Cmp(_lostPaid) < 0 {
 		log.Println("pIndex:", pIndex, " lost:", _lost, " lostPaid:", _lostPaid, ", lost shouldn't less than lostPaid")
-		return errors.New("lost error")
+		return xerrors.New("lost error")
 	}
 	bal := big.NewInt(0).Sub(_lost, _lostPaid)
 	pay := big.NewInt(0).Mul(sprice, new(big.Int).SetUint64(end-start))
 	if bal.Cmp(pay) < 0 {
 		log.Println("pIndex:", pIndex, " bal:", bal, " pay:", pay, ", bal shouldn't be less than pay")
-		return errors.New("pay error")
+		return xerrors.New("pay error")
 	}
 	// check nonce
 	_nonce, _, err := fs.GetFsInfoAggOrder(0, nPIndex)

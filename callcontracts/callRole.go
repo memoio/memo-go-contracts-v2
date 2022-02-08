@@ -4,7 +4,6 @@
 package callconts
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -15,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"golang.org/x/xerrors"
 )
 
 // NewR new a instance of ContractModule. 'roleAddr' indicates Role contract address
@@ -789,7 +789,7 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 
 	// check amount
 	if amount.Cmp(big.NewInt(0)) <= 0 {
-		return errors.New("amount shouldn't be 0")
+		return xerrors.New("amount shouldn't be 0")
 	}
 
 	// check tindex
