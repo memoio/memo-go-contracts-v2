@@ -348,7 +348,7 @@ func main() {
 	fmt.Println("============ 13. user register role and recharge ============")
 
 	r = callconts.NewR(roleAddr, acc1Addr, test.Sk1, txopts, ethEndPoint, status)
-	err = r.RegisterUser(rTokenAddr, uIndex, gIndex, 0, []byte("test"), nil)
+	err = r.RegisterUser(rTokenAddr, uIndex, gIndex, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -541,10 +541,9 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("After addOrder: storeinfo time", _time, ",size", _size, ",price", _price)
-	if _price.Cmp(sprice) != 0 || _size != size || _time != 0 {
-		log.Fatal("price in storeInfo after addOrder should be ", sprice, ", size in storeInfo should be ", size)
+	if _price.Cmp(sprice) != 0 || _size != size || _time != end {
+		log.Fatal("price in storeInfo after addOrder should be ", sprice, ", size in storeInfo should be ", size, ", time should be ", end)
 	}
-	fmt.Println("check getSettleInfo")
 	// check getSettleInfo
 	_time, _size, _price, _maxPay, _hasPaid, _canPay, _lost, _lostPaid, _managePay, _endPaid, _linearPaid, err := fs.GetSettleInfo(pIndex, 0)
 	if err != nil {
