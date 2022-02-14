@@ -3,7 +3,7 @@ package callconts
 import (
 	"log"
 	"math/big"
-	"memoContract/contracts/role"
+	"memoContract/contracts/issuance"
 	iface "memoContract/interfaces"
 	"time"
 
@@ -27,9 +27,9 @@ func NewIssu(issuAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoi
 }
 
 // DeployIssuance deploy an Issuance contract, called by admin
-func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Address, *role.Issuance, error) {
+func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Address, *issuance.Issuance, error) {
 	var issuAddr common.Address
-	var issuIns *role.Issuance
+	var issuIns *issuance.Issuance
 
 	log.Println("begin deploy Issuance contract...")
 	client := getClient(issu.endPoint)
@@ -41,7 +41,7 @@ func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Ad
 		return issuAddr, nil, errMA
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	issuAddr, tx, issuIns, err := role.DeployIssuance(auth, client, rolefsAddr)
+	issuAddr, tx, issuIns, err := issuance.DeployIssuance(auth, client, rolefsAddr)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误
@@ -59,8 +59,8 @@ func (issu *ContractModule) DeployIssuance(rolefsAddr common.Address) (common.Ad
 	return issuAddr, issuIns, nil
 }
 
-func newIssuance(issuAddr common.Address, client *ethclient.Client) (*role.Issuance, error) {
-	issuIns, err := role.NewIssuance(issuAddr, client)
+func newIssuance(issuAddr common.Address, client *ethclient.Client) (*issuance.Issuance, error) {
+	issuIns, err := issuance.NewIssuance(issuAddr, client)
 	if err != nil {
 		return nil, err
 	}

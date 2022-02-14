@@ -45,7 +45,8 @@ const (
 )
 
 var (
-	Foundation   = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
+	Foundation = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
+
 	PrimaryToken = common.HexToAddress("0x269658543337C4ecbA08Adaa38e13D0290e24De8")
 	RTokenAddr   = common.HexToAddress("0x360A3b47089B931e8763C0a63F3B91D250167597")
 )

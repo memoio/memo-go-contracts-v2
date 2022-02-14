@@ -126,14 +126,14 @@ type RTokenInfo interface {
 	GetTNum() (uint32, error)
 }
 
-// IssuanceInfo contains deploy Isuance-contract function
-type IssuanceInfo interface {
-	DeployIssuance(rfs common.Address) (common.Address, *role.Issuance, error)
-	MintLevel() (*big.Int, error)
-	LastMint() (*big.Int, error)
-	Price() (*big.Int, error)
-	Size() (*big.Int, error)
-	SpaceTime() (*big.Int, error)
-	TotalPay() (*big.Int, error)
-	TotalPaid() (*big.Int, error)
-}
+// // IssuanceInfo contains deploy Isuance-contract function
+// type IssuanceInfo interface {
+// 	DeployIssuance(rfs common.Address) (common.Address, *role.Issuance, error)
+// 	MintLevel() (*big.Int, error)
+// 	LastMint() (*big.Int, error)
+// 	Price() (*big.Int, error)
+// 	Size() (*big.Int, error)
+// 	SpaceTime() (*big.Int, error)
+// 	TotalPay() (*big.Int, error)
+// 	TotalPaid() (*big.Int, error)
+// }
