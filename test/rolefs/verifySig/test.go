@@ -446,14 +446,6 @@ func main() {
 
 	fmt.Println("============ 16. calc signatures for addOrder ============")
 
-	// uID uint64,
-	// pID uint64,
-	// nonce uint64,
-	// start uint64,
-	// end uint64,
-	// sz uint64,
-	// price *big.Int,
-
 	// user = acc1
 	usig, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk1)
 	if err != nil {
