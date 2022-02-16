@@ -13,17 +13,17 @@ import (
 )
 
 var (
-	ethEndPoint  string
-	qethEndPoint string
+	ethEndPoint string
+	//qethEndPoint string
 )
 
 // 该测试需花费约14分钟
 func main() {
-	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
-	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
+	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;") //dev网
+	//qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
 	flag.Parse()
 	ethEndPoint = *eth
-	qethEndPoint = *qeth
+	//qethEndPoint = *qeth
 	callconts.EndPoint = ethEndPoint
 
 	// 用于测试的一些参数
@@ -182,7 +182,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The PledgePool contract address is ", pledgePoolAddr.Hex())
-	pp = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
+	//pp = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	// 部署Issuance合约
 	issu := callconts.NewIssu(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	issuanceAddr, _, err := issu.DeployIssuance(rolefsAddr)
