@@ -2,6 +2,7 @@ package iface
 
 import (
 	"math/big"
+	"memoContract/contracts/issu"
 	"memoContract/contracts/role"
 	"memoContract/contracts/rolefs"
 
@@ -126,14 +127,18 @@ type RTokenInfo interface {
 	GetTNum() (uint32, error)
 }
 
-// // IssuanceInfo contains deploy Isuance-contract function
-// type IssuanceInfo interface {
-// 	DeployIssuance(rfs common.Address) (common.Address, *role.Issuance, error)
-// 	MintLevel() (*big.Int, error)
-// 	LastMint() (*big.Int, error)
-// 	Price() (*big.Int, error)
-// 	Size() (*big.Int, error)
-// 	SpaceTime() (*big.Int, error)
-// 	TotalPay() (*big.Int, error)
-// 	TotalPaid() (*big.Int, error)
-// }
+// IssuanceInfo contains deploy Isuance-contract function
+type IssuanceInfo interface {
+	DeployIssuance(rfs common.Address) (common.Address, *issu.Issuance, error)
+	MintLevel() (*big.Int, error)
+	LastMint() (*big.Int, error)
+	Price() (*big.Int, error)
+	Size() (*big.Int, error)
+	SpaceTime() (*big.Int, error)
+	TotalPay() (*big.Int, error)
+	TotalPaid() (*big.Int, error)
+	PeriodTarget() (*big.Int, error)
+	PeriodTotalReward() (*big.Int, error)
+	IssuRatio() (uint16, error)
+	MinRatio() (uint16, error)
+}

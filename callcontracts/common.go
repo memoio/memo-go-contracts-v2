@@ -31,18 +31,17 @@ var (
 	// RToken contract address
 	RTokenAddr = common.HexToAddress("0x0E9d1F6a17614EFF6Ee15Bf8B1F2A2CBF47Bfb95")
 	// FileSys contract address
-	FileSysAddr = common.HexToAddress("0xdC82C4164D9ba7cbD706Db69F9bD74B0c9cAe4eC")
+	FileSysAddr = common.HexToAddress("0x66d1697f8263f4a264Ff4D8110Ac32de17004450")
 	// PledgePool contract address
 	PledgePoolAddr = common.HexToAddress("0xCb523235d0FeC5103bB34593407135380DA28E93")
 	// Issuance contract address
-	//IssuanceAddr = common.HexToAddress("0x34687FA2a42b9B0f4E24Bfc0Ea526D12A66ef623")
-	IssuanceAddr = common.HexToAddress("0xcf0b4D81A6E7dA642C68d15D29eEaD44a1c6c976")
+	IssuanceAddr = common.HexToAddress("0x064B3D22AF5A25C87Df41Bf0dF61c5E271026267")
 	AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 	AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
 	FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
-	GIndex = uint64(1)
+	GIndex = uint64(2)
 )
 
 const (
