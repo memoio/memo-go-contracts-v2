@@ -187,10 +187,12 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
 	client := getClient(rfs.endPoint)
 	defer client.Close()
+
 	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
 	if err != nil {
 		return err
 	}
+
 	// check start,end,size
 	if size == 0 {
 		return errSize
@@ -272,8 +274,26 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if errMA != nil {
 		return errMA
 	}
+
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	tx, err := roleFSIns.AddOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
+	// tx, err := roleFSIns.AddOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
+	// use struct to call addOder
+	ps := rolefs.AOParams{
+		UIndex: uIndex,
+		PIndex: pIndex,
+		Start:  start,
+		End:    end,
+		Size:   size,
+		Nonce:  nonce,
+		TIndex: tIndex,
+		SPrice: sprice,
+		Usign:  usign,
+		Psign:  psign,
+		Ksigns: ksigns,
+	}
+	// call with struct param
+	tx, err := roleFSIns.AddOrder(auth, ps)
+
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误
@@ -363,8 +383,25 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if errMA != nil {
 		return errMA
 	}
+
+	// prepair params for subOrder
+	ps := rolefs.SOParams{
+		KIndex: 0,
+		UIndex: uIndex,
+		PIndex: pIndex,
+		Start:  start,
+		End:    end,
+		Size:   size,
+		Nonce:  nonce,
+		TIndex: tIndex,
+		SPrice: sprice,
+		Usign:  usign,
+		Psign:  psign,
+		Ksigns: ksigns,
+	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	tx, err := roleFSIns.SubOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
+	//tx, err := roleFSIns.SubOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
+	tx, err := roleFSIns.SubOrder(auth, ps)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误
@@ -598,8 +635,18 @@ func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pInd
 	if errMA != nil {
 		return errMA
 	}
+
+	// prepair params for subOrder
+	ps := rolefs.PWParams{
+		PIndex: pIndex,
+		TIndex: tIndex,
+		Pay:    pay,
+		Lost:   lost,
+		Ksigns: ksigns,
+	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	tx, err := roleFSIns.ProWithdraw(auth, pIndex, tIndex, pay, lost, ksigns)
+	//tx, err := roleFSIns.ProWithdraw(auth, pIndex, tIndex, pay, lost, ksigns)
+	tx, err := roleFSIns.ProWithdraw(auth, ps)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误

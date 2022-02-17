@@ -10,6 +10,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"golang.org/x/crypto/sha3"
+	//"github.com/memoio/go-mefs-v2/lib/utils"
 )
 
 // SignForRegister Used to call Register on behalf of other accounts
@@ -261,6 +263,91 @@ func SignForRepair(sk string, pIndex, start, end, size, nonce uint64, tIndex uin
 	return sig, nil
 }
 
+// hash(uIndex, pIndex, nonce, _start, end, _size, sPrice)
+func SignForAddOrder(
+	uID uint64,
+	pID uint64,
+	nonce uint64,
+	start uint64,
+	end uint64,
+	sz uint64,
+	price *big.Int,
+	accSk string,
+) ([]byte, error) {
+	// string to ecdsa
+	skEcdsa, err := HexSkToEcdsa(accSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// hash(uIndex, pIndex, nonce, _start, end, _size, sPrice)
+	var buf = make([]byte, 8)
+	d := sha3.NewLegacyKeccak256()
+	binary.BigEndian.PutUint64(buf, uID)
+	d.Write(buf)
+	binary.BigEndian.PutUint64(buf, pID)
+	d.Write(buf)
+	binary.BigEndian.PutUint64(buf, nonce)
+	d.Write(buf)
+	binary.BigEndian.PutUint64(buf, start)
+	d.Write(buf)
+	binary.BigEndian.PutUint64(buf, end)
+	d.Write(buf)
+	binary.BigEndian.PutUint64(buf, sz)
+	d.Write(buf)
+	//d.Write(LeftPadBytes(price.Bytes(), 32))
+	d.Write(LeftPadBytes(price.Bytes(), 32))
+	hash := d.Sum(nil)
+
+	fmt.Printf("hash for add order:\n%x\n", hash)
+
+	// sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
+}
+
+// hash(pIndex, tIndex, pay, lost)
+func SignForProWithdraw(
+	pIndex uint64,
+	tIndex uint32,
+	pay *big.Int,
+	lost *big.Int,
+	accSk string,
+) ([]byte, error) {
+	// string to ecdsa
+	skEcdsa, err := HexSkToEcdsa(accSk)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// hash(pIndex, tIndex, pay, lost)
+	var buf8 = make([]byte, 8)
+	var buf4 = make([]byte, 4)
+	d := sha3.NewLegacyKeccak256()
+	binary.BigEndian.PutUint64(buf8, pIndex)
+	d.Write(buf8)
+	binary.BigEndian.PutUint32(buf4, tIndex)
+	d.Write(buf4)
+	d.Write(LeftPadBytes(pay.Bytes(), 32))
+	d.Write(LeftPadBytes(lost.Bytes(), 32))
+
+	hash := d.Sum(nil)
+
+	fmt.Printf("hash for proWithdraw:\n%x\n", hash)
+
+	// sign
+	sig, err := crypto.Sign(hash, skEcdsa)
+	if err != nil {
+		return nil, err
+	}
+
+	return sig, nil
+}
+
 // HexSkToByte transfer hex string to byte
 func HexSkToByte(hexsk string) ([]byte, error) {
 	var src []byte
@@ -301,4 +388,15 @@ func HexSkToEcdsa(hexsk string) (*ecdsa.PrivateKey, error) {
 		return nil, err
 	}
 	return skECDSA, nil
+}
+
+func LeftPadBytes(slice []byte, l int) []byte {
+	if l <= len(slice) {
+		return slice
+	}
+
+	padded := make([]byte, l)
+	copy(padded[l-len(slice):], slice)
+
+	return padded
 }

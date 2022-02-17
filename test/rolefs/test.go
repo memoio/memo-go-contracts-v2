@@ -13,17 +13,17 @@ import (
 )
 
 var (
-	ethEndPoint  string
-	qethEndPoint string
+	ethEndPoint string
+	//qethEndPoint string
 )
 
 // 该测试需花费约14分钟
 func main() {
-	eth := flag.String("eth", "http://119.147.213.220:8193", "eth api Address;")   //dev网
-	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
+	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;") //dev网
+	//qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
 	flag.Parse()
 	ethEndPoint = *eth
-	qethEndPoint = *qeth
+	//qethEndPoint = *qeth
 	callconts.EndPoint = ethEndPoint
 
 	// 用于测试的一些参数
@@ -182,7 +182,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The PledgePool contract address is ", pledgePoolAddr.Hex())
-	pp = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
+	//pp = callconts.NewPledgePool(pledgePoolAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	// 部署Issuance合约
 	issu := callconts.NewIssu(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	issuanceAddr, _, err := issu.DeployIssuance(rolefsAddr)
@@ -360,11 +360,32 @@ func main() {
 	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Println("============ calc signatures for addOrder ============")
+
+	// user = acc1
+	usig, err := callconts.SignForAddOrder(uIndex, pIndex, nonce, start, end, size, sprice, test.Sk1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// provide = acc3
+	psig, err := callconts.SignForAddOrder(uIndex, pIndex, nonce, start, end, size, sprice, test.Sk3)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// keeper = acc2
+	ksig, err := callconts.SignForAddOrder(uIndex, pIndex, nonce, start, end, size, sprice, test.Sk2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ksigs := [][]byte{ksig}
+
 	// keeper调用addOrder
 	time.Sleep(test.WaitTime)
 	rfs = callconts.NewRFS(rolefsAddr, acc1Addr, test.Sk1, txopts, ethEndPoint, status)
 	callconts.ERC20Addr = test.PrimaryToken
-	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, nil, nil, [][]byte{[]byte("test")})
+	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, usig, psig, ksigs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -487,8 +508,28 @@ func main() {
 	}
 	//size:10, price:10, totalPay:100,上面测试通过的话，这里就不需要再重复测试了
 
+	fmt.Println("============ calc signatures for sub Order ============")
+
+	// user = acc1
+	usig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// provide = acc3
+	psig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk3)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// keeper = acc2
+	ksig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk2)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ksigs = [][]byte{ksig}
+
 	fmt.Println("============4. begin test SubOrder============")
-	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, start+10, size-5, nonce, 0, big.NewInt(0).Sub(sprice, big.NewInt(5)), nil, nil, [][]byte{[]byte("test")})
+	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, start+10, size-5, nonce, 0, big.NewInt(0).Sub(sprice, big.NewInt(5)), usig, psig, ksigs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -518,10 +559,21 @@ func main() {
 		log.Fatal("canPay should be ", tmp)
 	}
 
-	fmt.Println("============5. begin test ProWithdraw============")
+	fmt.Println("============ calc signatures for proWithdraw ============")
+
 	pay := big.NewInt(20)
 	lost := big.NewInt(10)
-	err = rfs.ProWithdraw(roleAddr, rTokenAddr, pIndex, 0, pay, lost, nil)
+
+	// keeper = acc2
+	ksig, err = callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk2)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ksigs = [][]byte{ksig}
+
+	fmt.Println("============5. begin test ProWithdraw============")
+
+	err = rfs.ProWithdraw(roleAddr, rTokenAddr, pIndex, 0, pay, lost, ksigs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -574,7 +626,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Issuance totalPaid:", _totalPaid)
-	if _totalPaid.Cmp(zero) != 0 {
+	if _totalPaid.Cmp(zero) <= 0 {
 		log.Fatal("result wrong")
 	}
 	// 调用AddRepair前，需要先调用ProWithdraw、指定lost值
