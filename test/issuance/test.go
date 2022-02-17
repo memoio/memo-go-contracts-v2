@@ -16,9 +16,15 @@ var (
 	qethEndPoint string
 )
 
+const (
+	PeriodTargetAmount = "50000000000000000000000000000"
+	IssuRatio          = 50
+	MinRatio           = 3
+)
+
 // 仍然需要通过调用rolefs合约中的addOrder等函数，从而触发代币发行、触发Issuance合约中的参数被更改，再次测试getter类函数
 func main() {
-	eth := flag.String("eth", "http://119.147.213.220:8193", "eth api Address;")   //dev网
+	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
 	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
 	flag.Parse()
 	ethEndPoint = *eth
@@ -117,6 +123,50 @@ func main() {
 	fmt.Println("The totalPaid is ", totalPaid)
 	if totalPaid.Cmp(big.NewInt(0)) != 0 {
 		log.Fatal("totalPaid should be 0")
+	}
+
+	fmt.Println("============9. begin test PeriodTarget============")
+	periodTarget, err := issu.PeriodTarget()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("The periodTarget is ", periodTarget)
+	targetAmount, ok := new(big.Int).SetString(PeriodTargetAmount, 10)
+	if !ok {
+		log.Fatal("transform string to bigInt fails")
+	}
+	if periodTarget.Cmp(targetAmount) != 0 {
+		log.Fatal("periodTarget should be ", targetAmount)
+	}
+
+	fmt.Println("============10. begin test PeriodTotalReward============")
+	totalReward, err := issu.PeriodTotalReward()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("The periodTotalReward is ", totalReward)
+	if totalReward.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("periodTotalReward should be 0")
+	}
+
+	fmt.Println("============11. begin test IssuRatio============")
+	ir, err := issu.IssuRatio()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("The issuRatio is ", ir)
+	if ir != IssuRatio {
+		log.Fatal("issuRatio should be ", IssuRatio)
+	}
+
+	fmt.Println("============12. begin test MinRatio============")
+	mr, err := issu.MinRatio()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("The minRatio is ", mr)
+	if mr != MinRatio {
+		log.Fatal("minRatio should be ", MinRatio)
 	}
 
 	fmt.Println("============test success!============")

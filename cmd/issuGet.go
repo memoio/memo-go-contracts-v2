@@ -43,6 +43,12 @@ var ISGet = &cli.Command{
 		prCmd,
 		szCmd,
 		stCmd,
+		totalPayCmd,
+		totalPaidCmd,
+		periodTargetCmd,
+		periodTotalRewardCmd,
+		issuRatioCmd,
+		minRatioCmd,
 	},
 }
 
@@ -198,6 +204,192 @@ var stCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("\nspace time: %v [0x%x]\n", st, st)
+
+		return nil
+	},
+}
+
+var totalPayCmd = &cli.Command{
+	Name:  "totalPay",
+	Usage: "get total pay in MEMO. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		issu := common.HexToAddress(cctx.String("issu"))
+		fmt.Println("issu:", issu)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// caller
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
+		tp, err := e.TotalPay()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\ntotalPay: %v [0x%x]\n", tp, tp)
+
+		return nil
+	},
+}
+
+var totalPaidCmd = &cli.Command{
+	Name:  "totalPaid",
+	Usage: "get total paid in MEMO. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		issu := common.HexToAddress(cctx.String("issu"))
+		fmt.Println("issu:", issu)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// caller
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
+		tp, err := e.TotalPaid()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\ntotalPaid: %v [0x%x]\n", tp, tp)
+
+		return nil
+	},
+}
+
+var periodTargetCmd = &cli.Command{
+	Name:  "periodTarget",
+	Usage: "get period issuance target in MEMO. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		issu := common.HexToAddress(cctx.String("issu"))
+		fmt.Println("issu:", issu)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// caller
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
+		tp, err := e.PeriodTarget()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nperiodTarget: %v [0x%x]\n", tp, tp)
+
+		return nil
+	},
+}
+
+var periodTotalRewardCmd = &cli.Command{
+	Name:  "periodTotalReward",
+	Usage: "get period total reward in MEMO. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		issu := common.HexToAddress(cctx.String("issu"))
+		fmt.Println("issu:", issu)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// caller
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
+		tp, err := e.PeriodTotalReward()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nperiodTotalReward: %v [0x%x]\n", tp, tp)
+
+		return nil
+	},
+}
+
+var issuRatioCmd = &cli.Command{
+	Name:  "issuRatio",
+	Usage: "get issuance ratio in MEMO. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		issu := common.HexToAddress(cctx.String("issu"))
+		fmt.Println("issu:", issu)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// caller
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
+		tp, err := e.IssuRatio()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nissuRatio: %v [0x%x]\n", tp, tp)
+
+		return nil
+	},
+}
+
+var minRatioCmd = &cli.Command{
+	Name:  "minRatio",
+	Usage: "get minimum issuance ratio in MEMO. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		issu := common.HexToAddress(cctx.String("issu"))
+		fmt.Println("issu:", issu)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+
+		// caller
+		e := callconts.NewIssu(issu, caller, "", txopts, endPoint, make(chan error))
+		tp, err := e.MinRatio()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("\nminRatio: %v [0x%x]\n", tp, tp)
 
 		return nil
 	},

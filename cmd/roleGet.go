@@ -580,7 +580,7 @@ var guCmd = &cli.Command{
 		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
 
 		// call contract
-		uIndex, err := r.GetGroupP(g64, u64)
+		uIndex, err := r.GetGroupU(g64, u64)
 		if err != nil {
 			return err
 		}

@@ -18,7 +18,7 @@ var (
 
 func main() {
 	//--eth=http://119.147.213.219:8101 --qeth=http://119.147.213.219:8101      testnet网
-	eth := flag.String("eth", "http://119.147.213.220:8193", "eth api Address;")   //dev网
+	eth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;")   //dev网
 	qeth := flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
 	flag.Parse()
 	ethEndPoint = *eth

@@ -112,7 +112,7 @@ func init() {
 
 func main() {
 
-	peth := flag.String("eth", "http://119.147.213.220:8193", "eth api Address;") //dev网
+	peth := flag.String("eth", "http://119.147.213.220:8191", "eth api Address;") //dev网
 	//qeth = flag.String("qeth", "http://119.147.213.220:8194", "eth api Address;") //dev网，用于keeper、provider连接
 	pfast := flag.Bool("f", false, "flag for fast test")
 
