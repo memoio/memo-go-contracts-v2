@@ -456,16 +456,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// keeper = acc3, acc4
-	ksig3, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk3)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ksig4, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk4)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ksigs := [][]byte{ksig3, ksig4}
+
+	/*
+		// keeper = acc3, acc4
+		ksig3, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk3)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ksig4, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk4)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ksigs := [][]byte{ksig3, ksig4}
+	*/
 
 	fmt.Println("============ 17. call addOrder ============")
 
@@ -487,7 +490,7 @@ func main() {
 		sprice,     // price
 		usig,       // usig
 		psig,       // psig
-		ksigs,      // ksigs
+		//ksigs,      // ksigs
 	)
 	if err != nil {
 		log.Print("call add order err:", err)
@@ -635,16 +638,19 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// keeper = acc3, acc4
-	ksig3, err = callconts.SignForAddOrder(1, 2, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk3)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ksig4, err = callconts.SignForAddOrder(1, 2, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk4)
-	if err != nil {
-		log.Fatal(err)
-	}
-	ksigs = [][]byte{ksig3, ksig4}
+
+	/*
+		// keeper = acc3, acc4
+		ksig3, err = callconts.SignForAddOrder(1, 2, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk3)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ksig4, err = callconts.SignForAddOrder(1, 2, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk4)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ksigs = [][]byte{ksig3, ksig4}
+	*/
 
 	fmt.Println("============20. call SubOrder============")
 
@@ -663,7 +669,6 @@ func main() {
 		big.NewInt(0).Sub(sprice, big.NewInt(5)), // sprice
 		usig,                                     // usig
 		psig,                                     // psig
-		ksigs,                                    // ksigs
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -703,30 +708,33 @@ func main() {
 	lost := big.NewInt(10)
 
 	// keeper = acc3, acc4
-	ksig3, err = callconts.SignForProWithdraw(2, 0, pay, lost, test.Sk3)
+	ksig3, err := callconts.SignForProWithdraw(2, 0, pay, lost, test.Sk3)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ksig4, err = callconts.SignForProWithdraw(2, 0, pay, lost, test.Sk4)
+	ksig4, err := callconts.SignForProWithdraw(2, 0, pay, lost, test.Sk4)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ksigs = [][]byte{ksig3, ksig4}
+	ksigs := [][]byte{ksig3, ksig4}
+	kIndexes := []uint64{3, 4}
 
 	fmt.Println("============ 23. call proWithdraw============")
 
 	fmt.Println("pay: ", pay.String())
 	fmt.Println("lost: ", lost.String())
+
 	// rfs caller, called by user
 	rfs = callconts.NewRFS(rolefsAddr, acc1Addr, test.Sk1, txopts, ethEndPoint, status)
 	err = rfs.ProWithdraw(
 		roleAddr,
 		rTokenAddr,
-		2,     // pIndex
-		0,     // tIndex
-		pay,   // pay
-		lost,  // lost
-		ksigs, // ksigs
+		2,        // pIndex
+		0,        // tIndex
+		pay,      // pay
+		lost,     // lost
+		kIndexes, // keeper indexes
+		ksigs,    // keeper signatures
 	)
 	if err != nil {
 		log.Fatal(err)

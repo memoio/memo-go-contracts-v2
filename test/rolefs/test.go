@@ -372,19 +372,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// keeper = acc2
-	ksig, err := callconts.SignForAddOrder(uIndex, pIndex, nonce, start, end, size, sprice, test.Sk2)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	ksigs := [][]byte{ksig}
+	/*
+		// keeper = acc2
+		ksig, err := callconts.SignForAddOrder(uIndex, pIndex, nonce, start, end, size, sprice, test.Sk2)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ksigs := [][]byte{ksig}
+	*/
 
 	// keeper调用addOrder
 	time.Sleep(test.WaitTime)
 	rfs = callconts.NewRFS(rolefsAddr, acc1Addr, test.Sk1, txopts, ethEndPoint, status)
 	callconts.ERC20Addr = test.PrimaryToken
-	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, usig, psig, ksigs)
+	err = rfs.AddOrder(roleAddr, rTokenAddr, uIndex, pIndex, start, end, size, nonce, 0, sprice, usig, psig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -519,16 +521,18 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// keeper = acc2
-	ksig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk2)
-	if err != nil {
-		log.Fatal(err)
-	}
 
-	ksigs = [][]byte{ksig}
+	/*
+		// keeper = acc2
+		ksig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk2)
+		if err != nil {
+			log.Fatal(err)
+		}
+		ksigs = [][]byte{ksig}
+	*/
 
 	fmt.Println("============4. begin test SubOrder============")
-	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, start+10, size-5, nonce, 0, big.NewInt(0).Sub(sprice, big.NewInt(5)), usig, psig, ksigs)
+	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, start+10, size-5, nonce, 0, big.NewInt(0).Sub(sprice, big.NewInt(5)), usig, psig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -564,15 +568,16 @@ func main() {
 	lost := big.NewInt(10)
 
 	// keeper = acc2
-	ksig, err = callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk2)
+	ksig, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk2)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ksigs = [][]byte{ksig}
+	ksigs := [][]byte{ksig}
+	kIndexes := []uint64{1} // kIndex = 1
 
 	fmt.Println("============5. begin test ProWithdraw============")
 
-	err = rfs.ProWithdraw(roleAddr, rTokenAddr, pIndex, 0, pay, lost, ksigs)
+	err = rfs.ProWithdraw(roleAddr, rTokenAddr, pIndex, 0, pay, lost, kIndexes, ksigs)
 	if err != nil {
 		log.Fatal(err)
 	}
