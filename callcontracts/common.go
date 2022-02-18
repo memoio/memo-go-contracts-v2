@@ -27,15 +27,15 @@ var (
 	// Role contract address
 	RoleAddr = common.HexToAddress("0xd3f9a762E3A6EB54569B1F6D8b8D7549851CBCA0")
 	// RoleFS contract address
-	RoleFSAddr = common.HexToAddress("0xb4E76EF29b5D00C883Fb5258fF86980D87D4835c")
+	RoleFSAddr = common.HexToAddress("0x003d4299Cd56009a24cDCf984e38F29349a2fb3a")
 	// RToken contract address
 	RTokenAddr = common.HexToAddress("0xdAe9253b9D373610D3c05F2c7ca2B60784f432e3")
 	// FileSys contract address
 	FileSysAddr = common.HexToAddress("0x3fE4F8F69D939A489D1ac9A33F6fd6ADdD99C852")
 	// PledgePool contract address
-	PledgePoolAddr = common.HexToAddress("0xCb523235d0FeC5103bB34593407135380DA28E93")
+	PledgePoolAddr = common.HexToAddress("0x0a87A0A03c5e53a2271cCdB0E4594bBE9d0a541D")
 	// Issuance contract address
-	IssuanceAddr = common.HexToAddress("0x064B3D22AF5A25C87Df41Bf0dF61c5E271026267")
+	IssuanceAddr = common.HexToAddress("0xC7163AD3C2F880Da11205d7Ba1373cB6aCE3C045")
 	AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 	AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
