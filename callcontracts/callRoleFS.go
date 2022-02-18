@@ -184,7 +184,7 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 // 目前合约中还未对签名进行判断处理
 // nonce需要从0开始依次累加
 // 调用该函数前，需要admin为RoleFS合约账户赋予MINTER_ROLE权限
-func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
+func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte) error {
 	client := getClient(rfs.endPoint)
 	defer client.Close()
 
@@ -210,16 +210,21 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if err != nil {
 		return err
 	}
-	// check ksigns's length
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
-	gkNum, err := r.GetGKNum(gIndex)
-	if err != nil {
-		return err
-	}
-	if len(ksigns) < int(gkNum*2/3) {
-		return ErrKSignsNE
-	}
+
+	/*
+		// check ksigns's length
+		r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
+		gkNum, err := r.GetGKNum(gIndex)
+		if err != nil {
+			return err
+		}
+		if len(ksigns) < int(gkNum*2/3) {
+			return ErrKSignsNE
+		}
+	*/
+
 	// check balance
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	pay := big.NewInt(0).Mul(sprice, new(big.Int).SetUint64(end-start))
 	manageAndTax := big.NewInt(0).Div(pay, big.NewInt(20)) // pay/100*4 + pay/100*1
 	payAndTax := big.NewInt(0).Add(pay, manageAndTax)
@@ -289,7 +294,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		SPrice: sprice,
 		Usign:  usign,
 		Psign:  psign,
-		Ksigns: ksigns,
+		//Ksigns: ksigns,
 	}
 	// call with struct param
 	tx, err := roleFSIns.AddOrder(auth, ps)
@@ -313,7 +318,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 // SubOrder called by keeper? Reduce the storage order in the FileSys.
 // hash(uIndex, pIndex, _start, end, _size, nonce, tIndex, sPrice)?
 // 目前合约中还未对签名信息做判断处理
-func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte, ksigns [][]byte) error {
+func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, usign, psign []byte) error {
 	client := getClient(rfs.endPoint)
 	defer client.Close()
 	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
@@ -335,16 +340,21 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if err != nil {
 		return err
 	}
-	// check ksigns's length
-	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
-	gkNum, err := r.GetGKNum(gIndex)
-	if err != nil {
-		return err
-	}
-	if len(ksigns) < int(gkNum*2/3) {
-		return ErrKSignsNE
-	}
+
+	/*
+		// check ksigns's length
+		r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
+		gkNum, err := r.GetGKNum(gIndex)
+		if err != nil {
+			return err
+		}
+		if len(ksigns) < int(gkNum*2/3) {
+			return ErrKSignsNE
+		}
+	*/
+
 	// check nonce
+	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
 	_, _, _, _, _, _, fsAddr, err := r.GetGroupInfo(gIndex)
 	if err != nil {
 		return err
@@ -397,7 +407,7 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 		SPrice: sprice,
 		Usign:  usign,
 		Psign:  psign,
-		Ksigns: ksigns,
+		//Ksigns: ksigns,
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
 	//tx, err := roleFSIns.SubOrder(auth, uIndex, pIndex, start, end, size, nonce, tIndex, sprice, usign, psign, ksigns)
@@ -593,7 +603,7 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 
 // ProWithdraw called by keeper? Retrieve the Provider's balance in FileSys.
 // hash(pIndex, tIndex, pay, lost)?
-func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pIndex uint64, tIndex uint32, pay, lost *big.Int, ksigns [][]byte) error {
+func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pIndex uint64, tIndex uint32, pay, lost *big.Int, kIndexes []uint64, ksigns [][]byte) error {
 	client := getClient(rfs.endPoint)
 	defer client.Close()
 	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
@@ -636,13 +646,29 @@ func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pInd
 		return errMA
 	}
 
+	// get provider address for calling proWithdraw
+	r = NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
+	proAddr, gIndex, err := r.GetAddrGindex(pIndex)
+	if err != nil {
+		return err
+	}
+	// get token address from tIndex for calling proWithdraw
+	rt := NewRT(rTokenAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint)
+	tAddr, err := rt.GetTA(tIndex)
+	if err != nil {
+		return err
+	}
+
 	// prepair params for subOrder
 	ps := rolefs.PWParams{
-		PIndex: pIndex,
-		TIndex: tIndex,
-		Pay:    pay,
-		Lost:   lost,
-		Ksigns: ksigns,
+		PIndex:   pIndex,
+		TIndex:   tIndex,
+		PAddr:    proAddr,
+		TAddr:    tAddr,
+		Pay:      pay,
+		Lost:     lost,
+		KIndexes: kIndexes,
+		Ksigns:   ksigns,
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
 	//tx, err := roleFSIns.ProWithdraw(auth, pIndex, tIndex, pay, lost, ksigns)

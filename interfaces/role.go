@@ -112,11 +112,11 @@ type RoleFSInfo interface {
 	DeployRoleFS() (common.Address, *rolefs.RoleFS, error)
 	// called by owner, which is the deployer
 	SetAddr(common.Address, common.Address, common.Address, common.Address) error
-	AddOrder(common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
-	SubOrder(common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte, [][]byte) error
+	AddOrder(common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte) error
+	SubOrder(common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, []byte) error
 	AddRepair(common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
 	SubRepair(common.Address, common.Address, uint64, uint64, uint64, uint64, uint64, uint64, uint32, *big.Int, []byte, [][]byte) error
-	ProWithdraw(common.Address, common.Address, uint64, uint32, *big.Int, *big.Int, [][]byte) error
+	ProWithdraw(common.Address, common.Address, uint64, uint32, *big.Int, *big.Int, []uint64, [][]byte) error
 }
 
 // RTokenInfo contains operations related to tokens that memo supported

@@ -411,7 +411,7 @@ func main() {
 	// 调用RoleFS合约中的AddOrder函数,keeper调用
 	callconts.ERC20Addr = test.PrimaryToken
 	rfs = callconts.NewRFS(rolefsAddr, addrs[0], sks[0], txopts, ethEndPoint, statusTran)
-	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], start, end, size, 0, 0, sprice, nil, nil, [][]byte{[]byte("Hello")})
+	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], start, end, size, 0, 0, sprice, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -499,7 +499,7 @@ func main() {
 	fmt.Println("============10. begin test AddOrder again============")
 	// 调用RoleFS合约中的AddOrder函数,keeper调用
 	rfs = callconts.NewRFS(rolefsAddr, addrs[0], sks[0], txopts, ethEndPoint, statusTran)
-	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], end, end+86400, size, 1, 0, sprice, nil, nil, [][]byte{[]byte("Hello")})
+	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], end, end+86400, size, 1, 0, sprice, nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
