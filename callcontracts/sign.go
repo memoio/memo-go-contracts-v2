@@ -264,13 +264,14 @@ func SignForRepair(sk string, pIndex, start, end, size, nonce uint64, tIndex uin
 }
 
 // hash(uIndex, pIndex, nonce, _start, end, _size, sPrice)
-func SignForAddOrder(
+func SignForOrder(
 	uID uint64,
 	pID uint64,
 	nonce uint64,
 	start uint64,
 	end uint64,
 	sz uint64,
+	tIndex uint32,
 	price *big.Int,
 	accSk string,
 ) ([]byte, error) {
@@ -281,7 +282,8 @@ func SignForAddOrder(
 	}
 
 	// hash(uIndex, pIndex, nonce, _start, end, _size, sPrice)
-	var buf = make([]byte, 8)
+	buf := make([]byte, 8)
+	buf4 := make([]byte, 4)
 	d := sha3.NewLegacyKeccak256()
 	binary.BigEndian.PutUint64(buf, uID)
 	d.Write(buf)
@@ -295,7 +297,8 @@ func SignForAddOrder(
 	d.Write(buf)
 	binary.BigEndian.PutUint64(buf, sz)
 	d.Write(buf)
-	//d.Write(LeftPadBytes(price.Bytes(), 32))
+	binary.BigEndian.PutUint32(buf4, tIndex)
+	d.Write(buf4)
 	d.Write(LeftPadBytes(price.Bytes(), 32))
 	hash := d.Sum(nil)
 
