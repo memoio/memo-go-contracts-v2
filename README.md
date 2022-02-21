@@ -22,13 +22,13 @@
 
 这些合约地址由 admin 部署合约从而得到，admin 部署合约步骤：
 
-1. DeployERC20 => erc20Addr
-2. DeployRole => roleAddr、rTokenAddr
-3. DeployRoleFS => rolefsAddr
-4. DeployPledgePool => pledgePoolAddr
-5. DeployIssuance => issuAddr
+1. DeployERC20 => erc20Addr 
+2. DeployRole => roleAddr、rTokenAddr 
+3. DeployRoleFS => rolefsAddr 
+4. DeployPledgePool => pledgePoolAddr 
+5. DeployIssuance => issuAddr 
 6. role.SetPI
-7. role.CreateGroup => fsAddr
+7. role.CreateGroup => fsAddr 
 8. rolefs.SetAddr
 9. admin SetUpRole(callconts.MinterRole, rolefsAddr)
 

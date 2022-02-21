@@ -362,13 +362,16 @@ func main() {
 
 	fmt.Println("============ calc signatures for addOrder ============")
 
+	// use primary token for testing
+	tIndex := uint32(0)
+
 	// user = acc1
-	usig, err := callconts.SignForAddOrder(uIndex, pIndex, nonce, start, end, size, sprice, test.Sk1)
+	usig, err := callconts.SignForOrder(uIndex, pIndex, nonce, start, end, size, tIndex, sprice, test.Sk1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// provide = acc3
-	psig, err := callconts.SignForAddOrder(uIndex, pIndex, nonce, start, end, size, sprice, test.Sk3)
+	psig, err := callconts.SignForOrder(uIndex, pIndex, nonce, start, end, size, tIndex, sprice, test.Sk3)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -512,12 +515,12 @@ func main() {
 	fmt.Println("============ calc signatures for sub Order ============")
 
 	// user = acc1
-	usig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk1)
+	usig, err = callconts.SignForOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, tIndex, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// provide = acc3
-	psig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk3)
+	psig, err = callconts.SignForOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, tIndex, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk3)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -630,7 +633,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("Issuance totalPaid:", _totalPaid)
-	if _totalPaid.Cmp(zero) <= 0 {
+	if _totalPaid.Cmp(zero) != 0 {
 		log.Fatal("result wrong")
 	}
 	// 调用AddRepair前，需要先调用ProWithdraw、指定lost值

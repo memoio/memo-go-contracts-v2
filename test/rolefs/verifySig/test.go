@@ -42,9 +42,12 @@ func main() {
 	nonce := uint64(0)
 	sprice := big.NewInt(1e11) // 1e11 1e6 1e2 1e7
 	addOrderpay := big.NewInt(0).Mul(big.NewInt(int64(end-start)), sprice)
+	fmt.Println("addOrderPay:", addOrderpay)
 	rechargeValue := big.NewInt(0).Mul(addOrderpay, big.NewInt(2)) // need not less than (end - start)*sprice + managePay + taxPay
+	fmt.Println("rechargeValue:", rechargeValue)
 	zero := big.NewInt(0)
 	managePay := big.NewInt(1).Div(addOrderpay, big.NewInt(25))
+	fmt.Println("managePay:", managePay)
 	reduceBal := big.NewInt(1).Add(addOrderpay, big.NewInt(1).Div(addOrderpay, big.NewInt(20)))
 
 	fmt.Println("============ 1. check acc balance of eth ============")
@@ -202,7 +205,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("============ 8. register user and provider ============")
+	fmt.Println("============ 8. register acc for user and provider ============")
 
 	// register user with acc1
 	r = callconts.NewR(roleAddr, acc1Addr, test.Sk1, txopts, ethEndPoint, status)
@@ -235,7 +238,7 @@ func main() {
 	}
 	fmt.Println("pIndex ", pIndex)
 
-	fmt.Println("============ 9. register keepers ============")
+	fmt.Println("============ 9. register acc for keepers ============")
 
 	// register acc3
 	r = callconts.NewR(roleAddr, acc3Addr, test.Sk3, txopts, ethEndPoint, status)
@@ -261,14 +264,14 @@ func main() {
 
 	// acc3 pledge
 	r = callconts.NewR(roleAddr, acc3Addr, test.Sk3, txopts, ethEndPoint, status)
-	kIndex0, err := r.GetRoleIndex(acc3Addr)
+	kIndex3, err := r.GetRoleIndex(acc3Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("kIndex0 ", kIndex0)
+	fmt.Println("kIndex3 ", kIndex3)
 	// pp caller
 	pp = callconts.NewPledgePool(pledgePoolAddr, acc3Addr, test.Sk3, txopts, ethEndPoint, status)
-	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex0, pledgeK, nil)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex3, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -277,7 +280,7 @@ func main() {
 	}
 
 	// acc3 register role
-	err = r.RegisterKeeper(pledgePoolAddr, kIndex0, []byte("test"), nil)
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex3, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -287,14 +290,14 @@ func main() {
 
 	// acc4 pledge
 	r = callconts.NewR(roleAddr, acc4Addr, test.Sk4, txopts, ethEndPoint, status)
-	kIndex1, err := r.GetRoleIndex(acc4Addr)
+	kIndex4, err := r.GetRoleIndex(acc4Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("kIndex1 ", kIndex1)
+	fmt.Println("kIndex4 ", kIndex4)
 	// pp caller
 	pp = callconts.NewPledgePool(pledgePoolAddr, acc4Addr, test.Sk4, txopts, ethEndPoint, status)
-	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex1, pledgeK, nil)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex4, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -303,7 +306,7 @@ func main() {
 	}
 
 	// acc4 register role
-	err = r.RegisterKeeper(pledgePoolAddr, kIndex1, []byte("test"), nil)
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex4, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -315,7 +318,7 @@ func main() {
 
 	// createGroup, and deploy FileSys contract
 	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
-	gIndex, err := r.CreateGroup(rolefsAddr, 0, []uint64{kIndex0, kIndex1}, 1)
+	gIndex, err := r.CreateGroup(rolefsAddr, 0, []uint64{kIndex3, kIndex4}, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -446,29 +449,19 @@ func main() {
 
 	fmt.Println("============ 16. calc signatures for addOrder ============")
 
+	// use primary token for testing
+	tIndex := uint32(0)
+
 	// user = acc1
-	usig, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk1)
+	usig, err := callconts.SignForOrder(1, 2, nonce, start, end, size, tIndex, sprice, test.Sk1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// provide = acc2
-	psig, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk2)
+	psig, err := callconts.SignForOrder(1, 2, nonce, start, end, size, tIndex, sprice, test.Sk2)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	/*
-		// keeper = acc3, acc4
-		ksig3, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk3)
-		if err != nil {
-			log.Fatal(err)
-		}
-		ksig4, err := callconts.SignForAddOrder(1, 2, nonce, start, end, size, sprice, test.Sk4)
-		if err != nil {
-			log.Fatal(err)
-		}
-		ksigs := [][]byte{ksig3, ksig4}
-	*/
 
 	fmt.Println("============ 17. call addOrder ============")
 
@@ -498,6 +491,8 @@ func main() {
 	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
+
+	time.Sleep(3 * time.Second)
 
 	fmt.Println("============ 18. test addOrder ============")
 
@@ -629,12 +624,12 @@ func main() {
 	fmt.Println("============ 19. calc signatures for sub Order ============")
 
 	// user = acc1
-	usig, err = callconts.SignForAddOrder(1, 2, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk1)
+	usig, err = callconts.SignForOrder(1, 2, nonce, start+5, start+10, size-5, tIndex, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk1)
 	if err != nil {
 		log.Fatal(err)
 	}
 	// provide = acc2
-	psig, err = callconts.SignForAddOrder(1, 2, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk2)
+	psig, err = callconts.SignForOrder(1, 2, nonce, start+5, start+10, size-5, tIndex, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk2)
 	if err != nil {
 		log.Fatal(err)
 	}
