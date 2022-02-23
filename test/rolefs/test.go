@@ -27,11 +27,28 @@ func main() {
 
 	// 用于测试的一些参数
 	adminAddr := common.HexToAddress(test.AdminAddr)
-	acc1Addr := common.HexToAddress(test.Acc1) // 用于注册User
-	acc2Addr := common.HexToAddress(test.Acc2) // 用于注册keeper
-	acc3Addr := common.HexToAddress(test.Acc3) // 用于注册provider
-	acc4Addr := common.HexToAddress(test.Acc4) // 用于注册provider
-	accs := []common.Address{acc1Addr, acc2Addr, acc3Addr, acc4Addr}
+	acc1Addr := common.HexToAddress(test.Acc1)   // User
+	acc2Addr := common.HexToAddress(test.Acc2)   // keeper
+	acc3Addr := common.HexToAddress(test.Acc3)   // provider
+	acc4Addr := common.HexToAddress(test.Acc4)   // provider
+	acc5Addr := common.HexToAddress(test.Acc5)   // keeper
+	acc6Addr := common.HexToAddress(test.Acc6)   // keeper
+	acc7Addr := common.HexToAddress(test.Acc7)   // keeper
+	acc8Addr := common.HexToAddress(test.Acc8)   // keeper
+	acc9Addr := common.HexToAddress(test.Acc9)   // keeper
+	acc10Addr := common.HexToAddress(test.Acc10) // keeper
+	accs := []common.Address{
+		acc1Addr,  // user
+		acc2Addr,  // keeper
+		acc3Addr,  // provider
+		acc4Addr,  // provider
+		acc5Addr,  // keeper
+		acc6Addr,  // keeper
+		acc7Addr,  // keeper
+		acc8Addr,  // keeper
+		acc9Addr,  // keeper
+		acc10Addr, // keeper
+	}
 	pledgeK := big.NewInt(1e6)
 	start := uint64(time.Now().Unix())
 	fmt.Println("start:", start)
@@ -201,7 +218,12 @@ func main() {
 	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
+
 	// keeper注册、质押、申请角色
+
+	fmt.Println("=== begin register acc for keepers ===")
+
+	// acc2
 	r = callconts.NewR(roleAddr, acc2Addr, test.Sk2, txopts, ethEndPoint, status)
 	err = r.Register(acc2Addr, nil)
 	if err != nil {
@@ -210,30 +232,237 @@ func main() {
 	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
+
+	// acc5
+	r = callconts.NewR(roleAddr, acc5Addr, test.Sk5, txopts, ethEndPoint, status)
+	err = r.Register(acc5Addr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// acc6
+	r = callconts.NewR(roleAddr, acc6Addr, test.Sk6, txopts, ethEndPoint, status)
+	err = r.Register(acc6Addr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// acc7
+	r = callconts.NewR(roleAddr, acc7Addr, test.Sk7, txopts, ethEndPoint, status)
+	err = r.Register(acc7Addr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// acc8
+	r = callconts.NewR(roleAddr, acc8Addr, test.Sk8, txopts, ethEndPoint, status)
+	err = r.Register(acc8Addr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// acc9
+	r = callconts.NewR(roleAddr, acc9Addr, test.Sk9, txopts, ethEndPoint, status)
+	err = r.Register(acc9Addr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// acc10
+	r = callconts.NewR(roleAddr, acc10Addr, test.Sk10, txopts, ethEndPoint, status)
+	err = r.Register(acc10Addr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
 	time.Sleep(1 * time.Second)
-	kIndex, err := r.GetRoleIndex(acc2Addr)
+
+	// register keepers
+
+	fmt.Println("=== begin register keepers ===")
+
+	// register keeper for acc2
+	r = callconts.NewR(roleAddr, acc2Addr, test.Sk2, txopts, ethEndPoint, status)
+	kIndex2, err := r.GetRoleIndex(acc2Addr)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("kIndex ", kIndex)
+	fmt.Println("kIndex2 ", kIndex2)
 	pp = callconts.NewPledgePool(pledgePoolAddr, acc2Addr, test.Sk2, txopts, ethEndPoint, status)
-	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex, pledgeK, nil)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex2, pledgeK, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
-	err = r.RegisterKeeper(pledgePoolAddr, kIndex, []byte("test"), nil)
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex2, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
+
+	// register keeper for acc5
+	r = callconts.NewR(roleAddr, acc5Addr, test.Sk5, txopts, ethEndPoint, status)
+	kIndex5, err := r.GetRoleIndex(acc5Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("kIndex5 ", kIndex5)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc5Addr, test.Sk5, txopts, ethEndPoint, status)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex5, pledgeK, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex5, []byte("test"), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// register keeper for acc6
+	r = callconts.NewR(roleAddr, acc6Addr, test.Sk6, txopts, ethEndPoint, status)
+	kIndex6, err := r.GetRoleIndex(acc6Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("kIndex6 ", kIndex6)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc6Addr, test.Sk6, txopts, ethEndPoint, status)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex6, pledgeK, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex6, []byte("test"), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// register keeper for acc7
+	r = callconts.NewR(roleAddr, acc7Addr, test.Sk7, txopts, ethEndPoint, status)
+	kIndex7, err := r.GetRoleIndex(acc7Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("kIndex7 ", kIndex7)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc7Addr, test.Sk7, txopts, ethEndPoint, status)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex7, pledgeK, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex7, []byte("test"), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// register keeper for acc8
+	r = callconts.NewR(roleAddr, acc8Addr, test.Sk8, txopts, ethEndPoint, status)
+	kIndex8, err := r.GetRoleIndex(acc8Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("kIndex8 ", kIndex8)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc8Addr, test.Sk8, txopts, ethEndPoint, status)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex8, pledgeK, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex8, []byte("test"), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// register keeper for acc9
+	r = callconts.NewR(roleAddr, acc9Addr, test.Sk9, txopts, ethEndPoint, status)
+	kIndex9, err := r.GetRoleIndex(acc9Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("kIndex9 ", kIndex9)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc9Addr, test.Sk9, txopts, ethEndPoint, status)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex9, pledgeK, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex9, []byte("test"), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
+	// register keeper for acc10
+	r = callconts.NewR(roleAddr, acc10Addr, test.Sk10, txopts, ethEndPoint, status)
+	kIndex10, err := r.GetRoleIndex(acc10Addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("kIndex10 ", kIndex10)
+	pp = callconts.NewPledgePool(pledgePoolAddr, acc10Addr, test.Sk10, txopts, ethEndPoint, status)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, kIndex10, pledgeK, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	err = r.RegisterKeeper(pledgePoolAddr, kIndex10, []byte("test"), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+
 	// createGroup, and deploy FileSys contract
 	r = callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
-	gIndex, err := r.CreateGroup(rolefsAddr, 0, []uint64{kIndex}, 1)
+	gIndex, err := r.CreateGroup(rolefsAddr, 0, []uint64{kIndex2}, 1)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -525,15 +754,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	/*
-		// keeper = acc2
-		ksig, err = callconts.SignForAddOrder(uIndex, pIndex, nonce, start+5, start+10, size-5, big.NewInt(0).Sub(sprice, big.NewInt(5)), test.Sk2)
-		if err != nil {
-			log.Fatal(err)
-		}
-		ksigs = [][]byte{ksig}
-	*/
-
 	fmt.Println("============4. begin test SubOrder============")
 	err = rfs.SubOrder(roleAddr, rTokenAddr, uIndex, pIndex, start+5, start+10, size-5, nonce, 0, big.NewInt(0).Sub(sprice, big.NewInt(5)), usig, psig)
 	if err != nil {
@@ -571,12 +791,43 @@ func main() {
 	lost := big.NewInt(10)
 
 	// keeper = acc2
-	ksig, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk2)
+	ksig2, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk2)
 	if err != nil {
 		log.Fatal(err)
 	}
-	ksigs := [][]byte{ksig}
-	kIndexes := []uint64{1} // kIndex = 1
+	// keeper = acc5
+	ksig5, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk5)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// keeper = acc6
+	ksig6, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk6)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// keeper = acc7
+	ksig7, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk7)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// keeper = acc8
+	ksig8, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk8)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// keeper = acc9
+	ksig9, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk9)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// keeper = acc10
+	ksig10, err := callconts.SignForProWithdraw(pIndex, 0, pay, lost, test.Sk10)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ksigs := [][]byte{ksig2, ksig5, ksig6, ksig7, ksig8, ksig9, ksig10}                  // indexes for keeeprs
+	kIndexes := []uint64{kIndex2, kIndex5, kIndex6, kIndex7, kIndex8, kIndex9, kIndex10} // keepers
 
 	fmt.Println("============5. begin test ProWithdraw============")
 
@@ -651,8 +902,8 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("p2Index ", p2Index)
-	if p2Index != 4 {
-		log.Fatal("p2Index should be 4")
+	if p2Index != 10 {
+		log.Fatal("p2Index should be 10")
 	}
 	pp = callconts.NewPledgePool(pledgePoolAddr, acc4Addr, test.Sk4, txopts, ethEndPoint, status)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, p2Index, pledgeK, nil)

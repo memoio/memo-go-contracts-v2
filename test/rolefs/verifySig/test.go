@@ -737,6 +737,7 @@ func main() {
 	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
+	time.Sleep(3 * time.Second)
 
 	fmt.Println("============ 24. test proWithdraw============")
 
@@ -770,8 +771,8 @@ func main() {
 	if _avail.Cmp(zero) != 0 {
 		log.Fatal("avail should be 0")
 	}
-	if _tmp.Cmp(big.NewInt(0).Sub(_canPay, _hasPaid)) != 0 {
-		log.Fatal("tmp should be ", big.NewInt(0).Sub(_canPay, _hasPaid))
+	if _tmp.Cmp(big.NewInt(0).Sub(_canPay, _hasPaid)) < 0 {
+		log.Fatal("tmp should not be less than", big.NewInt(0).Sub(_canPay, _hasPaid))
 	}
 	// 获取provider在tIndex上的代币余额
 	bal, err = erc20.BalanceOf(acc3Addr)
