@@ -311,7 +311,7 @@ func main() {
 	fmt.Println("============2. begin test GetFsInfo============")
 	// 先注册User，与group绑定
 	r = callconts.NewR(roleAddr, addrs[0], sks[0], txopts, ethEndPoint, statusTran)
-	err = r.RegisterUser(rtokenAddr, rIndexes[0], gIndex, []byte("Hello,test user"), nil)
+	err = r.RegisterUser(rtokenAddr, rIndexes[0], gIndex, 0, []byte("Hello,test user"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -249,7 +249,7 @@ func getTransactionReceipt(hash common.Hash) *types.Receipt {
 	defer cancel()
 	receipt, err := client.TransactionReceipt(ctx, hash)
 	if err != nil {
-		log.Println("get transaction receipt err:", err)
+		log.Println("get transaction receipt: ", err)
 	}
 	return receipt
 }
