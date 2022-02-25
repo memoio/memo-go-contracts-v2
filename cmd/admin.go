@@ -44,16 +44,8 @@ var AdminCmd = &cli.Command{
 		},
 	},
 	Subcommands: []*cli.Command{
+		// erc20
 		deployERC20Cmd,
-		deployRoleCmd,
-		deployIssuanceCmd,
-		deployRolefsCmd,
-		deployFileSysCmd,
-		deployPledgePoolCmd,
-
-		setPICmd,
-		setAddrCmd,
-
 		mintCmd,
 		burnCmd,
 		airDropCmd,
@@ -61,19 +53,29 @@ var AdminCmd = &cli.Command{
 		revokeRoleCmd,
 		pauseCmd,
 		unpauseCmd,
+		// role
+		deployRoleCmd,
+		setPICmd,
 		registerTokenCmd,
-
 		createGroupCmd, // 同时会deployFileSys并且setGF
 		addKeeperToGroupCmd,
 		setPledgeMoneyCmd,
-
 		alterOwnerCmd,
+		// issuance
+		deployIssuanceCmd,
+		// rolefs
+		deployRolefsCmd,
+		setAddrCmd,
+		// fileSys
+		deployFileSysCmd,
+		// pledgePool
+		deployPledgePoolCmd,
 	},
 }
 
 var deployERC20Cmd = &cli.Command{
 	Name:      "deperc",
-	Usage:     "Admin deploy ERC20 contract for primary token.",
+	Usage:     "ERC20 - Admin deploy ERC20 contract for primary token.",
 	ArgsUsage: "<name symbol>",
 	Description: `
 A function of ERC20 contract.
@@ -121,7 +123,7 @@ symbol - the symbol of newly deployed token
 
 var mintCmd = &cli.Command{
 	Name:      "mint",
-	Usage:     "Admin mint ERC20 token. ",
+	Usage:     "ERC20 - Admin mint ERC20 token. ",
 	ArgsUsage: "<target amount>",
 	Description: `
 Mint is a function in ERC20 contract.
@@ -192,7 +194,7 @@ amount - the number of token to be minted
 
 var burnCmd = &cli.Command{
 	Name:      "burn",
-	Usage:     "Admin burn ERC20 token.",
+	Usage:     "ERC20 - Admin burn ERC20 token.",
 	ArgsUsage: "<amount>",
 	Description: `
 Burn is a function in ERC20 contract.
@@ -256,7 +258,7 @@ amount - the number of token to be burned.
 
 var airDropCmd = &cli.Command{
 	Name:      "airdrop",
-	Usage:     "Admin airdrop ERC20 token to targets. ",
+	Usage:     "ERC20 - Admin airdrop ERC20 token to targets. ",
 	ArgsUsage: "<targetlist amount>",
 	Description: `
 AirDrop is a function in ERC20 contract.
@@ -329,7 +331,7 @@ amount - the amount of token to be airdroped.
 
 var setUpRoleCmd = &cli.Command{
 	Name:      "setrole",
-	Usage:     "Admin setup Role in ERC20 token. ",
+	Usage:     "ERC20 - Admin setup Role in ERC20 token. ",
 	ArgsUsage: "<target role>",
 	Description: `
 SetupRole is a function in ERC20 contract.
@@ -388,7 +390,7 @@ role - specifys the role of target, 0|1|2 stand for DEFAULT_ADMIN_ROLE|MINTER_RO
 
 var revokeRoleCmd = &cli.Command{
 	Name:      "revrole",
-	Usage:     "Admin revoke target's Role in ERC20 token. ",
+	Usage:     "ERC20 - Admin revoke target's Role in ERC20 token. ",
 	ArgsUsage: "<target, role>",
 	Description: `
 RevokeRole is a function in ERC20 contract.
@@ -455,7 +457,7 @@ ole - the role code to be set. 0|1|2 stands for DEFAULT_ADMIN_ROLE|MINTER_ROLE|P
 
 var pauseCmd = &cli.Command{
 	Name:      "pause",
-	Usage:     "Admin set true to prohibit transfer operation in erc20. ",
+	Usage:     "ERC20 - Admin set true to prohibit transfer operation in erc20. ",
 	ArgsUsage: " ",
 	Description: `
 Prohibit the transfer operation in primary token temporaly, the caller must have PAUSER_ROLE right.
@@ -502,7 +504,7 @@ no arguments
 
 var unpauseCmd = &cli.Command{
 	Name:      "unpause",
-	Usage:     "Admin set false to allow transfer operation in erc20. ",
+	Usage:     "ERC20 - Admin set false to allow transfer operation in erc20. ",
 	ArgsUsage: " ",
 	Description: `
 Allow transfer operation in primary token. Called by who has PAUSER_ROLE
@@ -549,7 +551,7 @@ no arguments
 
 var deployRoleCmd = &cli.Command{
 	Name:      "deprole",
-	Usage:     "Admin deploy Role contract. ",
+	Usage:     "Role - Admin deploy Role contract. ",
 	ArgsUsage: "<foundation primaryToken pledgeK pledgeP>",
 	Description: `
 Deploy a Role contract by admin.
@@ -625,7 +627,7 @@ pledgeP - the minimum anount to pledge in Role when apply for the Provider role.
 
 var setPICmd = &cli.Command{
 	Name:      "setPI",
-	Usage:     "Admin set PledgePool-address,Issuance-address and RoleFS-address to Role contract. ",
+	Usage:     "Role - Admin set PledgePool-address,Issuance-address and RoleFS-address to Role contract. ",
 	ArgsUsage: "<pledgePoolAddr issuAddr rolefsAddr>",
 	Description: `
 SetPI is a function in Role contract.
@@ -696,7 +698,7 @@ rolefsAddr - address of rolefs contract
 
 var registerTokenCmd = &cli.Command{
 	Name:      "regtk",
-	Usage:     "Admin registerToken in Role contract. ",
+	Usage:     "Role - Admin registerToken in Role contract. ",
 	ArgsUsage: "<tokenAddr>",
 	Description: `
 RegisterToken is a function in Role contract.
@@ -753,7 +755,7 @@ tokenAddr - the address of the token to be registered.
 
 var createGroupCmd = &cli.Command{
 	Name:      "cg",
-	Usage:     "Admin create group in Role contract. ",
+	Usage:     "Role - Admin create group in Role contract. ",
 	ArgsUsage: "<rfsAddr level>",
 	Description: `
 CreateGroup is a function in Role contract.
@@ -851,7 +853,7 @@ level - the minimum number of members needed by the group for it to be active
 
 var addKeeperToGroupCmd = &cli.Command{
 	Name:      "addk",
-	Usage:     "Admin add keeper to group in Role contract. ",
+	Usage:     "Role - Admin add keeper to group in Role contract. ",
 	ArgsUsage: "<kIndex gIndex>",
 	Description: `
 AddKeeper is a function in Role contract.
@@ -919,7 +921,7 @@ gIndex - the index of the group
 
 var setPledgeMoneyCmd = &cli.Command{
 	Name:      "setp",
-	Usage:     "Admin set pledgeK and pledgeP in Role contract. ",
+	Usage:     "Role - Admin set pledgeK and pledgeP in Role contract. ",
 	ArgsUsage: "<pledgeKeeper pledgeProvider>",
 	Description: `
 SetPledgeMoney is a function in role contract.
@@ -989,7 +991,7 @@ pledgeP - the minimum anount to pledge in Role when apply for the Provider role.
 
 var alterOwnerCmd = &cli.Command{
 	Name:      "ao",
-	Usage:     "Admin alter the owner of Role contract. ",
+	Usage:     "Role - Admin alter the owner of Role contract. ",
 	ArgsUsage: "<newOwner>",
 	Description: `
 AlterOwner is a funtion in Role contract.
@@ -1049,7 +1051,7 @@ newOwner - specify the new owner of Role Contract.
 
 var deployIssuanceCmd = &cli.Command{
 	Name:      "depissu",
-	Usage:     "Admin deploy Issuance contract. ",
+	Usage:     "Issuance - Admin deploy Issuance contract. ",
 	ArgsUsage: "<rfsAddr>",
 	Description: `
 Deploy an Issuance contract by admin. 
@@ -1100,7 +1102,7 @@ rfsAddr - the address of rolefs contract.
 
 var deployRolefsCmd = &cli.Command{
 	Name:      "deprfs",
-	Usage:     "Admin deploy RoleFS contract.",
+	Usage:     "RoleFS - Admin deploy RoleFS contract.",
 	ArgsUsage: " ",
 	Description: `
 Deploy a RoleFS contract by admin.
@@ -1138,7 +1140,7 @@ none
 
 var setAddrCmd = &cli.Command{
 	Name:      "setAddr",
-	Usage:     "Admin set issuan, role, fileSys, rtoken address to RoleFS contract.",
+	Usage:     "RoleFS - Admin set issuan, role, fileSys, rtoken address to RoleFS contract.",
 	ArgsUsage: "<issuAddr roleAddr fsAddr rtokenAddr>",
 	Description: `
 SetAddr is a function in RoleFS contract.
@@ -1219,7 +1221,7 @@ rtokenAddr - the address of rtoken contract
 
 var deployFileSysCmd = &cli.Command{
 	Name:      "depfs",
-	Usage:     "Admin deploy FileSys contract. ",
+	Usage:     "FileSys - Admin deploy FileSys contract. ",
 	ArgsUsage: "<roleAddr rfsAddr gIndex>",
 	Description: `
 Deploy a fileSys contract for a specified group index by admin. Usually called after a group is created.
@@ -1309,7 +1311,7 @@ gIndex - the index of the group which the newly deployed fileSys contract belong
 
 var deployPledgePoolCmd = &cli.Command{
 	Name:      "deppp",
-	Usage:     "Admin deploy PledgePool contract. ",
+	Usage:     "PledgePool - Admin deploy PledgePool contract. ",
 	ArgsUsage: "<primeTokenAddr rTokenAddr roleAddr>",
 	Description: `
 Deploy a pledgePool contract by admin.
