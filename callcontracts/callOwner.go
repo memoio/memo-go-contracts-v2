@@ -2,7 +2,7 @@ package callconts
 
 import (
 	"log"
-	iface "memoContract/interfaces"
+	iface "memoc/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	callconts "memoContract/callcontracts"
+	callconts "memoc/callcontracts"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +14,7 @@ import (
 // input of method set by param
 var RGet = &cli.Command{
 	Name:  "rget",
-	Usage: "call get methods of role contract",
+	Usage: "Get specified info of role contract",
 	Flags: []cli.Flag{
 		// role
 		&cli.StringFlag{

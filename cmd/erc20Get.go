@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	callconts "memoContract/callcontracts"
+	callconts "memoc/callcontracts"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +14,7 @@ import (
 // input of method set by param
 var GetERC20Cmd = &cli.Command{
 	Name:  "eget",
-	Usage: "call get methods of erc20 contract",
+	Usage: "Get specified info of the ERC20-contract",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "erc20",

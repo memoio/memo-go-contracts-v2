@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	"memoContract/contracts/role"
-	iface "memoContract/interfaces"
+	"memoc/contracts/role"
+	iface "memoc/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

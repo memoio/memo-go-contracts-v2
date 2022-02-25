@@ -3,8 +3,8 @@ package callconts
 import (
 	"log"
 	"math/big"
-	"memoContract/contracts/pledgepool"
-	"memoContract/contracts/role"
+	"memoc/contracts/pledgepool"
+	"memoc/contracts/role"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"

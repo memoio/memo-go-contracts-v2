@@ -7,8 +7,8 @@ package callconts
 import (
 	"log"
 	"math/big"
-	"memoContract/contracts/pledgepool"
-	iface "memoContract/interfaces"
+	"memoc/contracts/pledgepool"
+	iface "memoc/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

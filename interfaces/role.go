@@ -2,9 +2,9 @@ package iface
 
 import (
 	"math/big"
-	"memoContract/contracts/issu"
-	"memoContract/contracts/role"
-	"memoContract/contracts/rolefs"
+	"memoc/contracts/issu"
+	"memoc/contracts/role"
+	"memoc/contracts/rolefs"
 
 	"github.com/ethereum/go-ethereum/common"
 )

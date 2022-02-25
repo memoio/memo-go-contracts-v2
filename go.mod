@@ -1,4 +1,4 @@
-module memoContract
+module memoc
 
 go 1.16
 

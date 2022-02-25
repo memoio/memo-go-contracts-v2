@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
-	callconts "memoContract/callcontracts"
-	"memoContract/test"
+	callconts "memoc/callcontracts"
+	"memoc/test"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli/v2"
@@ -17,7 +17,7 @@ var transferEth = big.NewInt(2e18)
 // MoneyCmd is about transfer eth or ERC20-token, and get balance
 var MoneyCmd = &cli.Command{
 	Name:  "money",
-	Usage: "transfer eth or ERC20-token",
+	Usage: "Transfer Eth/ERC20-token",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "adminAddr",
@@ -46,15 +46,22 @@ var MoneyCmd = &cli.Command{
 	},
 	Subcommands: []*cli.Command{
 		balanceCmd,
+		balanceEthCmd,
 		transferCmd,
 		transferEthCmd,
-		balanceEthCmd,
 	},
 }
 
 var balanceCmd = &cli.Command{
-	Name:  "balance",
-	Usage: "get balance in ERC20 token. Args0:account",
+	Name:      "balance",
+	Usage:     "Get balance in ERC20 contract. ",
+	ArgsUsage: "<target>",
+	Description: `
+This command get the balance of a specified account in ERC20 contract.
+
+Arguments:
+target - the address of the target account to get balance for.
+	`,
 	Action: func(cctx *cli.Context) error {
 		acc := cctx.Args().Get(0)
 		fmt.Println("account:", acc)
@@ -88,9 +95,42 @@ var balanceCmd = &cli.Command{
 	},
 }
 
+var balanceEthCmd = &cli.Command{
+	Name:      "balanceEth",
+	Usage:     "Get Eth balance. ",
+	ArgsUsage: "<target>",
+	Description: `
+This command gets the Eth balance of a specified target account.
+
+Arguments:
+target - the target account address
+	`,
+	Action: func(cctx *cli.Context) error {
+		acc := cctx.Args().Get(0)
+		fmt.Println("account:", acc)
+		if len(acc) != 42 || acc == callconts.InvalidAddr {
+			fmt.Println("account should be with prefix 0x, and shouldn't be 0x0")
+			return nil
+		}
+
+		bal := callconts.QueryEthBalance(acc, callconts.EndPoint)
+		fmt.Println("\neth balance:", bal)
+
+		return nil
+	},
+}
+
 var transferCmd = &cli.Command{
-	Name:  "transfer",
-	Usage: "transfer erc20-token to target account. Args0:target",
+	Name:      "transfer",
+	Usage:     "Transfer erc20-token to target address. ",
+	ArgsUsage: "<target>",
+	Description: `
+Transfer is a function in ERC20 contract.
+This command call transfer function of ERC20 contract to transfer erc20 tokens from the caller of the function to a specified target address.
+
+Arguments:
+target - the address which the erc20 tokens to be transfered to.
+	`,
 	Action: func(cctx *cli.Context) error {
 		acc := cctx.Args().Get(0)
 		fmt.Println("account:", acc)
@@ -125,8 +165,15 @@ var transferCmd = &cli.Command{
 }
 
 var transferEthCmd = &cli.Command{
-	Name:  "transferEth",
-	Usage: "transfer eth to target account. Args0:target",
+	Name:      "transferEth",
+	Usage:     "Transfer eth to target account. ",
+	ArgsUsage: "<target>",
+	Description: `
+This command transfers Eth from the caller to a specified target address.
+
+Arguments:
+target - the target address which the Eth is transfered to.
+	`,
 	Action: func(cctx *cli.Context) error {
 		acc := cctx.Args().Get(0)
 		fmt.Println("account:", acc)
@@ -140,24 +187,6 @@ var transferEthCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-
-		return nil
-	},
-}
-
-var balanceEthCmd = &cli.Command{
-	Name:  "balanceEth",
-	Usage: "get eth balance. Args0:account",
-	Action: func(cctx *cli.Context) error {
-		acc := cctx.Args().Get(0)
-		fmt.Println("account:", acc)
-		if len(acc) != 42 || acc == callconts.InvalidAddr {
-			fmt.Println("account should be with prefix 0x, and shouldn't be 0x0")
-			return nil
-		}
-
-		bal := callconts.QueryEthBalance(acc, callconts.EndPoint)
-		fmt.Println("\neth balance:", bal)
 
 		return nil
 	},

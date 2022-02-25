@@ -3,8 +3,8 @@ package callconts
 import (
 	"log"
 	"math/big"
-	"memoContract/contracts/issu"
-	iface "memoContract/interfaces"
+	"memoc/contracts/issu"
+	iface "memoc/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

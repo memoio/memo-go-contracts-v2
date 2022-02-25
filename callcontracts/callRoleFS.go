@@ -3,8 +3,8 @@ package callconts
 import (
 	"log"
 	"math/big"
-	rolefs "memoContract/contracts/rolefs"
-	iface "memoContract/interfaces"
+	rolefs "memoc/contracts/rolefs"
+	iface "memoc/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
