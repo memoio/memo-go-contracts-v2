@@ -277,8 +277,7 @@ amount - the amount of token to be airdroped.
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		fmt.Println("target:", target)
-		var targets []string
-		targets = strings.Split(target, ",")
+		targets := strings.Split(target, ",")
 		fmt.Println("targets:", targets)
 		var targetsAddr []common.Address
 		for _, t := range targets {
@@ -753,7 +752,7 @@ tokenAddr - the address of the token to be registered.
 }
 
 var createGroupCmd = &cli.Command{
-	Name:      "createGroup",
+	Name:      "cg",
 	Usage:     "Admin create group in Role contract. ",
 	ArgsUsage: "<rfsAddr level>",
 	Description: `
@@ -801,8 +800,7 @@ level - the minimum number of members needed by the group for it to be active
 		roleAddr := common.HexToAddress(cctx.String("roleAddr"))
 		fmt.Println("roleAddr:", roleAddr.Hex())
 		kIndexes := cctx.String("kindexes")
-		var ks []string
-		ks = strings.Split(kIndexes, ",")
+		ks := strings.Split(kIndexes, ",")
 		fmt.Println("kIndexes:", ks)
 		var keepers []uint64
 		if ks[0] == "" {
@@ -852,7 +850,7 @@ level - the minimum number of members needed by the group for it to be active
 }
 
 var addKeeperToGroupCmd = &cli.Command{
-	Name:      "addKeeperToGroup",
+	Name:      "addk",
 	Usage:     "Admin add keeper to group in Role contract. ",
 	ArgsUsage: "<kIndex gIndex>",
 	Description: `
@@ -920,7 +918,7 @@ gIndex - the index of the group
 }
 
 var setPledgeMoneyCmd = &cli.Command{
-	Name:      "setPledgeMoney",
+	Name:      "setp",
 	Usage:     "Admin set pledgeK and pledgeP in Role contract. ",
 	ArgsUsage: "<pledgeKeeper pledgeProvider>",
 	Description: `
@@ -990,7 +988,7 @@ pledgeP - the minimum anount to pledge in Role when apply for the Provider role.
 }
 
 var alterOwnerCmd = &cli.Command{
-	Name:      "alterOwner",
+	Name:      "ao",
 	Usage:     "Admin alter the owner of Role contract. ",
 	ArgsUsage: "<newOwner>",
 	Description: `
@@ -1270,8 +1268,7 @@ gIndex - the index of the group which the newly deployed fileSys contract belong
 
 		// 获取command options
 		kIndexes := cctx.String("kindexes")
-		var ks []string
-		ks = strings.Split(kIndexes, ",")
+		ks := strings.Split(kIndexes, ",")
 		fmt.Println("kIndexes:", ks)
 		var keepers []uint64
 		for _, tmp := range ks {
