@@ -284,7 +284,7 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 }
 
 // RegisterUser called by anyone to register User role
-func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, gindex uint64, blskey []byte, sign []byte) error {
+func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, gindex uint64, payToken uint32, blskey []byte, sign []byte) error {
 	client := getClient(r.endPoint)
 	defer client.Close()
 	roleIns, err := newRole(r.contractAddress, client)
@@ -327,7 +327,7 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 		return errMA
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	tx, err := roleIns.RegisterUser(auth, index, gindex, blskey, sign)
+	tx, err := roleIns.RegisterUser(auth, index, gindex, payToken, blskey, sign)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误

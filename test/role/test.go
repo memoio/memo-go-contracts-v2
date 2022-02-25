@@ -968,14 +968,14 @@ func main() {
 		}
 		fmt.Printf("sig: %x\n", sig)
 
-		fmt.Println("call RegisterProvider")
-		// set plege pool addr to package level var for register keeper
+		fmt.Println("call RegisterUser")
+		// set plege pool addr to package level var for register role
 		callconts.PledgePoolAddr = pledgePoolAddr
 		// admin as caller
 		roleCaller := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
-		// rIndex = 8
+		// rIndex = 9
 		//roleAddr, rTokenAddr common.Address, index uint64, gindex uint64, tindex uint32, blskey []byte, sign []byte
-		err = roleCaller.RegisterUser(rtokenAddr, 9, 1, nil, sig)
+		err = roleCaller.RegisterUser(rtokenAddr, 9, 1, 0, nil, sig)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -1690,7 +1690,7 @@ func PrePaire() (err error) {
 
 		// register user
 		if roleType == 0 {
-			err = rUser.RegisterUser(rtokenAddr, rIndexes[0], 1, nil, nil)
+			err = rUser.RegisterUser(rtokenAddr, rIndexes[0], 1, 0, nil, nil)
 			if err != nil {
 				log.Fatal(err)
 			}
