@@ -2,7 +2,7 @@ package iface
 
 import (
 	"math/big"
-	"memoContract/contracts/pledgepool"
+	"memoc/contracts/pledgepool"
 
 	"github.com/ethereum/go-ethereum/common"
 )

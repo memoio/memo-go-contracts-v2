@@ -2,7 +2,7 @@ package iface
 
 import (
 	"math/big"
-	filesys "memoContract/contracts/filesystem"
+	filesys "memoc/contracts/filesystem"
 
 	"github.com/ethereum/go-ethereum/common"
 )

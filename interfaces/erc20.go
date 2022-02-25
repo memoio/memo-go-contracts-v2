@@ -3,7 +3,7 @@ package iface
 import (
 	"math/big"
 
-	"memoContract/contracts/erc20"
+	"memoc/contracts/erc20"
 
 	"github.com/ethereum/go-ethereum/common"
 )

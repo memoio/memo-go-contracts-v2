@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	callconts "memoContract/callcontracts"
+	callconts "memoc/callcontracts"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +14,7 @@ import (
 // input of method set by param
 var FSGet = &cli.Command{
 	Name:  "fsget",
-	Usage: "call get methods of fs contract",
+	Usage: "Get specified info of fs contract",
 	Flags: []cli.Flag{
 		// fs
 		&cli.StringFlag{

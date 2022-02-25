@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	callconts "memoContract/callcontracts"
+	callconts "memoc/callcontracts"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli/v2"
@@ -22,7 +22,7 @@ var (
 // admin value is optional. [completed]
 var AdminCmd = &cli.Command{
 	Name:  "admin",
-	Usage: "Admin deploy and call contracts",
+	Usage: "Admin deploy/call contracts",
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "adminAddr",
@@ -44,8 +44,16 @@ var AdminCmd = &cli.Command{
 		},
 	},
 	Subcommands: []*cli.Command{
-		// erc20
 		deployERC20Cmd,
+		deployRoleCmd,
+		deployIssuanceCmd,
+		deployRolefsCmd,
+		deployFileSysCmd,
+		deployPledgePoolCmd,
+
+		setPICmd,
+		setAddrCmd,
+
 		mintCmd,
 		burnCmd,
 		airDropCmd,
@@ -53,29 +61,29 @@ var AdminCmd = &cli.Command{
 		revokeRoleCmd,
 		pauseCmd,
 		unpauseCmd,
-		// role
-		deployRoleCmd,
-		setPICmd,
 		registerTokenCmd,
+
 		createGroupCmd, // 同时会deployFileSys并且setGF
 		addKeeperToGroupCmd,
 		setPledgeMoneyCmd,
+
 		alterOwnerCmd,
-		// issuance
-		deployIssuanceCmd,
-		// rolefs
-		deployRolefsCmd,
-		setAddrCmd,
-		// fileSys
-		deployFileSysCmd,
-		// pledgePool
-		deployPledgePoolCmd,
 	},
 }
 
 var deployERC20Cmd = &cli.Command{
-	Name:  "deploy-erc20",
-	Usage: "ERC20: admin deploy ERC20 contract. Args0:name, Args1:symbol",
+	Name:      "deperc",
+	Usage:     "Admin deploy ERC20 contract for primary token.",
+	ArgsUsage: "<name symbol>",
+	Description: `
+A function of ERC20 contract.
+Admin deploy an ERC20 standard contract for the Primary Token used in memo.
+Index of Primary Token is 0, other erc20 tokens start from 1, and increases by one after each.
+
+Arguments:
+name - the name of newly deployed token
+symbol - the symbol of newly deployed token
+	`,
 	Action: func(cctx *cli.Context) error {
 		name := cctx.Args().Get(0)
 		symbol := cctx.Args().Get(1)
@@ -94,6 +102,7 @@ var deployERC20Cmd = &cli.Command{
 			GasLimit: callconts.DefaultGasLimit,
 		}
 		status := make(chan error)
+		// erc20 caller
 		e := callconts.NewERC20(addr, addr, sk, txopts, endPoint, status)
 		erc20Addr, _, err := e.DeployERC20(name, symbol)
 		if err != nil {
@@ -111,8 +120,17 @@ var deployERC20Cmd = &cli.Command{
 }
 
 var mintCmd = &cli.Command{
-	Name:  "mint",
-	Usage: "ERC20: admin mint ERC20 token. Args0:target, Args1:amount",
+	Name:      "mint",
+	Usage:     "Admin mint ERC20 token. ",
+	ArgsUsage: "<target amount>",
+	Description: `
+Mint is a function in ERC20 contract.
+Admin mint some token for target.
+
+Arguments:
+target - the account address to receive minted token
+amount - the number of token to be minted
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "erc20Addr",
@@ -173,8 +191,16 @@ var mintCmd = &cli.Command{
 }
 
 var burnCmd = &cli.Command{
-	Name:  "burn",
-	Usage: "ERC20: admin burn ERC20 token. Args0:amount",
+	Name:      "burn",
+	Usage:     "Admin burn ERC20 token.",
+	ArgsUsage: "<amount>",
+	Description: `
+Burn is a function in ERC20 contract.
+Admin burn some ERC20 token, the number of burned is specifiied by arg amount.
+
+Arguments:
+amount - the number of token to be burned.
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "erc20Addr",
@@ -229,8 +255,17 @@ var burnCmd = &cli.Command{
 }
 
 var airDropCmd = &cli.Command{
-	Name:  "airdrop",
-	Usage: "ERC20: admin airdrop ERC20 token to targets. Args0:targets(for example: 0x4242c00fea991f432ae2ffb7ae88b8b353739a13,0x97041772c3bd9b97af8615fcf04812db9f81ee74), Args1:amount",
+	Name:      "airdrop",
+	Usage:     "Admin airdrop ERC20 token to targets. ",
+	ArgsUsage: "<targetlist amount>",
+	Description: `
+AirDrop is a function in ERC20 contract.
+Admin airdrop ERC20 tokens to specified targets. 
+
+Arguments:
+targetlist - the list of target addresses to receive token, like: 0x4242c00fea991f432ae2ffb7ae88b8b353739a13,0x97041772c3bd9b97af8615fcf04812db9f81ee74.
+amount - the amount of token to be airdroped.
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "erc20Addr",
@@ -294,16 +329,17 @@ var airDropCmd = &cli.Command{
 }
 
 var setUpRoleCmd = &cli.Command{
-	Name:  "setUpRole",
-	Usage: "ERC20: admin setUpRole in ERC20 token. Args0:target, Args1:role(0(DEFAULT_ADMIN_ROLE)、1(MINTER_ROLE)、2(PAUSER_ROLE))",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "erc20Addr",
-			Aliases: []string{"e"},
-			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
-			Usage:   "the ERC20 contract address",
-		},
-	},
+	Name:      "setrole",
+	Usage:     "Admin setup Role in ERC20 token. ",
+	ArgsUsage: "<target role>",
+	Description: `
+SetupRole is a function in ERC20 contract.
+Admin setup role for a target in the primary token. 
+
+Arguments:
+target - the address of the account to be setup.
+role - specifys the role of target, 0|1|2 stand for DEFAULT_ADMIN_ROLE|MINTER_ROLE|PAUSER_ROLE respectively.
+	`,
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		role := cctx.Args().Get(1)
@@ -320,13 +356,7 @@ var setUpRoleCmd = &cli.Command{
 			return errors.New("role should be 0(DEFAULT_ADMIN_ROLE)、1(MINTER_ROLE)、2(PAUSER_ROLE)")
 		}
 		fmt.Println("target:", target, ", role:", r)
-
-		txopts := &callconts.TxOpts{
-			Nonce:    nil,
-			GasPrice: big.NewInt(callconts.DefaultGasPrice),
-			GasLimit: callconts.DefaultGasLimit,
-		}
-
+		txopts := &callconts.TxOpts{Nonce: nil, GasPrice: big.NewInt(callconts.DefaultGasPrice), GasLimit: callconts.DefaultGasLimit}
 		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
 		fmt.Println("erc20Addr:", erc20Addr.Hex())
 		addr := common.HexToAddress(cctx.String("adminAddr"))
@@ -335,7 +365,6 @@ var setUpRoleCmd = &cli.Command{
 		fmt.Println("adminSk:", sk)
 		endPoint := cctx.String("endPoint")
 		fmt.Println("endPoint:", endPoint)
-
 		status := make(chan error)
 		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint, status)
 		err = e.SetUpRole(uint8(r), common.HexToAddress(target))
@@ -346,14 +375,30 @@ var setUpRoleCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-
 		return nil
 	},
+	Flags:                  []cli.Flag{&cli.StringFlag{Name: "erc20Addr", Aliases: []string{"e"}, Value: callconts.ERC20Addr.Hex(), Usage: "the ERC20 contract address"}},
+	SkipFlagParsing:        false,
+	HideHelp:               false,
+	HideHelpCommand:        false,
+	Hidden:                 false,
+	UseShortOptionHandling: false,
+	HelpName:               "",
+	CustomHelpTemplate:     "",
 }
 
 var revokeRoleCmd = &cli.Command{
-	Name:  "revokeRole",
-	Usage: "ERC20: admin revoke target's Role in ERC20 token. Args0:target, Args1:role(0(DEFAULT_ADMIN_ROLE)、1(MINTER_ROLE)、2(PAUSER_ROLE))",
+	Name:      "revrole",
+	Usage:     "Admin revoke target's Role in ERC20 token. ",
+	ArgsUsage: "<target, role>",
+	Description: `
+RevokeRole is a function in ERC20 contract.
+Revoke target's role in primary token by admin. 
+
+Arguments:
+target - the account address to be revoked.
+ole - the role code to be set. 0|1|2 stands for DEFAULT_ADMIN_ROLE|MINTER_ROLE|PAUSER_ROLE respectively.
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "erc20Addr",
@@ -410,8 +455,15 @@ var revokeRoleCmd = &cli.Command{
 }
 
 var pauseCmd = &cli.Command{
-	Name:  "pause",
-	Usage: "ERC20: set true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE",
+	Name:      "pause",
+	Usage:     "Admin set true to prohibit transfer operation in erc20. ",
+	ArgsUsage: " ",
+	Description: `
+Prohibit the transfer operation in primary token temporaly, the caller must have PAUSER_ROLE right.
+
+Arguments:
+no arguments
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "erc20Addr",
@@ -450,8 +502,15 @@ var pauseCmd = &cli.Command{
 }
 
 var unpauseCmd = &cli.Command{
-	Name:  "unpause",
-	Usage: "ERC20: set false to allow transfer operation in erc20. Called by who has PAUSER_ROLE",
+	Name:      "unpause",
+	Usage:     "Admin set false to allow transfer operation in erc20. ",
+	ArgsUsage: " ",
+	Description: `
+Allow transfer operation in primary token. Called by who has PAUSER_ROLE
+
+Arguments:
+no arguments
+`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "erc20Addr",
@@ -490,8 +549,18 @@ var unpauseCmd = &cli.Command{
 }
 
 var deployRoleCmd = &cli.Command{
-	Name:  "deploy-Role",
-	Usage: "Role: admin deploy Role contract. Args0:foundation address, Args1:primaryToken address, Args2:pledgeKeeper, Args3:pledgeProvider",
+	Name:      "deprole",
+	Usage:     "Admin deploy Role contract. ",
+	ArgsUsage: "<foundation primaryToken pledgeK pledgeP>",
+	Description: `
+Deploy a Role contract by admin.
+
+Arguments:
+foundation - the address of foundation
+primaryToken - the address of erc20 contract
+pledgeK - the minimum amount to pledge in Role when apply for the Keeper role.
+pledgeP - the minimum anount to pledge in Role when apply for the Provider role. 
+	`,
 	Action: func(cctx *cli.Context) error {
 		foundation := cctx.Args().Get(0)
 		primaryToken := cctx.Args().Get(1)
@@ -556,8 +625,18 @@ var deployRoleCmd = &cli.Command{
 }
 
 var setPICmd = &cli.Command{
-	Name:  "setPI",
-	Usage: "Role: admin set PledgePool-address,Issuance-address and RoleFS-address to Role contract. Args0:pledgePoolAddr, Args1:issuAddr, Args2:rolefsAddr",
+	Name:      "setPI",
+	Usage:     "Admin set PledgePool-address,Issuance-address and RoleFS-address to Role contract. ",
+	ArgsUsage: "<pledgePoolAddr issuAddr rolefsAddr>",
+	Description: `
+SetPI is a function in Role contract.
+Set the pledgePool contract address, issuance contract address and rolefs contract address for role contract by admin.
+
+Arguments:
+pledgePoolAddr - address of pledge pool contract
+issuAddr - address of issuance contract
+rolefsAddr - address of rolefs contract
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "roleAddr",
@@ -617,8 +696,16 @@ var setPICmd = &cli.Command{
 }
 
 var registerTokenCmd = &cli.Command{
-	Name:  "registerToken",
-	Usage: "Role: admin registerToken in Role contract. Args0:tokenAddr",
+	Name:      "regtk",
+	Usage:     "Admin registerToken in Role contract. ",
+	ArgsUsage: "<tokenAddr>",
+	Description: `
+RegisterToken is a function in Role contract.
+Register a token into Role contract by admin.
+
+Arguments:
+tokenAddr - the address of the token to be registered.
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "roleAddr",
@@ -666,8 +753,17 @@ var registerTokenCmd = &cli.Command{
 }
 
 var createGroupCmd = &cli.Command{
-	Name:  "createGroup",
-	Usage: "Role: admin create group in Role contract and then deploy FileSys, and set FileSys-address to group. Args0:rfsAddr, Args1:level",
+	Name:      "createGroup",
+	Usage:     "Admin create group in Role contract. ",
+	ArgsUsage: "<rfsAddr level>",
+	Description: `
+CreateGroup is a function in Role contract.
+Create a group in Role contract, and deploy a FileSys contract for it. 
+
+Arguments:
+rfsAddr - the address of rolefs contract
+level - the minimum number of members needed by the group for it to be active
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "roleAddr",
@@ -756,8 +852,17 @@ var createGroupCmd = &cli.Command{
 }
 
 var addKeeperToGroupCmd = &cli.Command{
-	Name:  "addKeeperToGroup",
-	Usage: "Role: admin add keeper to group in Role contract. Args0:kIndex, Args1:gIndex",
+	Name:      "addKeeperToGroup",
+	Usage:     "Admin add keeper to group in Role contract. ",
+	ArgsUsage: "<kIndex gIndex>",
+	Description: `
+AddKeeper is a function in Role contract.
+Add a keeper into the group with group index specified in argument.
+
+Arguments:
+kIndex - the index of the keeper to be added
+gIndex - the index of the group
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "roleAddr",
@@ -815,8 +920,17 @@ var addKeeperToGroupCmd = &cli.Command{
 }
 
 var setPledgeMoneyCmd = &cli.Command{
-	Name:  "setPledgeMoney",
-	Usage: "Role: admin set pledgeKeeper and pledgeProvider in Role contract. Args0:pledgeKeeper, Args1:pledgeProvider",
+	Name:      "setPledgeMoney",
+	Usage:     "Admin set pledgeK and pledgeP in Role contract. ",
+	ArgsUsage: "<pledgeKeeper pledgeProvider>",
+	Description: `
+SetPledgeMoney is a function in role contract.
+Set the value of pledgeK and pledgeP variables in the Role contract.
+
+Arguments:
+pledgeK - the minimum amount to pledge in Role when apply for the Keeper role.
+pledgeP - the minimum anount to pledge in Role when apply for the Provider role. 
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "roleAddr",
@@ -876,8 +990,16 @@ var setPledgeMoneyCmd = &cli.Command{
 }
 
 var alterOwnerCmd = &cli.Command{
-	Name:  "alterOwner",
-	Usage: "Role: admin alter the owner of Role contract. Args0:newOwner",
+	Name:      "alterOwner",
+	Usage:     "Admin alter the owner of Role contract. ",
+	ArgsUsage: "<newOwner>",
+	Description: `
+AlterOwner is a funtion in Role contract.
+Alter the owner of Role contract by admin.
+
+Arguments:
+newOwner - specify the new owner of Role Contract.
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "roleAddr",
@@ -928,8 +1050,16 @@ var alterOwnerCmd = &cli.Command{
 }
 
 var deployIssuanceCmd = &cli.Command{
-	Name:  "deployIssuance",
-	Usage: "Issuance: admin deploy Issuance contract. Args0:rfsAddr",
+	Name:      "depissu",
+	Usage:     "Admin deploy Issuance contract. ",
+	ArgsUsage: "<rfsAddr>",
+	Description: `
+Deploy an Issuance contract by admin. 
+The rolefs contract need to be deploy first.
+
+Arguments:
+rfsAddr - the address of rolefs contract. 
+	`,
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 1 {
 			return errors.New("should have 1 arguments. Args0:rfsAddr")
@@ -971,8 +1101,15 @@ var deployIssuanceCmd = &cli.Command{
 }
 
 var deployRolefsCmd = &cli.Command{
-	Name:  "deployRolefs",
-	Usage: "RoleFS: admin deploy RoleFS contract.",
+	Name:      "deprfs",
+	Usage:     "Admin deploy RoleFS contract.",
+	ArgsUsage: " ",
+	Description: `
+Deploy a RoleFS contract by admin.
+
+Arguments:
+none
+	`,
 	Action: func(cctx *cli.Context) error {
 		addr := common.HexToAddress(cctx.String("adminAddr"))
 		fmt.Println("adminAddr:", addr.Hex())
@@ -1002,8 +1139,19 @@ var deployRolefsCmd = &cli.Command{
 }
 
 var setAddrCmd = &cli.Command{
-	Name:  "setAddr",
-	Usage: "RoleFS: admin set issuan, role, fileSys, rtoken address to RoleFS contract.Args0:issuAddr, Args1:roleAddr, Args2:fsAddr, Args3:rtokenAddr",
+	Name:      "setAddr",
+	Usage:     "Admin set issuan, role, fileSys, rtoken address to RoleFS contract.",
+	ArgsUsage: "<issuAddr roleAddr fsAddr rtokenAddr>",
+	Description: `
+SetAddr is a function in RoleFS contract.
+Set the address of issuance contract, fs contract, rtoken contract for RoleFS contract.
+
+Arguments:
+issuaAddr - the address of issuance contract
+roleAddr - the address of role contract
+fsAddr - the address of fs contract
+rtokenAddr - the address of rtoken contract
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:    "rolefsAddr",
@@ -1072,8 +1220,17 @@ var setAddrCmd = &cli.Command{
 }
 
 var deployFileSysCmd = &cli.Command{
-	Name:  "deployFileSys",
-	Usage: "FileSys: admin deploy FileSys contract. Args0:roleAddr, Args1:rfsAddr, Args2:gIndex",
+	Name:      "depfs",
+	Usage:     "Admin deploy FileSys contract. ",
+	ArgsUsage: "<roleAddr rfsAddr gIndex>",
+	Description: `
+Deploy a fileSys contract for a specified group index by admin. Usually called after a group is created.
+
+Arguments:
+roleAddr - the address of role contract
+rfsAddr - the address of rolefs contract
+gIndex - the index of the group which the newly deployed fileSys contract belongs to.
+	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:        "kindexes",
@@ -1154,8 +1311,17 @@ var deployFileSysCmd = &cli.Command{
 }
 
 var deployPledgePoolCmd = &cli.Command{
-	Name:  "deployPledgePool",
-	Usage: "PledgePool: admin deploy PledgePool contract. Args0:primeTokenAddr, Args1:rTokenAddr, Args2:roleAddr",
+	Name:      "deppp",
+	Usage:     "Admin deploy PledgePool contract. ",
+	ArgsUsage: "<primeTokenAddr rTokenAddr roleAddr>",
+	Description: `
+Deploy a pledgePool contract by admin.
+
+Arguments:
+primeTokenAddr - the address of the primary token
+rTokenAddr - the address of rToken contract
+roleAddr - the address of role contract
+	`,
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 3 {
 			return errors.New("should have 3 arguments. Args0:primeTokenAddr, Args1:rTokenAddr, Args2:roleAddr")

@@ -1,8 +1,8 @@
 package callconts
 
 import (
-	"memoContract/contracts/role"
-	iface "memoContract/interfaces"
+	"memoc/contracts/role"
+	iface "memoc/interfaces"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"

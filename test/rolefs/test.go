@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	callconts "memoContract/callcontracts"
-	"memoContract/test"
+	callconts "memoc/callcontracts"
+	"memoc/test"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"

@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	callconts "memoContract/callcontracts"
+	callconts "memoc/callcontracts"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/urfave/cli/v2"
@@ -13,7 +13,7 @@ import (
 // input of method set by param
 var ISGet = &cli.Command{
 	Name:  "isget",
-	Usage: "call get methods of issuance contract",
+	Usage: "Get specified info of issuance contract",
 	Flags: []cli.Flag{
 		//
 		&cli.StringFlag{

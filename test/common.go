@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	callconts "memoContract/callcontracts"
+	callconts "memoc/callcontracts"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"

@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	"math/big"
-	callconts "memoContract/callcontracts"
+	callconts "memoc/callcontracts"
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -14,7 +14,7 @@ import (
 // input of method set by param
 var PPGet = &cli.Command{
 	Name:  "ppget",
-	Usage: "call get methods of pledge pool contract",
+	Usage: "Get specified info of pledge pool contract",
 	Flags: []cli.Flag{
 		// pp
 		&cli.StringFlag{

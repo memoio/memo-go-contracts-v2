@@ -9,9 +9,9 @@ import (
 	"math/big"
 	"os"
 
-	callconts "memoContract/callcontracts"
-	"memoContract/cmd"
-	test "memoContract/test"
+	callconts "memoc/callcontracts"
+	"memoc/cmd"
+	test "memoc/test"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -36,8 +36,8 @@ func main() {
 	}
 
 	app := &cli.App{
-		Name:                 "memoContract",
-		Usage:                "test memo contract!",
+		Name:                 "memoc",
+		Usage:                "Tool for test memo contracts",
 		EnableBashCompletion: true,
 		Commands:             commands,
 	}
