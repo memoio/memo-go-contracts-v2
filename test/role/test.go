@@ -962,7 +962,7 @@ func main() {
 		//--- call SignForRegisterUser
 		fmt.Println("call SignForRegisterUser")
 		// get signature, call with admin,  group 1, token 0, blsKey nil, register acc9
-		sig, err := callconts.SignForRegisterUser(adminAddr, 1, 0, nil, test.Sk9)
+		sig, err := callconts.SignForRegisterUser(adminAddr, 1, nil, test.Sk9)
 		if err != nil {
 			log.Fatal(err)
 		}
