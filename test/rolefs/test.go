@@ -303,7 +303,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("uIndex ", uIndex)
-	err = r.RegisterUser(rTokenAddr, uIndex, gIndex, 0, []byte("test"), nil)
+	err = r.RegisterUser(rTokenAddr, uIndex, gIndex, []byte("test"), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
