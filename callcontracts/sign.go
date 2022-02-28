@@ -76,7 +76,7 @@ func SignForRegisterProvider(caller common.Address, regAccSk string) ([]byte, er
 }
 
 // hash(caller,gIndex,payToken,blsKey)
-func SignForRegisterUser(caller common.Address, gIndex uint64, payToken uint32, _blsKey []byte, regAccSk string) ([]byte, error) {
+func SignForRegisterUser(caller common.Address, gIndex uint64, _blsKey []byte, regAccSk string) ([]byte, error) {
 	skEcdsa, err := HexSkToEcdsa(regAccSk)
 	if err != nil {
 		log.Fatal(err)
@@ -85,15 +85,11 @@ func SignForRegisterUser(caller common.Address, gIndex uint64, payToken uint32, 
 	//hash(caller,gIndex,payToken,blsKey)
 	b := make([]byte, 0)
 	tmp8 := make([]byte, 8)
-	tmp4 := make([]byte, 4)
 	// append caller
 	b = append(b, caller.Bytes()...)
 	// append gIndex
 	binary.BigEndian.PutUint64(tmp8, gIndex)
 	b = append(b, tmp8...)
-	// append payToken
-	binary.BigEndian.PutUint32(tmp4, payToken)
-	b = append(b, tmp4...)
 	// append blsKey
 	b = append(b, _blsKey...)
 
