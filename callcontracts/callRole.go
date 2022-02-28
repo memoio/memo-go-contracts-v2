@@ -284,7 +284,7 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 }
 
 // RegisterUser called by anyone to register User role
-func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, gindex uint64, payToken uint32, blskey []byte, sign []byte) error {
+func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, gindex uint64, blskey []byte, sign []byte) error {
 	client := getClient(r.endPoint)
 	defer client.Close()
 	roleIns, err := newRole(r.contractAddress, client)
