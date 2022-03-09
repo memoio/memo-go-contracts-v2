@@ -119,6 +119,8 @@ var (
 	ErrTIndex = xerrors.New("the token index is invalid")
 	// ErrRoleReg has registered
 	ErrRoleReg = xerrors.New("the account has already registered a role")
+	// ErrNotActive group not active
+	ErrNotActive = xerrors.New("group not active")
 	// ErrInvalidG invalid gindex
 	ErrInvalidG = xerrors.New("invalid group index")
 	// ErrNotSetPP need set PledgePool address in Role contract

@@ -607,6 +607,7 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 	if err != nil {
 		return err
 	}
+
 	if isActive || isBanned || roleType != ProviderRoleType {
 		log.Println("The account represented by pIndex", pIndex, " isActive:", isActive, " isBanned:", isBanned, " roleType:", roleType)
 		return ErrIndex
@@ -621,9 +622,19 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 		log.Println("gIndex shouldn't be zero or more than groupsNum", num)
 		return ErrInvalidG
 	}
-	_, isBanned, _, _, _, _, _, err = r.GetGroupInfo(gIndex)
+	kNum, err := r.GetGKNum(gIndex)
 	if err != nil {
 		return err
+	}
+	fmt.Println("keeper num of group: ", kNum)
+
+	isActive, isBanned, _, _, _, _, _, err = r.GetGroupInfo(gIndex)
+	if err != nil {
+		return err
+	}
+	if !isActive {
+		log.Println("the group is not active.")
+		return ErrNotActive
 	}
 	if isBanned {
 		log.Println("the group represented by gIndex is banned")
