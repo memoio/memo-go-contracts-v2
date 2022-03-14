@@ -21,7 +21,6 @@ import (
 var (
 
 	// for test chain
-	/*
 		// EndPoint is rpc endpoint of geth node
 		EndPoint  = "http://119.147.213.220:8191"
 		QEndPoint = "http://119.147.213.220:8194"
@@ -43,9 +42,11 @@ var (
 		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
 		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
-	*/
+
+		GIndex = uint64(2)
 
 	// for dev chain
+	/*
 	// EndPoint is rpc endpoint of geth node
 	EndPoint  = "https://devchain.metamemo.one:8501"
 	QEndPoint = "https://devchain.metamemo.one:8501"
@@ -69,7 +70,8 @@ var (
 	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
 	FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
-	GIndex = uint64(2)
+	GIndex = uint64(1)
+	*/
 )
 
 const (
@@ -188,7 +190,7 @@ type ContractModule struct {
 
 // getClient get rpc-client based the endPoint
 func getClient(endPoint string) *ethclient.Client {
-	client, err := rpc.Dial(EndPoint)
+	client, err := rpc.Dial(endPoint)
 	if err != nil {
 		log.Println(err)
 	}
