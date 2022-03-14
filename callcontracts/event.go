@@ -13,8 +13,8 @@ import (
 )
 
 // get gIndex from logs in receipt
-func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
-	receipt := getTransactionReceipt(hash)
+func getGIndexFromRLogs(endPoint string, hash common.Hash) (uint64, error) {
+	receipt := getTransactionReceipt(endPoint, hash)
 
 	if len(receipt.Logs) != 1 {
 		return 0, xerrors.New("length of logs in receipt is error")
@@ -35,8 +35,8 @@ func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
 }
 
 // get RUser event info from tx hash
-func getRUserInfoFromRLogs(hash common.Hash) (uint64, common.Address, error) {
-	receipt := getTransactionReceipt(hash)
+func getRUserInfoFromRLogs(endPoint string, hash common.Hash) (uint64, common.Address, error) {
+	receipt := getTransactionReceipt(endPoint, hash)
 
 	if len(receipt.Logs) != 1 {
 		return 0, common.Address{}, xerrors.New("length of logs in receipt is error")
@@ -61,8 +61,8 @@ func getRUserInfoFromRLogs(hash common.Hash) (uint64, common.Address, error) {
 }
 
 // get RKeeper event info from tx hash
-func getRKeeperInfoFromRLogs(hash common.Hash) (uint64, common.Address, error) {
-	receipt := getTransactionReceipt(hash)
+func getRKeeperInfoFromRLogs(endPoint string, hash common.Hash) (uint64, common.Address, error) {
+	receipt := getTransactionReceipt(endPoint, hash)
 
 	if len(receipt.Logs) != 1 {
 		return 0, common.Address{}, xerrors.New("length of logs in receipt is error")
@@ -87,8 +87,8 @@ func getRKeeperInfoFromRLogs(hash common.Hash) (uint64, common.Address, error) {
 }
 
 // get RProvider event info from tx hash
-func getRProviderInfoFromRLogs(hash common.Hash) (uint64, common.Address, error) {
-	receipt := getTransactionReceipt(hash)
+func getRProviderInfoFromRLogs(endPoint string, hash common.Hash) (uint64, common.Address, error) {
+	receipt := getTransactionReceipt(endPoint, hash)
 
 	if len(receipt.Logs) != 1 {
 		return 0, common.Address{}, xerrors.New("length of logs in receipt is error")
@@ -113,8 +113,8 @@ func getRProviderInfoFromRLogs(hash common.Hash) (uint64, common.Address, error)
 }
 
 // get Pledge event info in PledgePool contract from tx hash
-func getPledgeInfoFromRLogs(hash common.Hash) (common.Address, *big.Int, error) {
-	receipt := getTransactionReceipt(hash)
+func getPledgeInfoFromRLogs(endPoint string, hash common.Hash) (common.Address, *big.Int, error) {
+	receipt := getTransactionReceipt(endPoint, hash)
 
 	log.Println("tx logs count: ", len(receipt.Logs))
 
@@ -152,8 +152,8 @@ func getPledgeInfoFromRLogs(hash common.Hash) (common.Address, *big.Int, error) 
 }
 
 // get Withdraw event info in PledgePool contract from tx hash
-func getWithdrawInfoFromRLogs(hash common.Hash) (common.Address, *big.Int, error) {
-	receipt := getTransactionReceipt(hash)
+func getWithdrawInfoFromRLogs(endPoint string, hash common.Hash) (common.Address, *big.Int, error) {
+	receipt := getTransactionReceipt(endPoint, hash)
 
 	log.Println("tx logs count: ", len(receipt.Logs))
 

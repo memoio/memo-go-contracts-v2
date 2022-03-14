@@ -54,7 +54,7 @@ func (ac *ContractModule) SetUpRole(role uint8, addr common.Address) error {
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, ac.Status, "SetUpRole in AccessControl")
+	go checkTx(ac.endPoint, tx, ac.Status, "SetUpRole in AccessControl")
 
 	return nil
 }
@@ -101,7 +101,7 @@ func (ac *ContractModule) RevokeRole(role uint8, addr common.Address) error {
 	log.Println("transaction hash:", tx.Hash().Hex())
 	log.Println("send transaction successfully!")
 
-	go checkTx(tx, ac.Status, "RevokeRole in AccessControl")
+	go checkTx(ac.endPoint, tx, ac.Status, "RevokeRole in AccessControl")
 
 	return nil
 }
@@ -132,7 +132,7 @@ func (ac *ContractModule) RenounceRole(role uint8) error {
 	log.Println("transaction hash:", tx.Hash().Hex())
 	log.Println("send transaction successfully!")
 
-	go checkTx(tx, ac.Status, "RenounceRole in AccessControl")
+	go checkTx(ac.endPoint, tx, ac.Status, "RenounceRole in AccessControl")
 
 	return nil
 }
@@ -171,7 +171,7 @@ func (ac *ContractModule) Pause() error {
 	log.Println("transaction hash:", tx.Hash().Hex())
 	log.Println("send transaction successfully!")
 
-	go checkTx(tx, ac.Status, "Pause in AccessControl")
+	go checkTx(ac.endPoint, tx, ac.Status, "Pause in AccessControl")
 
 	return nil
 }
@@ -210,7 +210,7 @@ func (ac *ContractModule) Unpause() error {
 	log.Println("transaction hash:", tx.Hash().Hex())
 	log.Println("send transaction successfully!")
 
-	go checkTx(tx, ac.Status, "Unpause in AccessControl")
+	go checkTx(ac.endPoint, tx, ac.Status, "Unpause in AccessControl")
 
 	return nil
 }

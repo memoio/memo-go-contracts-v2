@@ -53,7 +53,7 @@ func (issuance *ContractModule) DeployIssuance(rolefsAddr common.Address) (commo
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, issuance.Status, "DeployIssuance")
+	go checkTx(issuance.endPoint, tx, issuance.Status, "DeployIssuance")
 
 	log.Println("Issuance address is ", issuAddr.Hex())
 	return issuAddr, issuIns, nil

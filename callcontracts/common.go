@@ -225,7 +225,7 @@ func makeAuth(endPoint string, hexSk string, moneyToContract *big.Int, txopts *T
 }
 
 //CheckTx check whether transaction is successful through receipt
-func checkTx(tx *types.Transaction, status chan error, name string) {
+func checkTx(endPoint string, tx *types.Transaction, status chan error, name string) {
 	log.Println("Check Tx hash:", tx.Hash().Hex(), "nonce:", tx.Nonce(), "gasPrice:", tx.GasPrice())
 	log.Println("waiting for miner...")
 
@@ -238,7 +238,7 @@ func checkTx(tx *types.Transaction, status chan error, name string) {
 		log.Printf("waiting %v sec.\n", t)
 		time.Sleep(time.Duration(t) * time.Second)
 		log.Println("getting txReceipt..")
-		receipt = getTransactionReceipt(tx.Hash())
+		receipt = getTransactionReceipt(endPoint, tx.Hash())
 		if receipt != nil {
 			break
 		}
@@ -268,7 +268,7 @@ func checkTx(tx *types.Transaction, status chan error, name string) {
 
 	// 获取withdraw money,输出到日志中
 	if name == "Withdraw" {
-		_, wd, err := getWithdrawInfoFromRLogs(tx.Hash())
+		_, wd, err := getWithdrawInfoFromRLogs(endPoint, tx.Hash())
 		if err != nil {
 			log.Println("getWithdrawInfoFromRLogs error:", err)
 		}
@@ -277,8 +277,8 @@ func checkTx(tx *types.Transaction, status chan error, name string) {
 }
 
 //GetTransactionReceipt 通过交易hash获得交易详情
-func getTransactionReceipt(hash common.Hash) *types.Receipt {
-	client, err := ethclient.Dial(EndPoint)
+func getTransactionReceipt(endPoint string, hash common.Hash) *types.Receipt {
+	client, err := ethclient.Dial(endPoint)
 	if err != nil {
 		log.Fatal("rpc.Dial err", err)
 	}

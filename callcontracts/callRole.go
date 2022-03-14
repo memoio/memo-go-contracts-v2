@@ -58,7 +58,7 @@ func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, ple
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "DeployRole")
+	go checkTx(r.endPoint, tx, r.Status, "DeployRole")
 
 	log.Println("Role address is ", roleAddr.Hex())
 	return roleAddr, roleIns, nil
@@ -111,7 +111,7 @@ func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Addre
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "SetPI")
+	go checkTx(r.endPoint, tx, r.Status, "SetPI")
 
 	return nil
 }
@@ -155,7 +155,7 @@ func (r *ContractModule) Register(addr common.Address, sign []byte) error {
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "Register")
+	go checkTx(r.endPoint, tx, r.Status, "Register")
 
 	return nil
 }
@@ -215,7 +215,7 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "RegisterKeeper")
+	go checkTx(r.endPoint, tx, r.Status, "RegisterKeeper")
 
 	return nil
 }
@@ -278,7 +278,7 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "RegisterProvider")
+	go checkTx(r.endPoint, tx, r.Status, "RegisterProvider")
 
 	return nil
 }
@@ -339,7 +339,7 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "RegisterUser")
+	go checkTx(r.endPoint, tx, r.Status, "RegisterUser")
 
 	return nil
 }
@@ -382,7 +382,7 @@ func (r *ContractModule) RegisterToken(tokenAddr common.Address) error {
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "RegisterToken")
+	go checkTx(r.endPoint, tx, r.Status, "RegisterToken")
 
 	return nil
 }
@@ -454,13 +454,13 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 
 	cg := make(chan error)
 	// NOTE： 此处需等待checkTx执行完毕,从而获取gIndex
-	go checkTx(tx, cg, "CreateGroup")
+	go checkTx(r.endPoint, tx, cg, "CreateGroup")
 	err = <-cg
 	if err != nil {
 		return 0, err
 	}
 
-	gIndex, err := getGIndexFromRLogs(tx.Hash())
+	gIndex, err := getGIndexFromRLogs(r.endPoint, tx.Hash())
 	if err != nil {
 		return 0, err
 	}
@@ -506,7 +506,7 @@ func (r *ContractModule) SetGF(fsAddr common.Address, gIndex uint64) error {
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "SetGF")
+	go checkTx(r.endPoint, tx, r.Status, "SetGF")
 
 	return nil
 }
@@ -583,7 +583,7 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "AddKeeperToGroup")
+	go checkTx(r.endPoint, tx, r.Status, "AddKeeperToGroup")
 
 	return nil
 }
@@ -661,7 +661,7 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "AddProviderToGroup")
+	go checkTx(r.endPoint, tx, r.Status, "AddProviderToGroup")
 
 	return nil
 }
@@ -705,7 +705,7 @@ func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) erro
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "SetPledgeMoney")
+	go checkTx(r.endPoint, tx, r.Status, "SetPledgeMoney")
 
 	return nil
 }
@@ -783,7 +783,7 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "Recharge")
+	go checkTx(r.endPoint, tx, r.Status, "Recharge")
 
 	return nil
 }
@@ -861,7 +861,7 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, r.Status, "WithdrawFromFs")
+	go checkTx(r.endPoint, tx, r.Status, "WithdrawFromFs")
 
 	return nil
 }

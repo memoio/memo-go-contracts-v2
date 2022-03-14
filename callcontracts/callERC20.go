@@ -53,7 +53,7 @@ func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc2
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "DeployERC20")
+	go checkTx(e.endPoint, tx, e.Status, "DeployERC20")
 
 	log.Println("ERC20 address is ", erc20Addr.Hex())
 	return erc20Addr, erc20Ins, nil
@@ -125,7 +125,7 @@ func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) erro
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "Transfer")
+	go checkTx(e.endPoint, tx, e.Status, "Transfer")
 
 	return nil
 }
@@ -179,7 +179,7 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "Approve")
+	go checkTx(e.endPoint, tx, e.Status, "Approve")
 
 	return nil
 }
@@ -244,7 +244,7 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "TransferFrom")
+	go checkTx(e.endPoint, tx, e.Status, "TransferFrom")
 
 	return nil
 }
@@ -303,7 +303,7 @@ func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "IncreaseAllowance")
+	go checkTx(e.endPoint, tx, e.Status, "IncreaseAllowance")
 
 	return nil
 }
@@ -355,7 +355,7 @@ func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "DecreaseAllowance")
+	go checkTx(e.endPoint, tx, e.Status, "DecreaseAllowance")
 
 	return nil
 }
@@ -402,7 +402,7 @@ func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) er
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "MintToken")
+	go checkTx(e.endPoint, tx, e.Status, "MintToken")
 
 	return nil
 }
@@ -453,7 +453,7 @@ func (e *ContractModule) Burn(burnValue *big.Int) error {
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "Burn")
+	go checkTx(e.endPoint, tx, e.Status, "Burn")
 
 	return nil
 }
@@ -506,7 +506,7 @@ func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, e.Status, "AirDrop")
+	go checkTx(e.endPoint, tx, e.Status, "AirDrop")
 
 	return nil
 }
