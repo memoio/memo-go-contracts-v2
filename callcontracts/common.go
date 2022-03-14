@@ -206,7 +206,7 @@ func makeAuth(endPoint string, hexSk string, moneyToContract *big.Int, txopts *T
 		return auth, err
 	}
 
-	client := getClient(EndPoint)
+	client := getClient(endPoint)
 	chainID, err := client.NetworkID(context.Background())
 	if err != nil {
 		fmt.Println("client.NetworkID error,use the default chainID")
