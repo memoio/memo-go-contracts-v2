@@ -37,7 +37,7 @@ func (ac *ContractModule) SetUpRole(role uint8, addr common.Address) error {
 	log.Println("begin SetUpRole to", addr.Hex(), " with role", role, " in AccessControl contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -87,7 +87,7 @@ func (ac *ContractModule) RevokeRole(role uint8, addr common.Address) error {
 	log.Println("begin RevokeRole to", addr.Hex(), " with role", role, " in AccessControl contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -118,7 +118,7 @@ func (ac *ContractModule) RenounceRole(role uint8) error {
 	log.Println("begin RenounceRole", role, " in AccessControl contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -157,7 +157,7 @@ func (ac *ContractModule) Pause() error {
 	log.Println("begin Pause in AccessControl contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -196,7 +196,7 @@ func (ac *ContractModule) Unpause() error {
 	log.Println("begin Unpause in AccessControl contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
 	if errMA != nil {
 		return errMA
 	}

@@ -36,7 +36,7 @@ func (issuance *ContractModule) DeployIssuance(rolefsAddr common.Address) (commo
 	defer client.Close()
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(issuance.hexSk, nil, issuance.txopts)
+	auth, errMA := makeAuth(issuance.endPoint, issuance.hexSk, nil, issuance.txopts)
 	if errMA != nil {
 		return issuAddr, nil, errMA
 	}

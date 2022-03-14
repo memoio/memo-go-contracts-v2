@@ -36,7 +36,7 @@ func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc2
 	defer client.Close()
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return erc20Addr, nil, errMA
 	}
@@ -108,7 +108,7 @@ func (e *ContractModule) Transfer(recipient common.Address, value *big.Int) erro
 	log.Println("begin Transfer to", recipient.Hex(), " with value", value, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -162,7 +162,7 @@ func (e *ContractModule) Approve(addr common.Address, value *big.Int) error {
 	log.Println("begin Approve", addr.Hex(), " with value", value, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -227,7 +227,7 @@ func (e *ContractModule) TransferFrom(sender, recipient common.Address, value *b
 	log.Println("begin TransferFrom from", sender.Hex(), "to", recipient.Hex(), " with value", value, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -286,7 +286,7 @@ func (e *ContractModule) IncreaseAllowance(recipient common.Address, value *big.
 	log.Println("begin IncreaseAllowance to", recipient.Hex(), " with value", value, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -338,7 +338,7 @@ func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.
 	log.Println("begin DecreaseAllowance to", recipient.Hex(), " with value", value, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -385,7 +385,7 @@ func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) er
 	log.Println("begin MintToken to", target.Hex(), " with value", mintValue, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -436,7 +436,7 @@ func (e *ContractModule) Burn(burnValue *big.Int) error {
 	log.Println("begin Burn with value", burnValue, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -489,7 +489,7 @@ func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error
 	log.Println("begin AirDrop to", tmp, " with value", value, " in ERC20 contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.hexSk, nil, e.txopts)
+	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
 	if errMA != nil {
 		return errMA
 	}

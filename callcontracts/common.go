@@ -21,56 +21,56 @@ import (
 var (
 
 	// for test chain
-		// EndPoint is rpc endpoint of geth node
-		EndPoint  = "http://119.147.213.220:8191"
-		QEndPoint = "http://119.147.213.220:8194"
-		//ERC20 contract address
-		ERC20Addr = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
-		// Role contract address
-		RoleAddr = common.HexToAddress("0x3A014045154403aFF1C07C19553Bc985C123CB6E")
-		// RToken contract address
-		RTokenAddr = common.HexToAddress("0xf4E8C26477699fff29C399b778b62A2AEeEf10c1")
-		// RoleFS contract address
-		RoleFSAddr = common.HexToAddress("0x9135a71429304ca6D2b330920E13aCE1561BaB0b")
-		// FileSys contract address
-		FileSysAddr = common.HexToAddress("0x4DF8Ec687865E274f28C1819C86910643dDBEAa5")
-		// PledgePool contract address
-		PledgePoolAddr = common.HexToAddress("0xc643176B92aFBfaF773EfdA524243B04c18dEdbF")
-		// Issuance contract address
-		IssuanceAddr = common.HexToAddress("0x1193094d708Ed76951c31fDA793500091870Df07")
-		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
-		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
-		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
-		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
-
-		GIndex = uint64(2)
-
-	// for dev chain
-	/*
 	// EndPoint is rpc endpoint of geth node
-	EndPoint  = "https://devchain.metamemo.one:8501"
-	QEndPoint = "https://devchain.metamemo.one:8501"
+	EndPoint  = "http://119.147.213.220:8191"
+	QEndPoint = "http://119.147.213.220:8194"
 	//ERC20 contract address
-	ERC20Addr = common.HexToAddress("0x9eF26CEF3301D9ca1b4811065de5c685FDCA483f")
+	ERC20Addr = common.HexToAddress("0xa96303D074eF892F39BCF5E19CD25Eeff7A73BAA")
 	// Role contract address
-	RoleAddr = common.HexToAddress("0xdD043AAAF3E04eC789d4fE1bE467b9fc286927a2")
+	RoleAddr = common.HexToAddress("0x3A014045154403aFF1C07C19553Bc985C123CB6E")
 	// RToken contract address
-	RTokenAddr = common.HexToAddress("0x6e0C687F45d5c871Ba631ae85fdd90b9e71412F8")
+	RTokenAddr = common.HexToAddress("0xf4E8C26477699fff29C399b778b62A2AEeEf10c1")
 	// RoleFS contract address
-	RoleFSAddr = common.HexToAddress("0xe910B6C55d5134bc535CcC68152897F780378F94")
-	// PledgePool contract address
-	PledgePoolAddr = common.HexToAddress("0xfCf4CE56e19A1234d6b79a12A624431A84513481")
-	// Issuance contract address
-	IssuanceAddr = common.HexToAddress("0xC77150530dBAFc42c406d4EbcF75259860EA1877")
+	RoleFSAddr = common.HexToAddress("0x9135a71429304ca6D2b330920E13aCE1561BaB0b")
 	// FileSys contract address
-	FileSysAddr = common.HexToAddress("0x064C938767a78455dE3CDfAf49b7A1FeF0af40f5")
-
+	FileSysAddr = common.HexToAddress("0x4DF8Ec687865E274f28C1819C86910643dDBEAa5")
+	// PledgePool contract address
+	PledgePoolAddr = common.HexToAddress("0xc643176B92aFBfaF773EfdA524243B04c18dEdbF")
+	// Issuance contract address
+	IssuanceAddr = common.HexToAddress("0x1193094d708Ed76951c31fDA793500091870Df07")
 	AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 	AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
 	FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
-	GIndex = uint64(1)
+	GIndex = uint64(2)
+
+	// for dev chain
+	/*
+		// EndPoint is rpc endpoint of geth node
+		EndPoint  = "https://devchain.metamemo.one:8501"
+		QEndPoint = "https://devchain.metamemo.one:8501"
+		//ERC20 contract address
+		ERC20Addr = common.HexToAddress("0x9eF26CEF3301D9ca1b4811065de5c685FDCA483f")
+		// Role contract address
+		RoleAddr = common.HexToAddress("0xdD043AAAF3E04eC789d4fE1bE467b9fc286927a2")
+		// RToken contract address
+		RTokenAddr = common.HexToAddress("0x6e0C687F45d5c871Ba631ae85fdd90b9e71412F8")
+		// RoleFS contract address
+		RoleFSAddr = common.HexToAddress("0xe910B6C55d5134bc535CcC68152897F780378F94")
+		// PledgePool contract address
+		PledgePoolAddr = common.HexToAddress("0xfCf4CE56e19A1234d6b79a12A624431A84513481")
+		// Issuance contract address
+		IssuanceAddr = common.HexToAddress("0xC77150530dBAFc42c406d4EbcF75259860EA1877")
+		// FileSys contract address
+		FileSysAddr = common.HexToAddress("0x064C938767a78455dE3CDfAf49b7A1FeF0af40f5")
+
+		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
+		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
+		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
+		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
+
+		GIndex = uint64(1)
 	*/
 )
 
@@ -198,7 +198,7 @@ func getClient(endPoint string) *ethclient.Client {
 }
 
 // makeAuth make the transactOpts to call contract
-func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.TransactOpts, error) {
+func makeAuth(endPoint string, hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.TransactOpts, error) {
 	auth := &bind.TransactOpts{}
 	sk, err := crypto.HexToECDSA(hexSk)
 	if err != nil {

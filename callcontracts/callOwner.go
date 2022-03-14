@@ -48,7 +48,7 @@ func (own *ContractModule) AlterOwner(newOwnerAddr common.Address) error {
 	log.Println("begin AlterOwner in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(own.hexSk, nil, own.txopts)
+	auth, errMA := makeAuth(own.endPoint, own.hexSk, nil, own.txopts)
 	if errMA != nil {
 		return errMA
 	}
