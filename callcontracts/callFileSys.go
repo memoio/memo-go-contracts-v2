@@ -65,7 +65,7 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
 	df := make(chan error)
-	go checkTx(tx, df, "DeployFileSys")
+	go checkTx(fs.endPoint, tx, df, "DeployFileSys")
 
 	// NOTE： 此处需等待checkTx执行完毕,从而后续执行SetGF函数
 	err = <-df

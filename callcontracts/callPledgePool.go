@@ -67,7 +67,7 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, p.Status, "DeployPledgePool")
+	go checkTx(p.endPoint, tx, p.Status, "DeployPledgePool")
 
 	log.Println("PledgePool address is ", pledgepAddr.Hex())
 	return pledgepAddr, pledgepIns, nil
@@ -155,7 +155,7 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, p.Status, "Pledge")
+	go checkTx(p.endPoint, tx, p.Status, "Pledge")
 
 	return nil
 }
@@ -214,7 +214,7 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, p.Status, "Withdraw")
+	go checkTx(p.endPoint, tx, p.Status, "Withdraw")
 
 	return nil
 }

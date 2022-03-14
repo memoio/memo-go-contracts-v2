@@ -53,7 +53,7 @@ func (rfs *ContractModule) DeployRoleFS() (common.Address, *rolefs.RoleFS, error
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, rfs.Status, "DeployRoleFS")
+	go checkTx(rfs.endPoint, tx, rfs.Status, "DeployRoleFS")
 
 	log.Println("RoleFS address is ", roleFSAddr.Hex())
 	return roleFSAddr, roleFSIns, nil
@@ -174,7 +174,7 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, rfs.Status, "SetAddr")
+	go checkTx(rfs.endPoint, tx, rfs.Status, "SetAddr")
 
 	return nil
 }
@@ -310,7 +310,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, rfs.Status, "AddOrder")
+	go checkTx(rfs.endPoint, tx, rfs.Status, "AddOrder")
 
 	return nil
 }
@@ -423,7 +423,7 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, rfs.Status, "SubOrder")
+	go checkTx(rfs.endPoint, tx, rfs.Status, "SubOrder")
 
 	return nil
 }
@@ -510,7 +510,7 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, rfs.Status, "AddRepair")
+	go checkTx(rfs.endPoint, tx, rfs.Status, "AddRepair")
 
 	return nil
 }
@@ -596,7 +596,7 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, rfs.Status, "SubRepair")
+	go checkTx(rfs.endPoint, tx, rfs.Status, "SubRepair")
 
 	return nil
 }
@@ -684,7 +684,7 @@ func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pInd
 	log.Println("send transaction successfully!")
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(tx, rfs.Status, "ProWithdraw")
+	go checkTx(rfs.endPoint, tx, rfs.Status, "ProWithdraw")
 
 	return nil
 }
