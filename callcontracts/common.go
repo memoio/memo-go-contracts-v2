@@ -206,8 +206,12 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 		return auth, err
 	}
 
-	//chainID := new(big.Int).SetUint64(35896) // chain id for test chain
-	chainID := new(big.Int).SetUint64(1666) // chain id for dev chain
+	client := getClient(EndPoint)
+	chainID, err := client.NetworkID(context.Background())
+	if err != nil {
+		fmt.Println("client.NetworkID error,use the default chainID")
+		chainID = big.NewInt(666)
+	}
 	fmt.Println("chainID: ", chainID)
 	auth, err = bind.NewKeyedTransactorWithChainID(sk, chainID)
 	if err != nil {
