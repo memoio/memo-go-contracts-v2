@@ -332,7 +332,7 @@ amount - the amount of token to be airdroped.
 var setUpRoleCmd = &cli.Command{
 	Name:      "setrole",
 	Usage:     "ERC20 - Admin setup Role in ERC20 token. ",
-	ArgsUsage: "<target role>",
+	ArgsUsage: "<rfsAddr role>",
 	Description: `
 SetupRole is a function in ERC20 contract.
 Admin setup role for a target in the primary token. 
