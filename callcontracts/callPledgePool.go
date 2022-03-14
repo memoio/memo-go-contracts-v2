@@ -50,7 +50,7 @@ func (p *ContractModule) DeployPledgePool(primeToken common.Address, rToken comm
 	defer client.Close()
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
+	auth, errMA := makeAuth(p.endPoint, p.hexSk, nil, p.txopts)
 	if errMA != nil {
 		return pledgepAddr, pledgepIns, errMA
 	}
@@ -138,7 +138,7 @@ func (p *ContractModule) Pledge(erc20Addr, roleAddr common.Address, rindex uint6
 	log.Println("begin Pledge in PledgePool contract with value", value, " and rindex", rindex, " ...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
+	auth, errMA := makeAuth(p.endPoint, p.hexSk, nil, p.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -197,7 +197,7 @@ func (p *ContractModule) Withdraw(roleAddr, rTokenAddr common.Address, rindex ui
 	log.Println("begin Withdraw in PledgePool contract with value", value, " and rindex", rindex, " and tindex", tindex, " ...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(p.hexSk, nil, p.txopts)
+	auth, errMA := makeAuth(p.endPoint, p.hexSk, nil, p.txopts)
 	if errMA != nil {
 		return errMA
 	}

@@ -47,7 +47,7 @@ func (fs *ContractModule) DeployFileSys(founder, gIndex uint64, r, rfs common.Ad
 	defer client.Close()
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(fs.hexSk, nil, fs.txopts)
+	auth, errMA := makeAuth(fs.endPoint, fs.hexSk, nil, fs.txopts)
 	if errMA != nil {
 		return fsAddr, nil, errMA
 	}

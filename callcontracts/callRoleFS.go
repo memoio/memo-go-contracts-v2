@@ -36,7 +36,7 @@ func (rfs *ContractModule) DeployRoleFS() (common.Address, *rolefs.RoleFS, error
 	defer client.Close()
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	auth, errMA := makeAuth(rfs.endPoint, rfs.hexSk, nil, rfs.txopts)
 	if errMA != nil {
 		return roleFSAddr, roleFSIns, errMA
 	}
@@ -157,7 +157,7 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 	log.Println("begin SetAddr in RoleFS contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	auth, errMA := makeAuth(rfs.endPoint, rfs.hexSk, nil, rfs.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -275,7 +275,7 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	log.Println("begin AddOrder in RoleFS contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	auth, errMA := makeAuth(rfs.endPoint, rfs.hexSk, nil, rfs.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -389,7 +389,7 @@ func (rfs *ContractModule) SubOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	log.Println("begin SubOrder in RoleFS contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	auth, errMA := makeAuth(rfs.endPoint, rfs.hexSk, nil, rfs.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -493,7 +493,7 @@ func (rfs *ContractModule) AddRepair(roleAddr, rTokenAddr common.Address, pIndex
 	log.Println("begin AddRepair in RoleFS contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	auth, errMA := makeAuth(rfs.endPoint, rfs.hexSk, nil, rfs.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -579,7 +579,7 @@ func (rfs *ContractModule) SubRepair(roleAddr, rTokenAddr common.Address, pIndex
 	log.Println("begin SubRepair in RoleFS contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	auth, errMA := makeAuth(rfs.endPoint, rfs.hexSk, nil, rfs.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -641,7 +641,7 @@ func (rfs *ContractModule) ProWithdraw(roleAddr, rTokenAddr common.Address, pInd
 	log.Println("begin call ProWithdraw in RoleFS contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(rfs.hexSk, nil, rfs.txopts)
+	auth, errMA := makeAuth(rfs.endPoint, rfs.hexSk, nil, rfs.txopts)
 	if errMA != nil {
 		return errMA
 	}

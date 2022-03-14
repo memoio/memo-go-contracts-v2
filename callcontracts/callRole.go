@@ -41,7 +41,7 @@ func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, ple
 	defer client.Close()
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return roleAddr, roleIns, errMA
 	}
@@ -94,7 +94,7 @@ func (r *ContractModule) SetPI(pledgePoolAddr, issuAddr, rolefsAddr common.Addre
 	log.Println("begin SetPI in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -138,7 +138,7 @@ func (r *ContractModule) Register(addr common.Address, sign []byte) error {
 	log.Println("begin Register in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -198,7 +198,7 @@ func (r *ContractModule) RegisterKeeper(pledgePoolAddr common.Address, index uin
 	log.Println("begin RegisterKeeper in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -261,7 +261,7 @@ func (r *ContractModule) RegisterProvider(pledgePoolAddr common.Address, index u
 	log.Println("begin RegisterProvider in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -322,7 +322,7 @@ func (r *ContractModule) RegisterUser(rTokenAddr common.Address, index uint64, g
 	log.Println("begin RegisterUser in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -365,7 +365,7 @@ func (r *ContractModule) RegisterToken(tokenAddr common.Address) error {
 	log.Println("begin RegisterToken in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -442,7 +442,7 @@ func (r *ContractModule) createGroup(kindexes []uint64, level uint16) (uint64, e
 	log.Println("begin CreateGroup in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return 0, errMA
 	}
@@ -489,7 +489,7 @@ func (r *ContractModule) SetGF(fsAddr common.Address, gIndex uint64) error {
 	log.Println("begin SetGF in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -566,7 +566,7 @@ func (r *ContractModule) AddKeeperToGroup(kIndex uint64, gIndex uint64) error {
 	log.Println("begin AddKeeperToGroup in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -644,7 +644,7 @@ func (r *ContractModule) AddProviderToGroup(pIndex uint64, gIndex uint64, sign [
 	log.Println("begin AddProviderToGroup in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -688,7 +688,7 @@ func (r *ContractModule) SetPledgeMoney(kpledge *big.Int, ppledge *big.Int) erro
 	log.Println("begin SetPledgeMoney in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -766,7 +766,7 @@ func (r *ContractModule) Recharge(rTokenAddr common.Address, uIndex uint64, tInd
 	log.Println("begin Recharge in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
@@ -844,7 +844,7 @@ func (r *ContractModule) WithdrawFromFs(rTokenAddr common.Address, rIndex uint64
 	log.Println("begin WithdrawFromFs in Role contract...")
 
 	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(r.hexSk, nil, r.txopts)
+	auth, errMA := makeAuth(r.endPoint, r.hexSk, nil, r.txopts)
 	if errMA != nil {
 		return errMA
 	}
