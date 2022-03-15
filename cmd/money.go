@@ -96,8 +96,16 @@ target - the address of the target account to get balance for.
 }
 
 var balanceEthCmd = &cli.Command{
-	Name:      "balanceEth",
-	Usage:     "Get Eth balance. ",
+	Name:  "balanceEth",
+	Usage: "Get Eth balance. ",
+	Flags: []cli.Flag{
+		&cli.StringFlag{
+			Name:    "endPoint",
+			Aliases: []string{"ep"},
+			Value:   callconts.EndPoint, //默认值为common.go中的endPoint
+			Usage:   "the geth endPoint",
+		},
+	},
 	ArgsUsage: "<target>",
 	Description: `
 This command gets the Eth balance of a specified target account.
@@ -113,7 +121,10 @@ target - the target account address
 			return nil
 		}
 
-		bal := callconts.QueryEthBalance(acc, callconts.EndPoint)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		bal := callconts.QueryEthBalance(acc, endPoint)
 		fmt.Println("\neth balance:", bal)
 
 		return nil
