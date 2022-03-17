@@ -45,33 +45,33 @@ var (
 
 	GIndex = uint64(2)
 
+/*
 	// for dev chain
-	/*
-		// EndPoint is rpc endpoint of geth node
-		EndPoint  = "https://devchain.metamemo.one:8501"
-		QEndPoint = "https://devchain.metamemo.one:8501"
-		//ERC20 contract address
-		ERC20Addr = common.HexToAddress("0x9eF26CEF3301D9ca1b4811065de5c685FDCA483f")
-		// Role contract address
-		RoleAddr = common.HexToAddress("0xdD043AAAF3E04eC789d4fE1bE467b9fc286927a2")
-		// RToken contract address
-		RTokenAddr = common.HexToAddress("0x6e0C687F45d5c871Ba631ae85fdd90b9e71412F8")
-		// RoleFS contract address
-		RoleFSAddr = common.HexToAddress("0xe910B6C55d5134bc535CcC68152897F780378F94")
-		// PledgePool contract address
-		PledgePoolAddr = common.HexToAddress("0xfCf4CE56e19A1234d6b79a12A624431A84513481")
-		// Issuance contract address
-		IssuanceAddr = common.HexToAddress("0xC77150530dBAFc42c406d4EbcF75259860EA1877")
-		// FileSys contract address
-		FileSysAddr = common.HexToAddress("0x064C938767a78455dE3CDfAf49b7A1FeF0af40f5")
+	// EndPoint is rpc endpoint of geth node
+	EndPoint  = "https://devchain.metamemo.one:8501"
+	QEndPoint = "https://devchain.metamemo.one:8501"
+	//ERC20 contract address
+	ERC20Addr = common.HexToAddress("0x2981aCcED24C5788d0Ac6a22f9df6C023d91b0Bf")
+	// Role contract address
+	RoleAddr = common.HexToAddress("0x15DB6043DFC4eAE279957D0C682dDbFCd529f3fb")
+	// RToken contract address
+	RTokenAddr = common.HexToAddress("0xBb92424614a0A71aC3Cd86B85c08AA77aBB97E2d")
+	// RoleFS contract address
+	RoleFSAddr = common.HexToAddress("0xAa25446A040B175De0C55bdB59ce999ab59C28e0")
+	// PledgePool contract address
+	PledgePoolAddr = common.HexToAddress("0xC77150530dBAFc42c406d4EbcF75259860EA1877")
+	// Issuance contract address
+	IssuanceAddr = common.HexToAddress("0x1E119397eD06666A6bfDA0c9Ea7575059258E97B")
+	// FileSys contract address
+	FileSysAddr = common.HexToAddress("0xEd8c550F2511bcDD23437b69c6Be71C3e47A4633")
 
-		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
-		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
-		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
-		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
+	AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
+	AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
+	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
+	FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
-		GIndex = uint64(1)
-	*/
+	GIndex = uint64(1)
+*/
 )
 
 const (
