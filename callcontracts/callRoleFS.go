@@ -162,7 +162,7 @@ func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address)
 		return errMA
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	tx, err := roleFSIns.SetAddr(auth, issuan, role, fileSys, rtoken)
+	tx, err := roleFSIns.SetAddr(auth, issuan, role, rtoken)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误
