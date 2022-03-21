@@ -28,9 +28,8 @@ func main() {
 
 	// 用于测试的一些参数
 	adminAddr := common.HexToAddress(test.AdminAddr)
-	roleAddr := common.HexToAddress("0xcB94eeEA7c35eB9eC32CE40fE1B07C99E9dE663d")
+	roleAddr := common.HexToAddress("0xA2f493B23a23A39d3f1072f3961dbAe53EAe384a")
 	pledgeMoney := big.NewInt(1e6)
-	addrsNum := uint64(7)
 
 	// 查看余额，支付交易Gas费，余额不足时，需充值（暂时手动）
 	bal := callconts.QueryEthBalance(test.AdminAddr, ethEndPoint)
@@ -86,9 +85,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("The account's role index is ", rIndex)
-	if rIndex != addrsNum {
-		log.Fatal("rIndex should be ", addrsNum)
-	}
+	
 	// 开始pledge
 	pp = callconts.NewPledgePool(ppAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 	err = pp.Pledge(test.PrimaryToken, roleAddr, rIndex, pledgeMoney, nil)
@@ -135,19 +132,6 @@ func main() {
 		log.Fatal("get addrNum failed: ", err)
 	}
 	fmt.Println("addrNum: ", _addrNum)
-	if _addrNum != addrsNum {
-		log.Fatal("addrs num should be ", addrsNum)
-	}
-
-	// show all acc
-	for i := uint64(0); i < _addrNum; i++ {
-		// rIndex as param
-		rAddr, err := r.GetAddr(i + 1)
-		if err != nil {
-			log.Fatal("get addr failed: ", err)
-		}
-		fmt.Println("rIndex: ", i+1, " rAddr: ", rAddr)
-	}
 
 	err = pp.Withdraw(roleAddr, test.RTokenAddr, rIndex, 0, pledgeMoney, nil)
 	if err != nil {

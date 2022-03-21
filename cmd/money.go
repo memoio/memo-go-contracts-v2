@@ -11,8 +11,12 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var transferMoney = big.NewInt(1e9)
-var transferEth = big.NewInt(2e18)
+var (
+	transferMoney = big.NewInt(1e9)
+	transferEth   = big.NewInt(2e18)
+	token         = float64(1e18)
+	nano          = float64(1e9)
+)
 
 // MoneyCmd is about transfer eth or ERC20-token, and get balance
 var MoneyCmd = &cli.Command{
@@ -90,7 +94,7 @@ target - the address of the target account to get balance for.
 		if err != nil {
 			return err
 		}
-		fmt.Println("\nerc20 balance:", bal)
+		fmt.Println("\nerc20 balance:", formatWei(bal))
 		return nil
 	},
 }
@@ -201,4 +205,17 @@ target - the target address which the Eth is transfered to.
 
 		return nil
 	},
+}
+
+func formatWei(i *big.Int) string {
+	f := new(big.Float).SetInt(i)
+	res, _ := f.Float64()
+	switch {
+	case res >= token:
+		return fmt.Sprintf("%.02f MEMO", res/token)
+	case res >= nano:
+		return fmt.Sprintf("%.02f NAmo", res/nano)
+	default:
+		return fmt.Sprintf("%d ATmo", i.Int64())
+	}
 }

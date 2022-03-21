@@ -328,7 +328,7 @@ func main() {
 	// 而调用RoleFS合约中的AddOrder函数前，需要先给RoleFS合约赋Issuance合约值
 	// 给RoleFS合约赋值
 	rfs = callconts.NewRFS(rolefsAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, statusTran)
-	err = rfs.SetAddr(issuanceAddr, roleAddr, fsAddr, rtokenAddr)
+	err = rfs.SetAddr(issuanceAddr, roleAddr, rtokenAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -397,7 +397,20 @@ func main() {
 	// 调用RoleFS合约中的AddOrder函数,keeper调用
 	callconts.ERC20Addr = test.PrimaryToken
 	rfs = callconts.NewRFS(rolefsAddr, addrs[0], sks[0], txopts, ethEndPoint, statusTran)
-	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], start, end, size, 0, 0, sprice, nil, nil)
+	fmt.Println("============ calc signatures for addOrder ============")
+	// use primary token for testing
+	tIndex := uint32(0)
+	// user = acc1
+	usig, err := callconts.SignForOrder(rIndexes[0], rIndexes[4], 0, start, end, size, tIndex, sprice, test.Sk1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// provide = acc5
+	psig, err := callconts.SignForOrder(rIndexes[0], rIndexes[4], 0, start, end, size, tIndex, sprice, test.Sk5)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], start, end, size, 0, 0, sprice, usig, psig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -485,7 +498,18 @@ func main() {
 	fmt.Println("============10. begin test AddOrder again============")
 	// 调用RoleFS合约中的AddOrder函数,keeper调用
 	rfs = callconts.NewRFS(rolefsAddr, addrs[0], sks[0], txopts, ethEndPoint, statusTran)
-	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], end, end+86400, size, 1, 0, sprice, nil, nil)
+	fmt.Println("============ calc signatures for addOrder ============")
+	// user = acc1
+	usig, err = callconts.SignForOrder(rIndexes[0], rIndexes[4], 1, end, end+86400, size, tIndex, sprice, test.Sk1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// provide = acc5
+	psig, err = callconts.SignForOrder(rIndexes[0], rIndexes[4], 1, end, end+86400, size, tIndex, sprice, test.Sk5)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = rfs.AddOrder(roleAddr, rtokenAddr, rIndexes[0], rIndexes[4], end, end+86400, size, 1, 0, sprice, usig, psig)
 	if err != nil {
 		log.Fatal(err)
 	}

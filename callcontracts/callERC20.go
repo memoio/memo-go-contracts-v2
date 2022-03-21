@@ -689,3 +689,34 @@ func (e *ContractModule) Allowance(sender, addr common.Address) (*big.Int, error
 		return allowance, nil
 	}
 }
+
+// MultiSigAddrs get the addresses that used to multi-signature.
+func (e *ContractModule) MultiSigAddrs() ([5]common.Address, error) {
+	addrs := [5]common.Address{}
+
+	client := getClient(e.endPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
+	if err != nil {
+		return addrs, err
+	}
+
+	for i := int64(0); i < 5; i++ {
+		retryCount := 0
+		for {
+			retryCount++
+			addrs[i], err = erc20Ins.Addrs(&bind.CallOpts{
+				From: e.addr,
+			}, big.NewInt(i))
+			if err != nil {
+				if retryCount > sendTransactionRetryCount {
+					return addrs, err
+				}
+				time.Sleep(retryGetInfoSleepTime)
+				continue
+			}
+			break
+		}
+	}
+	return addrs, nil
+}

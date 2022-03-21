@@ -22,7 +22,7 @@ contract RoleFS {
         owner = msg.sender;
     }
 
-    /// @dev set issuance-contract、role-contract、FileSys-contract and RToken-contract address, called by owner
+    /// @dev set issuance-contract、role-contract and RToken-contract address, called by owner
     function setAddr(address iss,address r, address rt) external {
         require(msg.sender == owner, "N");
         issuance = iss;

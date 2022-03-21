@@ -135,7 +135,7 @@ func (rfs *ContractModule) checkParam(uIndex, pIndex uint64, uRoleType, pRoleTyp
 }
 
 // SetAddr called by admin, which is the deployer. Set some address type variables.
-func (rfs *ContractModule) SetAddr(issuan, role, fileSys, rtoken common.Address) error {
+func (rfs *ContractModule) SetAddr(issuan, role, rtoken common.Address) error {
 	client := getClient(rfs.endPoint)
 	defer client.Close()
 	roleFSIns, err := newRoleFS(rfs.contractAddress, client)
@@ -210,18 +210,6 @@ func (rfs *ContractModule) AddOrder(roleAddr, rTokenAddr common.Address, uIndex,
 	if err != nil {
 		return err
 	}
-
-	/*
-		// check ksigns's length
-		r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)
-		gkNum, err := r.GetGKNum(gIndex)
-		if err != nil {
-			return err
-		}
-		if len(ksigns) < int(gkNum*2/3) {
-			return ErrKSignsNE
-		}
-	*/
 
 	// check balance
 	r := NewR(roleAddr, rfs.addr, rfs.hexSk, rfs.txopts, rfs.endPoint, rfs.Status)

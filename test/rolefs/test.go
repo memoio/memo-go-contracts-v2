@@ -264,7 +264,7 @@ func main() {
 	}
 	fmt.Println("The FileSys contract address is ", fsAddr.Hex())
 	// 给RoleFS合约赋予状态变量值
-	err = rfs.SetAddr(issuanceAddr, roleAddr, fsAddr, rTokenAddr)
+	err = rfs.SetAddr(issuanceAddr, roleAddr, rTokenAddr)
 	if err != nil {
 		log.Fatal(err)
 	}

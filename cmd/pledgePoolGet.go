@@ -92,7 +92,7 @@ var ppbalCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\nbalance: %v\n", b)
+		fmt.Printf("\nbalance: %v\n", formatWei(b))
 
 		return nil
 	},
@@ -136,7 +136,7 @@ var plCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\npledge: %v\n", b)
+		fmt.Printf("\npledge: %v\n", formatWei(b))
 
 		return nil
 	},
@@ -173,7 +173,7 @@ var tpCmd = &cli.Command{
 			return err
 		}
 
-		fmt.Printf("\ntotal pledge: %v\n", tt)
+		fmt.Printf("\ntotal pledge: %v\n", formatWei(tt))
 
 		return nil
 	},
