@@ -17,6 +17,7 @@ type ERC20Info interface {
 	GetTotalSupply() (*big.Int, error)
 	GetMaxSupply() (*big.Int, error)
 	GetVersion() (uint16, error)
+	MultiSigAddrs() ([5]common.Address, error)
 	BalanceOf(common.Address) (*big.Int, error)
 	Allowance(common.Address, common.Address) (*big.Int, error)
 

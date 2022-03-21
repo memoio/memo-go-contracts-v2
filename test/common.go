@@ -48,7 +48,7 @@ var (
 	Foundation = common.HexToAddress("0x30F6551c2F970b21C1A9426aeb289c4ED6d570Fd")
 
 	PrimaryToken = common.HexToAddress("0xe4Fe7d73F7f7593f41E06FffF550732B2E25C7eD")
-	RTokenAddr   = common.HexToAddress("0x360A3b47089B931e8763C0a63F3B91D250167597")
+	RTokenAddr   = common.HexToAddress("0xB4888a5a29C3a33dA7c23c1d25375e693b4562f1")
 )
 
 // TransferTo trans eth to addr for test

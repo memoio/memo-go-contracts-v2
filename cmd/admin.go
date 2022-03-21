@@ -729,7 +729,7 @@ level - the minimum number of members needed by the group for it to be active
 			Aliases:     []string{"ks"},
 			Value:       "", //默认值为nil
 			Usage:       "keeper indexes included when creating group",
-			DefaultText: "kindexes such as 1,2,3",
+			DefaultText: "; kindexes such as 1,2,3",
 		},
 	},
 	Action: func(cctx *cli.Context) error {
@@ -1114,12 +1114,11 @@ rtokenAddr - the address of rtoken contract
 	},
 	Action: func(cctx *cli.Context) error {
 		if cctx.Args().Len() != 4 {
-			return errors.New("should have 4 arguments. Args0:issuAddr, Args1:roleAddr, Args2:fsAddr, Args3:rtokenAddr")
+			return errors.New("should have 4 arguments. Args0:issuAddr, Args1:roleAddr, Args2:rtokenAddr")
 		}
 		issuAddr := cctx.Args().Get(0)
 		roleAddr := cctx.Args().Get(1)
-		fsAddr := cctx.Args().Get(2)
-		rtAddr := cctx.Args().Get(3)
+		rtAddr := cctx.Args().Get(2)
 
 		// 输入值判断并格式转换
 		if len(issuAddr) != 42 || issuAddr == callconts.InvalidAddr {
@@ -1132,11 +1131,6 @@ rtokenAddr - the address of rtoken contract
 			return nil
 		}
 		fmt.Println("role address:", roleAddr)
-		if len(fsAddr) != 42 || fsAddr == callconts.InvalidAddr {
-			fmt.Println("fsAddr should be with prefix 0x and shouldn't be 0x0")
-			return nil
-		}
-		fmt.Println("fs address:", fsAddr)
 		if len(rtAddr) != 42 || rtAddr == callconts.InvalidAddr {
 			fmt.Println("rtAddr should be with prefix 0x and shouldn't be 0x0")
 			return nil
@@ -1159,7 +1153,7 @@ rtokenAddr - the address of rtoken contract
 		fmt.Println("endPoint:", endPoint)
 		status := make(chan error)
 		rfs := callconts.NewRFS(rfsAddr, addr, sk, txopts, endPoint, status)
-		err := rfs.SetAddr(common.HexToAddress(issuAddr), common.HexToAddress(roleAddr), common.HexToAddress(fsAddr), common.HexToAddress(rtAddr))
+		err := rfs.SetAddr(common.HexToAddress(issuAddr), common.HexToAddress(roleAddr), common.HexToAddress(rtAddr))
 		if err != nil {
 			return err
 		}

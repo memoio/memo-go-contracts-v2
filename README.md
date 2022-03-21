@@ -30,9 +30,9 @@
 6. role.SetPI (recompile memoc before run this with memoc)
 7. role.CreateGroup => fsAddr
 8. rolefs.SetAddr (recompile memoc before run this with memoc)
-9. erc20.SetUpRole(callconts.MinterRole, rolefsAddr)
+9. erc20.SetUpRole(rolefsAddr, 1)
 
-admin 选取一部分 keeper(也可以为i空，因为后续可以调用 addKeeperToGroup 增添 keeper 到 group 中)创建 group(createGroup)，每个 group 对应一个 filesys。所以在 admin 调用 createGroup 时，会同时部署一个 FileSys 合约。
+admin 选取一部分 keeper(也可以为空，因为后续可以调用 addKeeperToGroup 增添 keeper 到 group 中)创建 group(createGroup)，每个 group 对应一个 filesys。所以在 admin 调用 createGroup 时，会同时部署一个 FileSys 合约。
 
 ## index
 

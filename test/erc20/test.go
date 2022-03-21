@@ -439,5 +439,16 @@ func main() {
 		log.Fatal("Addr RenounceRole fails")
 	}
 
+	fmt.Println("============23. begin test get multiSigAddrs============")
+	msaddrs, err := e.MultiSigAddrs()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for i, msa := range msaddrs {
+		if msa.Hex() != addrs[i].Hex() {
+			log.Fatal("multiSigAddr ", i, " ", msa.Hex(), " should be ", addrs[i].Hex())
+		}
+	}
+
 	fmt.Println("============test success!============")
 }

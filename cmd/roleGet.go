@@ -653,7 +653,7 @@ var ppCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\npledgeProvider: %v\n", pledge)
+		fmt.Printf("\npledgeProvider: %v\n", formatWei(pledge))
 
 		return nil
 	},
@@ -687,7 +687,7 @@ var pkCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\npledgekeeper: %v\n", pledge)
+		fmt.Printf("\npledgekeeper: %v\n", formatWei(pledge))
 
 		return nil
 	},

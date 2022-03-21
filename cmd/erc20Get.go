@@ -46,6 +46,7 @@ var GetERC20Cmd = &cli.Command{
 		psCmd,
 		msCmd,
 		vCmd,
+		msaCmd,
 	},
 }
 
@@ -167,7 +168,7 @@ var tsCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println("erc20 total supply:", ts)
+		fmt.Println("erc20 total supply:", formatWei(ts))
 
 		return nil
 	},
@@ -212,7 +213,7 @@ var boCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println("balance of acc: ", b)
+		fmt.Println("balance of acc: ", formatWei(b))
 
 		return nil
 	},
@@ -260,7 +261,7 @@ var alCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("allowance of %s to %s is : %v\n", owner, spender, al)
+		fmt.Printf("allowance of %s to %s is : %v\n", owner, spender, formatWei(al))
 
 		return nil
 	},
@@ -372,7 +373,7 @@ var msCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println("erc20 maxSupply:", n)
+		fmt.Println("erc20 maxSupply:", formatWei(n))
 
 		return nil
 	},
@@ -404,6 +405,41 @@ var vCmd = &cli.Command{
 			return err
 		}
 		fmt.Println("erc20 version:", n)
+
+		return nil
+	},
+}
+
+// get erc20 multiSigAddrs
+var msaCmd = &cli.Command{
+	Name:  "msa",
+	Usage: "get erc20 multiSigAddrs. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		erc20 := common.HexToAddress(cctx.String("erc20"))
+		fmt.Println("erc20:", erc20)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+		// erc20 caller
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
+		n, err := e.MultiSigAddrs()
+		if err != nil {
+			return err
+		}
+		output := [5]string{}
+		for i, a := range n {
+			output[i] = a.Hex()
+		}
+		fmt.Println("erc20 multiSigAddrs:", output)
 
 		return nil
 	},

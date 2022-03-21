@@ -234,7 +234,7 @@ var totalPayCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\ntotalPay: %v [0x%x]\n", tp, tp)
+		fmt.Printf("\ntotalPay: %v [0x%x]\n", formatWei(tp), tp)
 
 		return nil
 	},
@@ -265,7 +265,7 @@ var totalPaidCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\ntotalPaid: %v [0x%x]\n", tp, tp)
+		fmt.Printf("\ntotalPaid: %v [0x%x]\n", formatWei(tp), tp)
 
 		return nil
 	},
@@ -296,7 +296,7 @@ var periodTargetCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\nperiodTarget: %v [0x%x]\n", tp, tp)
+		fmt.Printf("\nperiodTarget: %v [0x%x]\n", formatWei(tp), tp)
 
 		return nil
 	},
@@ -327,7 +327,7 @@ var periodTotalRewardCmd = &cli.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Printf("\nperiodTotalReward: %v [0x%x]\n", tp, tp)
+		fmt.Printf("\nperiodTotalReward: %v [0x%x]\n", formatWei(tp), tp)
 
 		return nil
 	},
