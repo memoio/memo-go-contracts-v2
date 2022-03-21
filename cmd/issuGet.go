@@ -9,7 +9,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// GetERC20Cmd erc20 address and caller address set by flags
+// ISGet some getter functions in Issuance-contract
 // input of method set by param
 var ISGet = &cli.Command{
 	Name:  "isget",

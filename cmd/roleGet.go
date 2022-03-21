@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// GetERC20Cmd erc20 address and caller address set by flags
+// RGet some getter functions in Role-contract
 // input of method set by param
 var RGet = &cli.Command{
 	Name:  "rget",

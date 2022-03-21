@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// GetERC20Cmd erc20 address and caller address set by flags
+// FSGet some getter functions in FileSys-contract
 // input of method set by param
 var FSGet = &cli.Command{
 	Name:  "fsget",
