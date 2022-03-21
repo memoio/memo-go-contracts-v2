@@ -32,7 +32,7 @@ func NewR(roleAddr, addr common.Address, hexSk string, txopts *TxOpts, endPoint 
 }
 
 // DeployRole deploy a Role contract, called by admin, specify foundation、primaryToken、pledgeK、pledgeP
-func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, pledgeKeeper, pledgeProvider *big.Int) (common.Address, *role.Role, error) {
+func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, pledgeKeeper, pledgeProvider *big.Int, version uint16) (common.Address, *role.Role, error) {
 	var roleAddr common.Address
 	var roleIns *role.Role
 
@@ -46,7 +46,7 @@ func (r *ContractModule) DeployRole(foundation, primaryToken common.Address, ple
 		return roleAddr, roleIns, errMA
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	roleAddr, tx, roleIns, err := role.DeployRole(auth, client, foundation, primaryToken, pledgeKeeper, pledgeProvider)
+	roleAddr, tx, roleIns, err := role.DeployRole(auth, client, foundation, primaryToken, pledgeKeeper, pledgeProvider, version)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误
@@ -1487,5 +1487,34 @@ func (r *ContractModule) GetGroupU(gIndex uint64, index uint64) (uint64, error) 
 		}
 
 		return uIndex, nil
+	}
+}
+
+// GetRVersion get the version of Role-contract.
+func (r *ContractModule) GetRVersion() (uint16, error) {
+	var v uint16
+
+	client := getClient(r.endPoint)
+	defer client.Close()
+	roleIns, err := newRole(r.contractAddress, client)
+	if err != nil {
+		return v, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		v, err = roleIns.Version(&bind.CallOpts{
+			From: r.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return v, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return v, nil
 	}
 }

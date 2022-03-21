@@ -21,7 +21,7 @@ type OwnerInfo interface {
 // RoleInfo contains operations related to memo roles
 type RoleInfo interface {
 	// deploy Role contract. specify foundation、primaryToken、pledgeK、pledgeP
-	DeployRole(common.Address, common.Address, *big.Int, *big.Int) (common.Address, *role.Role, error)
+	DeployRole(common.Address, common.Address, *big.Int, *big.Int, uint16) (common.Address, *role.Role, error)
 
 	// callled by owner, set pledgePool-address、issuance-address and rolefs-address
 	SetPI(common.Address, common.Address, common.Address) error
@@ -105,6 +105,8 @@ type RoleInfo interface {
 
 	// get user role index by group array index and provider array index
 	GetGroupU(uint64, uint64) (uint64, error)
+
+	GetRVersion() (uint16, error)
 }
 
 // RoleFSInfo contains operations related to memo roles and filesystem-payment

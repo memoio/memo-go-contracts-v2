@@ -104,23 +104,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("admin balance in primaryToken is ", bal)
-	// 余额不足，自动充值
-	mintValue := big.NewInt(1).Add(big.NewInt(test.MoneyTo), new(big.Int).Mul(rechargeValue, big.NewInt(2)))
-	if bal.Cmp(mintValue) < 0 {
-		// mintToken
-		err = erc20.MintToken(adminAddr, mintValue)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err = <-status; err != nil {
-			log.Fatal(err)
-		}
-		bal, err = erc20.BalanceOf(adminAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("after mint, admin balance in primaryToken is ", bal)
-	}
+
 	tNum := 0
 	var errT error
 	for i, acc := range accs {
@@ -175,7 +159,7 @@ func main() {
 	fmt.Println("============2. begin test SetAddr============")
 	// 部署Role合约
 	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
-	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeK)
+	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeK, 1)
 	if err != nil {
 		log.Fatal(err)
 	}

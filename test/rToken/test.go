@@ -43,7 +43,7 @@ func main() {
 	fmt.Println("============1. begin test deploy RToken contract ============")
 	// 注意：RToken合约是由Role合约部署的.在Role合约被admin部署时，Role合约通过create2创建RToken合约
 	r := callconts.NewR(adminAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
-	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeKP, pledgeKP)
+	roleAddr, _, err := r.DeployRole(test.Foundation, test.PrimaryToken, pledgeKP, pledgeKP, 1)
 	if err != nil {
 		log.Fatal(err)
 	}

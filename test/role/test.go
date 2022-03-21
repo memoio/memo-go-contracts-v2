@@ -1295,22 +1295,6 @@ func CheckERC20Balance() {
 	}
 	fmt.Println("admin balance in primaryToken is ", bal)
 
-	if bal.Cmp(nineEth) < 0 {
-		// mintToken
-		err = erc20.MintToken(adminAddr, nineEth)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err = <-status; err != nil {
-			log.Fatal(err)
-		}
-		bal, err = erc20.BalanceOf(adminAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("after mint, admin balance in primaryToken is ", bal)
-	}
-
 	fmt.Println(">>>> checking balance of accounts, 1 eth each")
 	// 确保每个测试账户的ERC20代币余额充足（不少于Pledge值，默认1 eth）
 	tNum := 0
@@ -1378,7 +1362,7 @@ func PrePaire() (err error) {
 
 		// deploy Role
 		roleCaller = callconts.NewR(common.Address{}, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
-		roleAddr, _, err = roleCaller.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
+		roleAddr, _, err = roleCaller.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP, 1)
 		if err != nil {
 			log.Fatal(err)
 		}

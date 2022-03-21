@@ -50,21 +50,6 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("admin balance in primaryToken is ", bal)
-	if bal.Cmp(big.NewInt(test.MoneyTo)) < 0 {
-		// mintToken
-		err = erc20.MintToken(adminAddr, big.NewInt(test.MoneyTo))
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err = <-status; err != nil {
-			log.Fatal(err)
-		}
-		bal, err = erc20.BalanceOf(adminAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("after mint, admin balance in primaryToken is ", bal)
-	}
 
 	pp := callconts.NewPledgePool(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 

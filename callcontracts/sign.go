@@ -1,9 +1,7 @@
 package callconts
 
 import (
-	"crypto/ecdsa"
 	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"log"
 	"math/big"
@@ -17,7 +15,7 @@ import (
 // SignForRegister Used to call Register on behalf of other accounts
 // hash(caller, register)
 func SignForRegister(caller common.Address, regAccSK string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(regAccSK)
+	skEcdsa, err := crypto.HexToECDSA(regAccSK)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,7 +35,7 @@ func SignForRegister(caller common.Address, regAccSK string) ([]byte, error) {
 
 // hash(caller,_blsKey,"keeper")
 func SignForRegisterKeeper(caller common.Address, _blsKey []byte, regAccSk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(regAccSk)
+	skEcdsa, err := crypto.HexToECDSA(regAccSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,7 +55,7 @@ func SignForRegisterKeeper(caller common.Address, _blsKey []byte, regAccSk strin
 
 // hash(caller,"provider")
 func SignForRegisterProvider(caller common.Address, regAccSk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(regAccSk)
+	skEcdsa, err := crypto.HexToECDSA(regAccSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -77,7 +75,7 @@ func SignForRegisterProvider(caller common.Address, regAccSk string) ([]byte, er
 
 // hash(caller,gIndex,payToken,blsKey)
 func SignForRegisterUser(caller common.Address, gIndex uint64, _blsKey []byte, regAccSk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(regAccSk)
+	skEcdsa, err := crypto.HexToECDSA(regAccSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -108,7 +106,7 @@ func SignForRegisterUser(caller common.Address, gIndex uint64, _blsKey []byte, r
 
 // hash(caller,gIndex)
 func SignForAddProviderToGroup(caller common.Address, gIndex uint64, accSk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(accSk)
+	skEcdsa, err := crypto.HexToECDSA(accSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -137,7 +135,7 @@ func SignForAddProviderToGroup(caller common.Address, gIndex uint64, accSk strin
 
 // hash(caller, uIndex, tIndex, money)
 func SignForRecharge(caller common.Address, uIndex uint64, tIndex uint32, money *big.Int, accSk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(accSk)
+	skEcdsa, err := crypto.HexToECDSA(accSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -174,7 +172,7 @@ func SignForRecharge(caller common.Address, uIndex uint64, tIndex uint32, money 
 
 // hash(caller, tIndex, amount)
 func SignForWithdrawFromFs(caller common.Address, tIndex uint32, amount *big.Int, accSk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(accSk)
+	skEcdsa, err := crypto.HexToECDSA(accSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -207,7 +205,7 @@ func SignForWithdrawFromFs(caller common.Address, tIndex uint32, amount *big.Int
 
 // SignForRepair used to call AddRepair or SubRepair, when subRepair, label is "s"; when addRepair, label is "a"
 func SignForRepair(sk string, pIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int, label string) ([]byte, error) {
-	ecdsaSk, err := HexSkToEcdsa(sk)
+	ecdsaSk, err := crypto.HexToECDSA(sk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -272,7 +270,7 @@ func SignForOrder(
 	accSk string,
 ) ([]byte, error) {
 	// string to ecdsa
-	skEcdsa, err := HexSkToEcdsa(accSk)
+	skEcdsa, err := crypto.HexToECDSA(accSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -318,7 +316,7 @@ func SignForProWithdraw(
 	accSk string,
 ) ([]byte, error) {
 	// string to ecdsa
-	skEcdsa, err := HexSkToEcdsa(accSk)
+	skEcdsa, err := crypto.HexToECDSA(accSk)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -345,48 +343,6 @@ func SignForProWithdraw(
 	}
 
 	return sig, nil
-}
-
-// HexSkToByte transfer hex string to byte
-func HexSkToByte(hexsk string) ([]byte, error) {
-	var src []byte
-	skLengthNoPrefix := EthSkLength - 2
-	skByteEthLength := skLengthNoPrefix / 2
-
-	switch len(hexsk) {
-	case EthSkLength:
-		if hexsk[:2] == "0x" {
-			src = []byte(hexsk[2:])
-		} else {
-			return nil, errHexskFormat
-		}
-	case skLengthNoPrefix:
-		src = []byte(hexsk)
-	default:
-		return nil, errHexskFormat
-	}
-
-	skByteEth := make([]byte, skByteEthLength)
-
-	_, err := hex.Decode(skByteEth, src)
-	if err != nil {
-		return nil, err
-	}
-
-	return skByteEth, nil
-}
-
-// HexSkToEcdsa transfer hex string to ecdsa type
-func HexSkToEcdsa(hexsk string) (*ecdsa.PrivateKey, error) {
-	skByteEth, err := HexSkToByte(hexsk)
-	if err != nil {
-		return nil, err
-	}
-	skECDSA, err := crypto.ToECDSA(skByteEth)
-	if err != nil {
-		return nil, err
-	}
-	return skECDSA, nil
 }
 
 func LeftPadBytes(slice []byte, l int) []byte {

@@ -35,6 +35,7 @@ func main() {
 	// 部署Role的参数
 	pledgeK := big.NewInt(1e18)
 	pledgeP := big.NewInt(1e18)
+	version := uint16(1)
 	var addrs []common.Address = []common.Address{common.HexToAddress(test.Acc1), common.HexToAddress(test.Acc2), common.HexToAddress(test.Acc3), common.HexToAddress(test.Acc4), common.HexToAddress(test.Acc5)}
 	var sks []string = []string{test.Sk1, test.Sk2, test.Sk3, test.Sk4, test.Sk5}
 
@@ -60,22 +61,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("admin balance in primaryToken is ", bal)
-	if bal.Cmp(big.NewInt(test.MoneyTo*5)) < 0 {
-		// mintToken
-		err = erc20.MintToken(adminAddr, big.NewInt(test.MoneyTo*5))
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = <-statusTran
-		if err != nil {
-			log.Fatal(err)
-		}
-		bal, err = erc20.BalanceOf(adminAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("after mint, admin balance in primaryToken is ", bal)
-	}
+
 	tranNum := 0 // 表示转账checkTx的goroutine个数
 	for i, addr := range addrs {
 		bal, err = erc20.BalanceOf(addr)
@@ -109,7 +95,7 @@ func main() {
 	var roleAddr common.Address
 	tranNum = 0
 	r := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, statusTran)
-	roleAddr, _, err = r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP)
+	roleAddr, _, err = r.DeployRole(test.Foundation, test.PrimaryToken, pledgeK, pledgeP, version)
 	if err != nil {
 		log.Fatal(err)
 	}

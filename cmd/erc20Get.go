@@ -44,6 +44,8 @@ var GetERC20Cmd = &cli.Command{
 		alCmd,
 		hrCmd,
 		psCmd,
+		msCmd,
+		vCmd,
 	},
 }
 
@@ -340,6 +342,68 @@ var psCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("\nget paused: %v\n", b)
+
+		return nil
+	},
+}
+
+// get erc20 maxSupply
+var msCmd = &cli.Command{
+	Name:  "ms",
+	Usage: "get erc20 maxSupply. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		erc20 := common.HexToAddress(cctx.String("erc20"))
+		fmt.Println("erc20:", erc20)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+		// erc20 caller
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
+		n, err := e.GetMaxSupply()
+		if err != nil {
+			return err
+		}
+		fmt.Println("erc20 maxSupply:", n)
+
+		return nil
+	},
+}
+
+// get erc20 version
+var vCmd = &cli.Command{
+	Name:  "v",
+	Usage: "get erc20 version. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		erc20 := common.HexToAddress(cctx.String("erc20"))
+		fmt.Println("erc20:", erc20)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+		// erc20 caller
+		e := callconts.NewERC20(erc20, caller, "", txopts, endPoint, make(chan error))
+		n, err := e.GetVersion()
+		if err != nil {
+			return err
+		}
+		fmt.Println("erc20 version:", n)
 
 		return nil
 	},

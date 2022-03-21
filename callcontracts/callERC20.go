@@ -27,7 +27,7 @@ func NewERC20(erc20Addr, addr common.Address, hexSk string, txopts *TxOpts, endP
 }
 
 // DeployERC20 deploy an ERC20 contract, called by admin, specify name and symbol.
-func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc20.ERC20, error) {
+func (e *ContractModule) DeployERC20(name, symbol string, version uint16, addrs [5]common.Address) (common.Address, *erc20.ERC20, error) {
 	var erc20Addr common.Address
 	var erc20Ins *erc20.ERC20
 
@@ -41,7 +41,7 @@ func (e *ContractModule) DeployERC20(name, symbol string) (common.Address, *erc2
 		return erc20Addr, nil, errMA
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	erc20Addr, tx, erc20Ins, err := erc20.DeployERC20(auth, client, name, symbol)
+	erc20Addr, tx, erc20Ins, err := erc20.DeployERC20(auth, client, name, symbol, version, addrs)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误
@@ -361,7 +361,7 @@ func (e *ContractModule) DecreaseAllowance(recipient common.Address, value *big.
 }
 
 // MintToken The account represented by the e.hexsk mint token to target. Called by who has MINTER_ROLE.
-func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) error {
+func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int, signs [5][]byte) error {
 	client := getClient(e.endPoint)
 	defer client.Close()
 	erc20Ins, err := newERC20(e.contractAddress, client)
@@ -390,7 +390,7 @@ func (e *ContractModule) MintToken(target common.Address, mintValue *big.Int) er
 		return errMA
 	}
 	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	tx, err := erc20Ins.MintToken(auth, target, mintValue)
+	tx, err := erc20Ins.MintToken(auth, target, mintValue, signs)
 	// ====面临的失败场景====
 	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
 	// 交易发送失败，直接返回错误
@@ -454,59 +454,6 @@ func (e *ContractModule) Burn(burnValue *big.Int) error {
 	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
 	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
 	go checkTx(e.endPoint, tx, e.Status, "Burn")
-
-	return nil
-}
-
-// AirDrop The account represented by the e.hexsk airdrop to targets. Called by who has DEFAULT_ADMIN_ROLE.
-func (e *ContractModule) AirDrop(targets []common.Address, value *big.Int) error {
-	client := getClient(e.endPoint)
-	defer client.Close()
-	erc20Ins, err := newERC20(e.contractAddress, client)
-	if err != nil {
-		return err
-	}
-
-	hasAdminRole, err := e.HasRole(uint8(0), e.addr)
-	if err != nil {
-		return err
-	}
-	if !hasAdminRole {
-		return ErrNoAdminRight
-	}
-
-	var tmp []string
-	var tmpAddr string
-	for _, t := range targets {
-		tmpAddr = t.Hex()
-		if tmpAddr == InvalidAddr {
-			log.Println("airDrop: targets include invalidAddr, targets:", targets)
-			return ErrInValAddr
-		}
-		tmp = append(tmp, tmpAddr)
-	}
-
-	log.Println("begin AirDrop to", tmp, " with value", value, " in ERC20 contract...")
-
-	// txopts.gasPrice参数赋值为nil
-	auth, errMA := makeAuth(e.endPoint, e.hexSk, nil, e.txopts)
-	if errMA != nil {
-		return errMA
-	}
-	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
-	tx, err := erc20Ins.AirDrop(auth, targets, value)
-	// ====面临的失败场景====
-	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
-	// 交易发送失败，直接返回错误
-	if err != nil {
-		log.Println("AirDrop Err:", err)
-		return err
-	}
-	log.Println("transaction hash:", tx.Hash().Hex())
-	log.Println("send transaction successfully!")
-	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
-	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
-	go checkTx(e.endPoint, tx, e.Status, "AirDrop")
 
 	return nil
 }
@@ -624,6 +571,64 @@ func (e *ContractModule) GetTotalSupply() (*big.Int, error) {
 		}
 
 		return totalSupply, nil
+	}
+}
+
+// GetMaxSupply get the maxSupply of erc20 token.
+func (e *ContractModule) GetMaxSupply() (*big.Int, error) {
+	ms := big.NewInt(0)
+
+	client := getClient(e.endPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
+	if err != nil {
+		return ms, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		ms, err = erc20Ins.MaxSupply(&bind.CallOpts{
+			From: e.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return ms, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return ms, nil
+	}
+}
+
+// GetVersion get the version of erc20 token.
+func (e *ContractModule) GetVersion() (uint16, error) {
+	var v uint16
+
+	client := getClient(e.endPoint)
+	defer client.Close()
+	erc20Ins, err := newERC20(e.contractAddress, client)
+	if err != nil {
+		return v, err
+	}
+
+	retryCount := 0
+	for {
+		retryCount++
+		v, err = erc20Ins.Version(&bind.CallOpts{
+			From: e.addr,
+		})
+		if err != nil {
+			if retryCount > sendTransactionRetryCount {
+				return v, err
+			}
+			time.Sleep(retryGetInfoSleepTime)
+			continue
+		}
+
+		return v, nil
 	}
 }
 

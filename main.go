@@ -23,6 +23,7 @@ var errHexskFormat = errors.New("the hexsk'format is wrong")
 // for test
 func main() {
 	fmt.Println("welcome to test contract!")
+	fmt.Println("curent endPoint: ", callconts.EndPoint)
 
 	commands := []*cli.Command{
 		cmd.AdminCmd,

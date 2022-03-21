@@ -31,10 +31,21 @@ func main() {
 	bal = callconts.QueryEthBalance(test.Acc1, ethEndPoint)
 	fmt.Println("test common-account has balance: ", bal, " in Ethereum")
 
+	initialSupply, ok := big.NewInt(0).SetString("300000000000000000000000000", 10) // 3亿
+	if !ok {
+		return
+	}
+	maxSupply, ok := big.NewInt(0).SetString("600000000000000000000000000", 10) // 6亿
+	if !ok {
+		return
+	}
+
 	var (
-		name   string   = "memo"
-		symbol string   = "M"
-		tmp    *big.Int = big.NewInt(0)
+		name    string            = "memo"
+		symbol  string            = "M"
+		tmp     *big.Int          = big.NewInt(0)
+		version uint16            = 1
+		addrs   [5]common.Address = [5]common.Address{common.HexToAddress(test.Acc1), common.HexToAddress(test.Acc2), common.HexToAddress(test.Acc3), common.HexToAddress(test.Acc4), common.HexToAddress(test.Acc5)}
 	)
 
 	txopts := &callconts.TxOpts{
@@ -47,7 +58,7 @@ func main() {
 	e := callconts.NewERC20(erc20Addr, common.HexToAddress(test.AdminAddr), test.AdminSk, txopts, ethEndPoint, status)
 
 	fmt.Println("============1. begin test deploy ERC20 contract============")
-	erc20Addr, _, err := e.DeployERC20(name, symbol)
+	erc20Addr, _, err := e.DeployERC20(name, symbol, version, addrs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,6 +77,15 @@ func main() {
 	}
 	if n != name {
 		log.Fatal("The name obtained ", n, " does not match the actual")
+	}
+
+	// get maxSupply
+	ms, err := e.GetMaxSupply()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if ms.Cmp(maxSupply) != 0 {
+		log.Fatal("The maxSupply obtained ", ms, " does not match the actual ", maxSupply)
 	}
 
 	fmt.Println("============3. begin test GetSymbol============")
@@ -93,6 +113,14 @@ func main() {
 	}
 	if bal.Cmp(big.NewInt(0)) != 0 {
 		log.Fatal("The balance in ERC20 obtained ", bal, " does not match the actual")
+	}
+
+	bal, err = e.BalanceOf(common.HexToAddress(test.AdminAddr))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if bal.Cmp(initialSupply) != 0 {
+		log.Fatal("The balance in ERC20 obtained ", bal, " does not match the actual ", initialSupply)
 	}
 
 	fmt.Println("============6. begin test Allowance============")
@@ -209,41 +237,18 @@ func main() {
 	}
 	fmt.Println("TotalSupply0 is: ", ts0)
 
-	fmt.Println("============13. begin test MintToken in ERC20============")
-	bal0, err := e.BalanceOf(common.HexToAddress(test.AdminAddr))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("Old balance of AdminAddr is: ", bal0)
-	err = e.MintToken(common.HexToAddress(test.AdminAddr), big.NewInt(test.MoneyTo))
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = <-status
-	if err != nil {
-		log.Fatal(err)
-	}
-	bal, err = e.BalanceOf(common.HexToAddress(test.AdminAddr))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("balance of AdminAddr is: ", bal)
-	if tmp.Sub(bal, bal0).Cmp(big.NewInt(test.MoneyTo)) != 0 {
-		log.Fatal("MintToken fails")
-	}
-
 	fmt.Println("============14. begin test GetTotalSupply============")
 	ts, err := e.GetTotalSupply()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("TotalSupply is:", ts)
-	if tmp.Sub(ts, ts0).Cmp(big.NewInt(test.MoneyTo)) != 0 {
-		log.Fatal("The totalSupply obtained ", ts, " does not match the actual")
+	if ts.Cmp(initialSupply) != 0 {
+		log.Fatal("The totalSupply obtained ", ts, " does not match the actual ", initialSupply)
 	}
 
 	fmt.Println("============15. begin test Transfer in ERC20============")
-	bal0, err = e.BalanceOf(common.HexToAddress(test.Acc1))
+	bal0, err := e.BalanceOf(common.HexToAddress(test.AdminAddr))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -260,7 +265,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("balance of Addr is: ", bal)
-	if tmp.Sub(bal, bal0).Cmp(big.NewInt(100)) != 0 {
+	if bal.Cmp(big.NewInt(100)) != 0 {
 		log.Fatal("Transfer fails")
 	}
 
@@ -350,37 +355,6 @@ func main() {
 		log.Fatal("DecreaseAllowance fails")
 	}
 
-	fmt.Println("============20. begin test AirDrop in ERC20============")
-	bal0, err = e.BalanceOf(common.HexToAddress(test.Acc1))
-	if err != nil {
-		log.Fatal(err)
-	}
-	bal01, err := e.BalanceOf(common.HexToAddress(test.Acc2))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("balance of Addr、Acc2 is: ", bal0, bal01)
-	err = e.AirDrop([]common.Address{common.HexToAddress(test.Acc1), common.HexToAddress(test.Acc2)}, big.NewInt(100))
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = <-status
-	if err != nil {
-		log.Fatal(err)
-	}
-	bal, err = e.BalanceOf(common.HexToAddress(test.Acc1))
-	if err != nil {
-		log.Fatal(err)
-	}
-	bal11, err := e.BalanceOf(common.HexToAddress(test.Acc2))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("balance of Addr、Acc2 is: ", bal, bal11)
-	if tmp.Sub(bal, bal0).Cmp(big.NewInt(100)) != 0 || tmp.Sub(bal11, bal01).Cmp(big.NewInt(100)) != 0 {
-		log.Fatal("AirDrop fails")
-	}
-
 	fmt.Println("============21. begin test Burn in ERC20============")
 	err = e.SetUpRole(callconts.AdminRole, common.HexToAddress(test.Acc1))
 	if err != nil {
@@ -417,7 +391,7 @@ func main() {
 		log.Fatal(err)
 	}
 	e = callconts.NewERC20(erc20Addr, common.HexToAddress(test.Acc2), test.Sk2, txopts, ethEndPoint, status)
-	err = e.Burn(bal11)
+	err = e.Burn(big.NewInt(100))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -430,9 +404,6 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Println("balance of Acc2 is: ", bal)
-	if bal.Cmp(big.NewInt(0)) != 0 {
-		log.Fatal("Burn by Acc2 fails")
-	}
 
 	fmt.Println("============22. begin test RenounceRole in AccessControl============")
 	err = e.RenounceRole(callconts.AdminRole)

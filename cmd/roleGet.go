@@ -54,6 +54,7 @@ var RGet = &cli.Command{
 		ownerCmd,
 		ppCmd,
 		pkCmd,
+		rvCmd,
 	},
 }
 
@@ -687,6 +688,37 @@ var pkCmd = &cli.Command{
 			return err
 		}
 		fmt.Printf("\npledgekeeper: %v\n", pledge)
+
+		return nil
+	},
+}
+
+// get Role version
+var rvCmd = &cli.Command{
+	Name:  "v",
+	Usage: "get Role version. ",
+	Action: func(cctx *cli.Context) error {
+		// parse flags
+		role := common.HexToAddress(cctx.String("role"))
+		fmt.Println("role:", role)
+		caller := common.HexToAddress(cctx.String("caller"))
+		fmt.Println("caller:", caller)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		// send tx
+		txopts := &callconts.TxOpts{
+			Nonce:    nil,
+			GasPrice: big.NewInt(callconts.DefaultGasPrice),
+			GasLimit: callconts.DefaultGasLimit,
+		}
+		// owner use the same address with role
+		r := callconts.NewR(role, caller, "", txopts, endPoint, make(chan error))
+		n, err := r.GetRVersion()
+		if err != nil {
+			return err
+		}
+		fmt.Println("Role version:", n)
 
 		return nil
 	},

@@ -48,7 +48,6 @@ var AdminCmd = &cli.Command{
 		deployERC20Cmd,
 		mintCmd,
 		burnCmd,
-		airDropCmd,
 		setUpRoleCmd,
 		revokeRoleCmd,
 		pauseCmd,
@@ -85,11 +84,15 @@ Index of Primary Token is 0, other erc20 tokens start from 1, and increases by o
 Arguments:
 name - the name of newly deployed token
 symbol - the symbol of newly deployed token
+version - the version of ERC20 contract
+addrs - the addrs that used to mint with multi-signature, input 5 addresses separated by commas
 	`,
 	Action: func(cctx *cli.Context) error {
 		name := cctx.Args().Get(0)
 		symbol := cctx.Args().Get(1)
-		fmt.Println("name:", name, " symbol:", symbol)
+		version := cctx.Args().Get(2)
+		addrs := cctx.Args().Get(3)
+		fmt.Println("name:", name, " symbol:", symbol, " version:", version, " addrs:", addrs)
 
 		addr := common.HexToAddress(cctx.String("adminAddr"))
 		fmt.Println("adminAddr:", addr.Hex())
@@ -106,7 +109,16 @@ symbol - the symbol of newly deployed token
 		status := make(chan error)
 		// erc20 caller
 		e := callconts.NewERC20(addr, addr, sk, txopts, endPoint, status)
-		erc20Addr, _, err := e.DeployERC20(name, symbol)
+		ver, err := strconv.Atoi(version)
+		if err != nil {
+			return err
+		}
+		as := strings.Split(addrs, ",")
+		asAddr := [5]common.Address{}
+		for i := 0; i < 5; i++ {
+			asAddr[i] = common.HexToAddress(as[i])
+		}
+		erc20Addr, _, err := e.DeployERC20(name, symbol, uint16(ver), asAddr)
 		if err != nil {
 			return err
 		}
@@ -132,6 +144,7 @@ Admin mint some token for target.
 Arguments:
 target - the account address to receive minted token
 amount - the number of token to be minted
+signs - signature information for 5 accounts, separated by commas
 	`,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
@@ -144,7 +157,8 @@ amount - the number of token to be minted
 	Action: func(cctx *cli.Context) error {
 		target := cctx.Args().Get(0)
 		amount := cctx.Args().Get(1)
-		fmt.Println("amount:", amount, ", target:", target)
+		signs := cctx.Args().Get(2)
+		fmt.Println("amount:", amount, ", target:", target, " signs:", signs)
 
 		// TODO:check target
 		if len(target) != 42 || target == callconts.InvalidAddr {
@@ -179,7 +193,12 @@ amount - the number of token to be minted
 
 		status := make(chan error)
 		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint, status)
-		err := e.MintToken(common.HexToAddress(target), mintValue)
+		ss := strings.Split(signs, ",")
+		signByte := [5][]byte{}
+		for i, s := range ss {
+			signByte[i] = []byte(s)
+		}
+		err := e.MintToken(common.HexToAddress(target), mintValue, signByte)
 		if err != nil {
 			return err
 		}
@@ -247,79 +266,6 @@ amount - the number of token to be burned.
 			return err
 		}
 
-		err = <-status
-		if err != nil {
-			return err
-		}
-
-		return nil
-	},
-}
-
-var airDropCmd = &cli.Command{
-	Name:      "airdrop",
-	Usage:     "ERC20 - Admin airdrop ERC20 token to targets. ",
-	ArgsUsage: "<targetlist amount>",
-	Description: `
-AirDrop is a function in ERC20 contract.
-Admin airdrop ERC20 tokens to specified targets. 
-
-Arguments:
-targetlist - the list of target addresses to receive token, like: 0x4242c00fea991f432ae2ffb7ae88b8b353739a13,0x97041772c3bd9b97af8615fcf04812db9f81ee74.
-amount - the amount of token to be airdroped.
-	`,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "erc20Addr",
-			Aliases: []string{"e"},
-			Value:   callconts.ERC20Addr.Hex(), //默认值为common.go中的erc20合约地址
-			Usage:   "the ERC20 contract address",
-		},
-	},
-	Action: func(cctx *cli.Context) error {
-		target := cctx.Args().Get(0)
-		fmt.Println("target:", target)
-		targets := strings.Split(target, ",")
-		fmt.Println("targets:", targets)
-		var targetsAddr []common.Address
-		for _, t := range targets {
-			targetsAddr = append(targetsAddr, common.HexToAddress(t))
-		}
-
-		amount := cctx.Args().Get(1)
-		fmt.Println("amount:", amount)
-
-		airdropValue := big.NewInt(0)
-		airdropValue, ok := airdropValue.SetString(amount, 10)
-		if !ok {
-			return errSStr
-		}
-		if airdropValue.Cmp(big.NewInt(0)) <= 0 {
-			fmt.Println("airdropValue should be more than 0")
-			return nil
-		}
-
-		txopts := &callconts.TxOpts{
-			Nonce:    nil,
-			GasPrice: big.NewInt(callconts.DefaultGasPrice),
-			GasLimit: callconts.DefaultGasLimit,
-		}
-
-		erc20Addr := common.HexToAddress(cctx.String("erc20Addr"))
-		fmt.Println("erc20Addr:", erc20Addr.Hex())
-		addr := common.HexToAddress(cctx.String("adminAddr"))
-		fmt.Println("adminAddr:", addr.Hex())
-		sk := cctx.String("adminSk")
-		fmt.Println("adminSk:", sk)
-		endPoint := cctx.String("endPoint")
-		fmt.Println("endPoint:", endPoint)
-
-		status := make(chan error)
-		e := callconts.NewERC20(erc20Addr, addr, sk, txopts, endPoint, status)
-		err := e.AirDrop(targetsAddr, airdropValue)
-		if err != nil {
-			return err
-		}
 		err = <-status
 		if err != nil {
 			return err
@@ -561,12 +507,14 @@ foundation - the address of foundation
 primaryToken - the address of erc20 contract
 pledgeK - the minimum amount to pledge in Role when apply for the Keeper role.
 pledgeP - the minimum anount to pledge in Role when apply for the Provider role. 
+version - the version of Role contract
 	`,
 	Action: func(cctx *cli.Context) error {
 		foundation := cctx.Args().Get(0)
 		primaryToken := cctx.Args().Get(1)
 		pledgeKeeper := cctx.Args().Get(2)
 		pledgeProvider := cctx.Args().Get(3)
+		version := cctx.Args().Get(4)
 
 		// 输入值判断并格式转换
 		if len(foundation) != 42 || foundation == callconts.InvalidAddr {
@@ -606,7 +554,11 @@ pledgeP - the minimum anount to pledge in Role when apply for the Provider role.
 		}
 		status := make(chan error)
 		r := callconts.NewR(callconts.AdminAddr, addr, sk, txopts, endPoint, status)
-		roleAddr, _, err := r.DeployRole(common.HexToAddress(foundation), common.HexToAddress(primaryToken), pledgeK, pledgeP)
+		v, err := strconv.Atoi(version)
+		if err != nil {
+			return err
+		}
+		roleAddr, _, err := r.DeployRole(common.HexToAddress(foundation), common.HexToAddress(primaryToken), pledgeK, pledgeP, uint16(v))
 		if err != nil {
 			return err
 		}
