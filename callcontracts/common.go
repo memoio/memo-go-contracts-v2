@@ -20,32 +20,33 @@ import (
 // the following variables need to be assigned according to the running results in actual applications
 var (
 
-	/*
+	
 		// for test chain
 		// EndPoint is rpc endpoint of geth node
 		EndPoint  = "http://119.147.213.220:8191"
 		QEndPoint = "http://119.147.213.220:8194"
 		//ERC20 contract address
-		ERC20Addr = common.HexToAddress("0x8CB8fCDb8A3479Db0F1639c827e4177F1C96A501")
+		ERC20Addr = common.HexToAddress("0x788E554e94f05e6b7862563d9D708d982ba96D5C")
 		// Role contract address
-		RoleAddr = common.HexToAddress("0x3A014045154403aFF1C07C19553Bc985C123CB6E")
+		RoleAddr = common.HexToAddress("0xCa2C4103bd5679F43eC9E277C2bAf5598f94Fe6D")
 		// RToken contract address
-		RTokenAddr = common.HexToAddress("0xf4E8C26477699fff29C399b778b62A2AEeEf10c1")
+		RTokenAddr = common.HexToAddress("0x26ea029a4c778e74f2d64Ca8DFA7f36c6aF4FE60")
 		// RoleFS contract address
-		RoleFSAddr = common.HexToAddress("0x9135a71429304ca6D2b330920E13aCE1561BaB0b")
+		RoleFSAddr = common.HexToAddress("0xFd688f2D007019422E314EbA32C68a6F5D668fC0")
 		// FileSys contract address
-		FileSysAddr = common.HexToAddress("0x4DF8Ec687865E274f28C1819C86910643dDBEAa5")
+		FileSysAddr = common.HexToAddress("0xFB9FF16EB4093aa8fFf762F2dF4E61d3A7532Af9")
 		// PledgePool contract address
-		PledgePoolAddr = common.HexToAddress("0xc643176B92aFBfaF773EfdA524243B04c18dEdbF")
+		PledgePoolAddr = common.HexToAddress("0x76CB45B03096Fd922aef3413cB04FCC6A97d93C4")
 		// Issuance contract address
-		IssuanceAddr = common.HexToAddress("0x1193094d708Ed76951c31fDA793500091870Df07")
+		IssuanceAddr = common.HexToAddress("0x16D62bA68Eda95967ACfFb9a03586A9965cd77d5")
+
 		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
 		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
 		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
 		GIndex = uint64(2)
-	*/
+	
 
 	/*
 		// for dev chain
@@ -69,6 +70,7 @@ var (
 		GIndex = uint64(1)
 	*/
 
+	/*
 	// for product chain
 	// EndPoint is rpc endpoint of geth node
 	EndPoint  = "https://chain.metamemo.one:8501"
@@ -111,6 +113,7 @@ var (
 	// 3ea2511812b33f61b387f8a706378e8658a6f4a1bf9c20615e2af00985c59a6c
 
 	GIndex = uint64(1)
+	*/
 )
 
 const (
