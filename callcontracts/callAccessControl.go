@@ -2,24 +2,23 @@ package callconts
 
 import (
 	"log"
-	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/core/types"
 )
 
 // SetUpRole Called by who has DEFAULT_ADMIN_ROLE. Set role to addr.
 // role: DEFAULT_ADMIN_ROLE(0)、MINTER_ROLE(1)、PAUSER_ROLE(2)
-func (ac *ContractModule) SetUpRole(erc20Addr common.Address, role uint8, addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) SetUpRole(role uint8, addr common.Address) error {
+	client := getClient(ac.endPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
 
-	hasAdmin, err := ac.HasRole(erc20Addr, uint8(0), ac.addr)
+	hasAdmin, err := ac.HasRole(uint8(0), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -36,57 +35,40 @@ func (ac *ContractModule) SetUpRole(erc20Addr common.Address, role uint8, addr c
 	}
 
 	log.Println("begin SetUpRole to", addr.Hex(), " with role", role, " in AccessControl contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = acIns.SetUpRole(auth, role, addr)
-		if err != nil {
-			retryCount++
-			log.Println("SetUpRole Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err != nil {
-			checkRetryCount++
-			log.Println("SetUpRole in AccessControl transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("SetUpRole in AccessControl has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := acIns.SetUpRole(auth, role, addr)
+	// ====面临的失败场景====
+	// 交易参数通过abi打包失败;payable检测失败;构造types.Transaction结构体时遇到的失败问题（opt默认值字段通过预言机获取）；
+	// 交易发送失败，直接返回错误
+	if err != nil {
+		log.Println("SetUpRole Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+	// 交易成功发送至 pending pool , 后台检查交易是否成功执行,执行失败则将错误传入 ContractModule 中的 status 通道
+	// 交易若由于链上拥堵而短时间无法被打包，不再增加gasPrice重新发送
+	go checkTx(ac.endPoint, tx, ac.Status, "SetUpRole in AccessControl")
+
 	return nil
 }
 
 // RevokeRole Called by who has DEFAULT_ADMIN_ROLE. Revoke other account's role.
-func (ac *ContractModule) RevokeRole(erc20Addr common.Address, role uint8, addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) RevokeRole(role uint8, addr common.Address) error {
+	client := getClient(ac.endPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
 
-	hasAdmin, err := ac.HasRole(erc20Addr, uint8(0), ac.addr)
+	hasAdmin, err := ac.HasRole(uint8(0), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -103,108 +85,68 @@ func (ac *ContractModule) RevokeRole(erc20Addr common.Address, role uint8, addr 
 	}
 
 	log.Println("begin RevokeRole to", addr.Hex(), " with role", role, " in AccessControl contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = acIns.RevokeRole(auth, role, addr)
-		if err != nil {
-			retryCount++
-			log.Println("RevokeRole Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err != nil {
-			checkRetryCount++
-			log.Println("RevokeRole in AccessControl transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("RevokeRole in AccessControl has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := acIns.RevokeRole(auth, role, addr)
+
+	if err != nil {
+		log.Println("RevokeRole Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+
+	go checkTx(ac.endPoint, tx, ac.Status, "RevokeRole in AccessControl")
+
 	return nil
 }
 
 // RenounceRole Account renounce its role .
-func (ac *ContractModule) RenounceRole(erc20Addr common.Address, role uint8) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) RenounceRole(role uint8) error {
+	client := getClient(ac.endPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
 
 	log.Println("begin RenounceRole", role, " in AccessControl contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = acIns.RenounceRole(auth, role)
-		if err != nil {
-			retryCount++
-			log.Println("RenounceRole Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err != nil {
-			checkRetryCount++
-			log.Println("RenounceRole in AccessControl transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("RenounceRole in AccessControl has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := acIns.RenounceRole(auth, role)
+
+	if err != nil {
+		log.Println("RenounceRole Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+
+	go checkTx(ac.endPoint, tx, ac.Status, "RenounceRole in AccessControl")
+
 	return nil
 }
 
 // Pause Set to true to prohibit transfer operation in erc20. Called by who has PAUSER_ROLE.
-func (ac *ContractModule) Pause(erc20Addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) Pause() error {
+	client := getClient(ac.endPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
 
-	hasPause, err := ac.HasRole(erc20Addr, uint8(2), ac.addr)
+	hasPause, err := ac.HasRole(uint8(2), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -213,57 +155,37 @@ func (ac *ContractModule) Pause(erc20Addr common.Address) error {
 	}
 
 	log.Println("begin Pause in AccessControl contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = acIns.Pause(auth)
-		if err != nil {
-			retryCount++
-			log.Println("Pause Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err != nil {
-			checkRetryCount++
-			log.Println("Pause in AccessControl transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Pause in AccessControl has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := acIns.Pause(auth)
+
+	if err != nil {
+		log.Println("Pause Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+
+	go checkTx(ac.endPoint, tx, ac.Status, "Pause in AccessControl")
+
 	return nil
 }
 
 // Unpause Set to false to allow transfer operation in erc20. Called by who has PAUSER_ROLE.
-func (ac *ContractModule) Unpause(erc20Addr common.Address) error {
-	acIns, err := newERC20(erc20Addr)
+func (ac *ContractModule) Unpause() error {
+	client := getClient(ac.endPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return err
 	}
 
-	hasPause, err := ac.HasRole(erc20Addr, uint8(2), ac.addr)
+	hasPause, err := ac.HasRole(uint8(2), ac.addr)
 	if err != nil {
 		return err
 	}
@@ -272,54 +194,34 @@ func (ac *ContractModule) Unpause(erc20Addr common.Address) error {
 	}
 
 	log.Println("begin Unpause in AccessControl contract...")
-	tx := &types.Transaction{}
-	retryCount := 0
-	checkRetryCount := 0
 
-	for {
-		auth, errMA := makeAuth(ac.hexSk, nil, ac.txopts)
-		if errMA != nil {
-			return errMA
-		}
-
-		// generally caused by too low gasprice
-		rebuild(err, tx, auth)
-
-		tx, err = acIns.Unpause(auth)
-		if err != nil {
-			retryCount++
-			log.Println("Unpause Err:", err)
-			if err.Error() == core.ErrNonceTooLow.Error() && auth.GasPrice.Cmp(big.NewInt(DefaultGasPrice)) > 0 {
-				log.Println("previously pending transaction has successfully executed")
-				break
-			}
-			if retryCount > sendTransactionRetryCount {
-				return err
-			}
-			time.Sleep(retryTxSleepTime)
-			continue
-		}
-
-		err = checkTx(tx)
-		if err != nil {
-			checkRetryCount++
-			log.Println("Unpause in AccessControl transaction fails:", err)
-			if checkRetryCount > checkTxRetryCount {
-				return err
-			}
-			continue
-		}
-		break
+	// txopts.gasPrice参数赋值为nil
+	auth, errMA := makeAuth(ac.endPoint, ac.hexSk, nil, ac.txopts)
+	if errMA != nil {
+		return errMA
 	}
-	log.Println("Unpause in AccessControl has been successful!")
+	// 构建交易，通过 sendTransaction 将交易发送至 pending pool
+	tx, err := acIns.Unpause(auth)
+
+	if err != nil {
+		log.Println("Unpause Err:", err)
+		return err
+	}
+	log.Println("transaction hash:", tx.Hash().Hex())
+	log.Println("send transaction successfully!")
+
+	go checkTx(ac.endPoint, tx, ac.Status, "Unpause in AccessControl")
+
 	return nil
 }
 
 // HasRole Check whether the account has the right.
-func (ac *ContractModule) HasRole(erc20Addr common.Address, role uint8, addr common.Address) (bool, error) {
+func (ac *ContractModule) HasRole(role uint8, addr common.Address) (bool, error) {
 	var has bool
 
-	acIns, err := newERC20(erc20Addr)
+	client := getClient(ac.endPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return has, err
 	}
@@ -343,10 +245,12 @@ func (ac *ContractModule) HasRole(erc20Addr common.Address, role uint8, addr com
 }
 
 // GetPaused Check whether the account has the right.
-func (ac *ContractModule) GetPaused(erc20Addr common.Address) (bool, error) {
+func (ac *ContractModule) GetPaused() (bool, error) {
 	var isPaused bool
 
-	acIns, err := newERC20(erc20Addr)
+	client := getClient(ac.endPoint)
+	defer client.Close()
+	acIns, err := newERC20(ac.contractAddress, client)
 	if err != nil {
 		return isPaused, err
 	}

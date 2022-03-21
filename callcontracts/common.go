@@ -2,19 +2,13 @@ package callconts
 
 import (
 	"context"
-	"encoding/binary"
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"log"
 	"math/big"
-	"memoContract/contracts/role"
-	"strings"
 	"time"
 
-	"crypto/ecdsa"
+	"golang.org/x/xerrors"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -25,37 +19,120 @@ import (
 
 // the following variables need to be assigned according to the running results in actual applications
 var (
+
+	/*
+		// for test chain
+		// EndPoint is rpc endpoint of geth node
+		EndPoint  = "http://119.147.213.220:8191"
+		QEndPoint = "http://119.147.213.220:8194"
+		//ERC20 contract address
+		ERC20Addr = common.HexToAddress("0x8CB8fCDb8A3479Db0F1639c827e4177F1C96A501")
+		// Role contract address
+		RoleAddr = common.HexToAddress("0x3A014045154403aFF1C07C19553Bc985C123CB6E")
+		// RToken contract address
+		RTokenAddr = common.HexToAddress("0xf4E8C26477699fff29C399b778b62A2AEeEf10c1")
+		// RoleFS contract address
+		RoleFSAddr = common.HexToAddress("0x9135a71429304ca6D2b330920E13aCE1561BaB0b")
+		// FileSys contract address
+		FileSysAddr = common.HexToAddress("0x4DF8Ec687865E274f28C1819C86910643dDBEAa5")
+		// PledgePool contract address
+		PledgePoolAddr = common.HexToAddress("0xc643176B92aFBfaF773EfdA524243B04c18dEdbF")
+		// Issuance contract address
+		IssuanceAddr = common.HexToAddress("0x1193094d708Ed76951c31fDA793500091870Df07")
+		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
+		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
+		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
+		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
+
+		GIndex = uint64(2)
+	*/
+
+	/*
+		// for dev chain
+		// EndPoint is rpc endpoint of geth node
+		EndPoint  = "https://devchain.metamemo.one:8501"
+		QEndPoint = "https://devchain.metamemo.one:8501"
+		//ERC20 contract address
+		ERC20Addr = common.HexToAddress("0x2981aCcED24C5788d0Ac6a22f9df6C023d91b0Bf")
+		// Role contract address
+		RoleAddr = common.HexToAddress("0x15DB6043DFC4eAE279957D0C682dDbFCd529f3fb")
+		// RToken contract address
+		RTokenAddr = common.HexToAddress("0xBb92424614a0A71aC3Cd86B85c08AA77aBB97E2d")
+		// RoleFS contract address
+		RoleFSAddr = common.HexToAddress("0xAa25446A040B175De0C55bdB59ce999ab59C28e0")
+		// PledgePool contract address
+		PledgePoolAddr = common.HexToAddress("0xC77150530dBAFc42c406d4EbcF75259860EA1877")
+		// Issuance contract address
+		IssuanceAddr = common.HexToAddress("0x1E119397eD06666A6bfDA0c9Ea7575059258E97B")
+		// FileSys contract address
+		FileSysAddr = common.HexToAddress("0xEd8c550F2511bcDD23437b69c6Be71C3e47A4633")
+
+		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
+		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
+		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
+		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
+
+		GIndex = uint64(1)
+	*/
+
+	// for product chain
 	// EndPoint is rpc endpoint of geth node
-	EndPoint string
+	EndPoint  = "https://chain.metamemo.one:8501"
+	QEndPoint = "https://chain.metamemo.one:8501"
 	//ERC20 contract address
-	ERC20Addr common.Address
+	ERC20Addr = common.HexToAddress("0x7eF37CB66Bc9Ab2b88b0dC9a8461f99CEFA73D57")
 	// Role contract address
-	RoleAddr common.Address
+	RoleAddr = common.HexToAddress("0x0fC98129261dadEc4576f4b052F64354F6f6C634")
+	// RToken contract address
+	RTokenAddr = common.HexToAddress("0xEa838C3198C031f5EBb2F079207aCF40cCB35A85")
 	// RoleFS contract address
-	RoleFSAddr common.Address
-	// FileSys contract address
-	FileSysAddr common.Address
+	RoleFSAddr = common.HexToAddress("0x95ac462Dec4Ffb4ce723FF35B7edd3Acb8F9d1d7")
 	// PledgePool contract address
-	PledgePoolAddr common.Address
+	PledgePoolAddr = common.HexToAddress("0x28Fd6aDA92F3C213a4439e7a8Ad2DaFDD9815291")
 	// Issuance contract address
-	IssuanceAddr common.Address
+	IssuanceAddr = common.HexToAddress("0xEfA598A29b03A7c9176CA446F1d26e9E85ef0E9f")
+	// FileSys contract address
+	FileSysAddr = common.HexToAddress("0x9636865Dae73a72F88De1Afd15E582848765fefF")
+
+	AdminAddr    = common.HexToAddress("0x76e391468b627c802d38ba1e56a1f5cfb05b98ee")
+	AdminSk      = "474e530fc2aff814e9c4526fe06b4efd2043ffd8e52d67388b057919f0df2bdb"
+	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
+	FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
+
+	// account/sk for deploy erc20：
+	// 1.
+	// 0x7ef756852946514924d7bdbe393096e13e895bc8
+	// 511f471249ec5690d4ffd05af108b96f246a61f382b7da5cd1b587fa7bcacee3
+	// 2.
+	// 0x6820a0856c9c6fd13ba5b3e12cf0e77c88914817
+	// b330076b4f869e41753196fd8c5a076877a8a6549646413b277985c2a7e37b9e
+	// 3.
+	// 0x50110b34244e8a88571e6c6c8270be6d8adb2058
+	// 31c00148d644578ebebde6cbf9a75b4266821d2944c8af55276779c9e9edf7f1
+	// 4.
+	// 0x79fd9fbfeca6f3c01e79f86c28e35313db831404
+	// bde31b12a25d4fe3696f567bb89273be7e0f425850a0972a438f7627eee7feba
+	// 5.
+	// 0x0a7c7f353c176474ab7da094b47f1189e976bc08
+	// 3ea2511812b33f61b387f8a706378e8658a6f4a1bf9c20615e2af00985c59a6c
+
+	GIndex = uint64(1)
 )
 
 const (
 	//InvalidAddr implements invalid contracts-address
-	InvalidAddr          = "0x0000000000000000000000000000000000000000"
-	spaceTimePayGasLimit = uint64(8000000)
-	spaceTimePayGasPrice = 2 * DefaultGasPrice
+	InvalidAddr = "0x0000000000000000000000000000000000000000"
 	// DefaultGasPrice default gas price in sending transaction
 	DefaultGasPrice = 200
 	// DefaultGasLimit default gas limit in sending transaction
-	DefaultGasLimit           = uint64(8000000)
+	DefaultGasLimit           = uint64(5000000) // as small as possible
 	sendTransactionRetryCount = 5
 	checkTxRetryCount         = 8
-	checkTxSleepTime          = 5
+	checkTxSleepTime          = 6 // 先等待6s（出块时间加1）
+	nextBlockTime             = 5 // 出块时间5s
 	retryTxSleepTime          = time.Minute
-	retryGetInfoSleepTime     = time.Minute
-	waitTime                  = 3 * time.Second
+	retryGetInfoSleepTime     = 30 * time.Second
+	waitTime                  = 1 * time.Second // after transaction, get info from chain
 
 	// AdminRole indicates the account has Admin right in ERC20 contract
 	AdminRole = uint8(0)
@@ -71,6 +148,8 @@ const (
 	// KeeperRoleType indicates keeper's roleType in Role contract
 	KeeperRoleType = 3
 	register       = "role-register"
+	labelKeeper    = "keeper"
+	labelProvider  = "provider"
 	// topic of contract log
 	transferTopic    = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 	alterOwnerTopic  = "0x8c153ecee6895f15da72e646b4029e0ef7cbf971986d8d9cfe48c5563d368e90"
@@ -82,64 +161,81 @@ const (
 	rUserTopic       = "0x7defc6162296f3490e44c1787f4ae9852a8d6a8e67ba0a69c57bd7be5f8a0b1a"
 	createGroupTopic = "0xc79ca32352cc5529f3c78b5cb44574fbc979555a04f5b6425ed2595417da2e64"
 	// EthSkLength sk length in ethereum
-	EthSkLength = 66 // 0x
+	EthSkLength = 66 // with prefix 0x
 )
 
 var (
 	// ErrTxFail indicates that the transaction is not packaged or an error occurred during the packaging process
-	ErrTxFail = errors.New("transaction fails")
+	ErrTxFail = xerrors.New("transaction not packaged")
 	// ErrTxExecu indicates that an error occurred during packaging
-	ErrTxExecu = errors.New("transaction mined but execution failed")
+	ErrTxExecu = xerrors.New("transaction mined but execution failed")
 	// ErrBalNotE indicates that the account's balance is not enough to do something
-	ErrBalNotE = errors.New("balance is not enough")
+	ErrBalNotE = xerrors.New("balance is not enough")
 	// ErrAlloNotE indicates that the account's allowance is not enough to transferfrom
-	ErrAlloNotE = errors.New("allowance is not enough")
+	ErrAlloNotE = xerrors.New("allowance is not enough")
 	// ErrInValAddr indicates that the account address is invalid
-	ErrInValAddr = errors.New("invalid address")
+	ErrInValAddr = xerrors.New("invalid address")
 	// ErrNoMintRight indicates that the account has not Mint right in erc20 contract
-	ErrNoMintRight = errors.New("the account has not Mint right")
+	ErrNoMintRight = xerrors.New("the account has not Mint right")
 	// ErrNoPauseRight indicates that the account has not Pause right in erc20 contract
-	ErrNoPauseRight = errors.New("the account has not Pause right")
+	ErrNoPauseRight = xerrors.New("the account has not Pause right")
 	// ErrNoAdminRight indicates that the account has not Admin right in erc20 contract
-	ErrNoAdminRight      = errors.New("the account has not Admin right")
-	errAccessControlRole = errors.New("the role in accessControl is invalid")
+	ErrNoAdminRight      = xerrors.New("the account has not Admin right")
+	errAccessControlRole = xerrors.New("the role in accessControl is invalid")
 	// ErrIndex indicates that the rindex does not meet the requirements
-	ErrIndex = errors.New("the role index is invalid")
+	ErrIndex = xerrors.New("the role index is invalid")
+	// ErrIndexZero shouldn't be zero
+	ErrIndexZero = xerrors.New("the roleIndex or groupIndex should not be 0")
+	// ErrOARange index out of range
+	ErrOARange = xerrors.New("the index out of array range")
 	// ErrIsBanned inidicates that the account is banned in Role contract, so some function about it cann't be called
-	ErrIsBanned = errors.New("the account is banned in Role contract")
+	ErrIsBanned = xerrors.New("the account is banned in Role contract")
 	// ErrTIndex tindex invalid
-	ErrTIndex = errors.New("the token index is invalid")
+	ErrTIndex = xerrors.New("the token index is invalid")
 	// ErrRoleReg has registered
-	ErrRoleReg = errors.New("the account has already registered a role")
+	ErrRoleReg = xerrors.New("the account has already registered a role")
+	// ErrNotActive group not active
+	ErrNotActive = xerrors.New("group not active")
 	// ErrInvalidG invalid gindex
-	ErrInvalidG = errors.New("invalid group index")
+	ErrInvalidG = xerrors.New("invalid group index")
 	// ErrNotSetPP need set PledgePool address in Role contract
-	ErrNotSetPP = errors.New("haven't set pledgePool address in Role contract before call RegisterToken")
+	ErrNotSetPP = xerrors.New("haven't set pledgePool address in Role contract before call RegisterToken")
 	// ErrKSignsNE ksigns err
-	ErrKSignsNE     = errors.New("the account of kSigns is not enough")
-	errAllowanceExc = errors.New("the account's allowance to other account excess balance")
-	errPledgeNE     = errors.New("the pledge money is not enough to pledgeKeeper or pledgeProvider")
-	errHexskFormat  = errors.New("the hexsk'format is wrong")
+	ErrKSignsNE     = xerrors.New("the account of kSigns is not enough")
+	errAllowanceExc = xerrors.New("the account's allowance to other account excess balance")
+	errPledgeNE     = xerrors.New("the pledge money is not enough to pledgeKeeper or pledgeProvider")
+	errHexskFormat  = xerrors.New("the hexsk'format is wrong")
+	errPaused       = xerrors.New("transfer is paused now")
+	errNotOwner     = xerrors.New("the caller is not owner")
+	errSize         = xerrors.New("size should be greater than 0, or size err")
+	errEnd          = xerrors.New("end should be greater than start")
+	errEndNow       = xerrors.New("end should be more than start,and shouldn't be more than now")
+	errNonce        = xerrors.New("nonce error")
+	errSprice       = xerrors.New("sprice error")
+	errCaller       = xerrors.New("caller error")
 )
 
 // TxOpts contains some general parameters about sending ethereum transaction
 type TxOpts struct {
-	Nonce    *big.Int
-	GasPrice *big.Int
-	GasLimit uint64
+	Nonce    *big.Int // 赋值nil
+	GasPrice *big.Int // 赋值nil，从而使用推荐值
+	GasLimit uint64   // 赋值默认值
 }
 
 // ContractModule  The basic information of node used for contract.
 // Address and private key need to correspond.
 type ContractModule struct {
-	addr   common.Address //local address
-	hexSk  string         //local privateKey
-	txopts *TxOpts
+	addr            common.Address //local address
+	hexSk           string         //local privateKey
+	txopts          *TxOpts
+	contractAddress common.Address
+	endPoint        string     // ethClient endPoint
+	Status          chan error // 上层调用函数需要监听该通道，持续从该通道中读取数据
 }
 
 // getClient get rpc-client based the endPoint
 func getClient(endPoint string) *ethclient.Client {
-	client, err := rpc.Dial(EndPoint)
+	client, err := rpc.Dial(endPoint)
 	if err != nil {
 		log.Println(err)
 	}
@@ -147,7 +243,7 @@ func getClient(endPoint string) *ethclient.Client {
 }
 
 // makeAuth make the transactOpts to call contract
-func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.TransactOpts, error) {
+func makeAuth(endPoint string, hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.TransactOpts, error) {
 	auth := &bind.TransactOpts{}
 	sk, err := crypto.HexToECDSA(hexSk)
 	if err != nil {
@@ -155,7 +251,17 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 		return auth, err
 	}
 
-	auth = bind.NewKeyedTransactor(sk)
+	client := getClient(endPoint)
+	chainID, err := client.NetworkID(context.Background())
+	if err != nil {
+		fmt.Println("client.NetworkID error,use the default chainID")
+		chainID = big.NewInt(666)
+	}
+	fmt.Println("chainID: ", chainID)
+	auth, err = bind.NewKeyedTransactorWithChainID(sk, chainID)
+	if err != nil {
+		return nil, xerrors.New("new keyed transaction failed")
+	}
 	auth.GasPrice = txopts.GasPrice
 	auth.Value = moneyToContract //放进合约里的钱
 	auth.Nonce = txopts.Nonce
@@ -164,130 +270,80 @@ func makeAuth(hexSk string, moneyToContract *big.Int, txopts *TxOpts) (*bind.Tra
 }
 
 //CheckTx check whether transaction is successful through receipt
-func checkTx(tx *types.Transaction) error {
+func checkTx(endPoint string, tx *types.Transaction, status chan error, name string) {
 	log.Println("Check Tx hash:", tx.Hash().Hex(), "nonce:", tx.Nonce(), "gasPrice:", tx.GasPrice())
 	log.Println("waiting for miner...")
 
 	var receipt *types.Receipt
-	for i := 0; i < 20; i++ {
-		receipt = getTransactionReceipt(tx.Hash())
+	t := checkTxSleepTime
+	for i := 0; i < 10; i++ {
+		if i != 0 {
+			t = nextBlockTime * i
+		}
+		log.Printf("waiting %v sec.\n", t)
+		time.Sleep(time.Duration(t) * time.Second)
+		log.Println("getting txReceipt..")
+		receipt = getTransactionReceipt(endPoint, tx.Hash())
 		if receipt != nil {
 			break
 		}
-		t := checkTxSleepTime * (i + 1)
-		time.Sleep(time.Duration(t) * time.Second)
 	}
 
-	if receipt == nil { //245s获取不到交易信息，判定交易失败
-		return ErrTxFail
-	}
-
-	if receipt.Status == 0 { //等于0表示交易失败，等于1表示成功
-		log.Println("Transaction mined but execution failed")
-		txReceipt, err := receipt.MarshalJSON()
-		if err != nil {
-			return err
-		}
-		log.Println("TxReceipt:", string(txReceipt))
-		return ErrTxExecu
+	// 矿工挂掉等情况导致交易无法被打包
+	if receipt == nil { //231s获取不到交易信息，判定交易失败
+		log.Println(name, ": cann't get tx receipt, tx not packaged")
+		status <- ErrTxFail
+		return
 	}
 
 	log.Println("GasUsed:", receipt.GasUsed, "CumulativeGasUsed:", receipt.CumulativeGasUsed)
 
-	return nil
+	if receipt.Status == 0 { //等于0表示交易失败，等于1表示成功
+		log.Println(name, ": transaction mined but execution failed, please check your tx input")
+		if receipt.GasUsed != receipt.CumulativeGasUsed {
+			log.Println(name, ": tx exceed gas limit")
+		}
+		status <- ErrTxExecu
+		return
+	}
+
+	// 交易成功
+	status <- nil
+	log.Println(name, "has been successful!")
+
+	// 获取withdraw money,输出到日志中
+	if name == "Withdraw" {
+		_, wd, err := getWithdrawInfoFromRLogs(endPoint, tx.Hash())
+		if err != nil {
+			log.Println("getWithdrawInfoFromRLogs error:", err)
+		}
+		log.Println("tx:", tx.Hash().Hex(), ", account withdraw money:", wd)
+	}
 }
 
 //GetTransactionReceipt 通过交易hash获得交易详情
-func getTransactionReceipt(hash common.Hash) *types.Receipt {
-	client, err := ethclient.Dial(EndPoint)
+func getTransactionReceipt(endPoint string, hash common.Hash) *types.Receipt {
+	client, err := ethclient.Dial(endPoint)
 	if err != nil {
 		log.Fatal("rpc.Dial err", err)
 	}
-	receipt, err := client.TransactionReceipt(context.Background(), hash)
+	defer client.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
+	receipt, err := client.TransactionReceipt(ctx, hash)
+	if err != nil {
+		log.Println("get transaction receipt: ", err)
+	}
 	return receipt
 }
 
+// increase tx's gasprice when error occur
 func rebuild(err error, tx *types.Transaction, auth *bind.TransactOpts) {
 	if err == ErrTxFail && tx != nil {
 		auth.Nonce = big.NewInt(int64(tx.Nonce()))
 		auth.GasPrice = new(big.Int).Add(tx.GasPrice(), big.NewInt(DefaultGasPrice))
 		log.Println("rebuild transaction... nonce is ", auth.Nonce, " gasPrice is ", auth.GasPrice)
 	}
-}
-
-// get gIndex from logs in receipt
-func getGIndexFromRLogs(hash common.Hash) (uint64, error) {
-	receipt := getTransactionReceipt(hash)
-
-	if len(receipt.Logs) != 1 {
-		return 0, errors.New("length of logs in receipt is error")
-	}
-
-	contractAbi, err := abi.JSON(strings.NewReader(string(role.RoleABI)))
-	if err != nil {
-		log.Println("abi json err:", err)
-		return 0, err
-	}
-
-	intr, err := contractAbi.Events["CreateGroup"].Inputs.UnpackValues(receipt.Logs[0].Data)
-	if err != nil {
-		log.Println("unpack log err: ", err)
-		return 0, err
-	}
-	return intr[0].(uint64), nil
-}
-
-// SignForRegister Used to call Register on behalf of other accounts
-func SignForRegister(caller common.Address, sk string) ([]byte, error) {
-	skEcdsa, err := HexSkToEcdsa(sk)
-	if err != nil {
-		log.Fatal(err)
-	}
-	//(caller, register)的哈希值
-	label := common.LeftPadBytes([]byte(register), 32)
-	hash := crypto.Keccak256(caller.Bytes(), label)
-
-	//私钥对上述哈希值签名
-	sig, err := crypto.Sign(hash, skEcdsa)
-	if err != nil {
-		return nil, err
-	}
-
-	return sig, nil
-}
-
-// SignForAddRepair used to call AddReapir
-func SignForAddRepair(sk string, npIndex, start, end, size, nonce uint64, tIndex uint32, sprice *big.Int) ([]byte, error) {
-	ecdsaSk, err := HexSkToEcdsa(sk)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// (npIndex, _start, end, _size, nonce, tIndex, sprice)的哈希值
-	tmp := make([]byte, 8)
-	binary.BigEndian.PutUint64(tmp, npIndex)
-	npIndexNew := common.LeftPadBytes(tmp, 32)
-	binary.BigEndian.PutUint64(tmp, start)
-	startNew := common.LeftPadBytes(tmp, 32)
-	binary.BigEndian.PutUint64(tmp, end)
-	endNew := common.LeftPadBytes(tmp, 32)
-	binary.BigEndian.PutUint64(tmp, size)
-	sizeNew := common.LeftPadBytes(tmp, 32)
-	binary.BigEndian.PutUint64(tmp, nonce)
-	nonceNew := common.LeftPadBytes(tmp, 32)
-	b := make([]byte, 4)
-	binary.BigEndian.PutUint32(b, tIndex)
-	tIndexNew := common.LeftPadBytes(tmp, 32)
-	spriceNew := common.LeftPadBytes(sprice.Bytes(), 32)
-
-	hash := crypto.Keccak256(npIndexNew, startNew, endNew, sizeNew, nonceNew, tIndexNew, spriceNew)
-
-	// 私钥签名
-	sig, err := crypto.Sign(hash, ecdsaSk)
-	if err != nil {
-		return nil, err
-	}
-	return sig, nil
 }
 
 // QueryEthBalance gets eth balance
@@ -308,46 +364,4 @@ func QueryEthBalance(addr, ethEndPoint string) *big.Int {
 		log.Fatal("hex to bigInt fails")
 	}
 	return a
-}
-
-// HexSkToByte transfer hex string to byte
-func HexSkToByte(hexsk string) ([]byte, error) {
-	var src []byte
-	skLengthNoPrefix := EthSkLength - 2
-	skByteEthLength := skLengthNoPrefix / 2
-
-	switch len(hexsk) {
-	case EthSkLength:
-		if hexsk[:2] == "0x" {
-			src = []byte(hexsk[2:])
-		} else {
-			return nil, errHexskFormat
-		}
-	case skLengthNoPrefix:
-		src = []byte(hexsk)
-	default:
-		return nil, errHexskFormat
-	}
-
-	skByteEth := make([]byte, skByteEthLength)
-
-	_, err := hex.Decode(skByteEth, src)
-	if err != nil {
-		return nil, err
-	}
-
-	return skByteEth, nil
-}
-
-// HexSkToEcdsa transfer hex string to ecdsa type
-func HexSkToEcdsa(hexsk string) (*ecdsa.PrivateKey, error) {
-	skByteEth, err := HexSkToByte(hexsk)
-	if err != nil {
-		return nil, err
-	}
-	skECDSA, err := crypto.ToECDSA(skByteEth)
-	if err != nil {
-		return nil, err
-	}
-	return skECDSA, nil
 }
