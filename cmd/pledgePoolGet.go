@@ -10,7 +10,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// GetERC20Cmd erc20 address and caller address set by flags
+// PPGet some getter function in PledgePool-contract
 // input of method set by param
 var PPGet = &cli.Command{
 	Name:  "ppget",
