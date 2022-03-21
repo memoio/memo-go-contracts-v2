@@ -35,6 +35,9 @@ var (
 		RoleFSAddr = common.HexToAddress("0xFd688f2D007019422E314EbA32C68a6F5D668fC0")
 		// FileSys contract address
 		FileSysAddr = common.HexToAddress("0xFB9FF16EB4093aa8fFf762F2dF4E61d3A7532Af9")
+		// for group2, level 4: 0xE915C7cF05e8AeE4A001327c588D8837bD0CcF2C
+		// for group3, level 4: 0x0E79b7F5aE172B39a9f3440561AB317011f3296B
+
 		// PledgePool contract address
 		PledgePoolAddr = common.HexToAddress("0x76CB45B03096Fd922aef3413cB04FCC6A97d93C4")
 		// Issuance contract address
@@ -89,6 +92,8 @@ var (
 	IssuanceAddr = common.HexToAddress("0xEfA598A29b03A7c9176CA446F1d26e9E85ef0E9f")
 	// FileSys contract address
 	FileSysAddr = common.HexToAddress("0x9636865Dae73a72F88De1Afd15E582848765fefF")
+	// for group 5, level=4: 0x9eb127f271D883Ea87CDA9Bb87AFE7723C0C0A6b
+	// for group 6, level=4: 0x7877BB55198D814521ad3daBa27e31fFb52d913D
 
 	AdminAddr    = common.HexToAddress("0x76e391468b627c802d38ba1e56a1f5cfb05b98ee")
 	AdminSk      = "474e530fc2aff814e9c4526fe06b4efd2043ffd8e52d67388b057919f0df2bdb"
