@@ -2,3 +2,4 @@ contracts-sol/node_modules/*
 contracts-sol/artifacts/*
 contracts-sol/cache/*
 contracts-sol/package-lock.json
+contracts-sol/yarn.lock
