@@ -92,8 +92,8 @@ var (
 	IssuanceAddr = common.HexToAddress("0xEfA598A29b03A7c9176CA446F1d26e9E85ef0E9f")
 	// FileSys contract address
 	FileSysAddr = common.HexToAddress("0x9636865Dae73a72F88De1Afd15E582848765fefF")
-	// for group 5, level=4: 0x9eb127f271D883Ea87CDA9Bb87AFE7723C0C0A6b
-	// for group 6, level=4: 0x7877BB55198D814521ad3daBa27e31fFb52d913D
+	// for group 6, level=3: 0x7877BB55198D814521ad3daBa27e31fFb52d913D
+	// for group 7, level=3: 0xA6122C0A0c1baD78A70B92537c8E374d01373041
 
 	AdminAddr    = common.HexToAddress("0x76e391468b627c802d38ba1e56a1f5cfb05b98ee")
 	AdminSk      = "474e530fc2aff814e9c4526fe06b4efd2043ffd8e52d67388b057919f0df2bdb"
