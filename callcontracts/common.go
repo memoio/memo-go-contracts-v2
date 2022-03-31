@@ -44,9 +44,7 @@ var (
 		IssuanceAddr = common.HexToAddress("0x16D62bA68Eda95967ACfFb9a03586A9965cd77d5")
 
 		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
-		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
-		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
 		GIndex = uint64(2)
 	
@@ -66,9 +64,7 @@ var (
 		FileSysAddr = common.HexToAddress("0xCeFf1C9a59193BaaB91f5Abe5e370dac5FDd4309")
 
 		AdminAddr    = common.HexToAddress("0x1c111472F298E4119150850c198C657DA1F8a368")
-		AdminSk      = "0a95533a110ee10bdaa902fed92e56f3f7709a532e22b5974c03c0251648a5d4"
 		Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
-		FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
 		GIndex = uint64(1)
 	*/
@@ -96,9 +92,7 @@ var (
 	// for group 7, level=3: 0xA6122C0A0c1baD78A70B92537c8E374d01373041
 
 	AdminAddr    = common.HexToAddress("0x76e391468b627c802d38ba1e56a1f5cfb05b98ee")
-	AdminSk      = "474e530fc2aff814e9c4526fe06b4efd2043ffd8e52d67388b057919f0df2bdb"
 	Foundation   = common.HexToAddress("0x98B0B2387f98206efbF6fbCe2462cE22916BAAa3")
-	FoundationSk = "4d360550b16bcb24d8f89e92915679a488f60ddd70fb05d2c3ee84726a4983aa"
 
 	// account/sk for deploy erc20：
 	// 1.
