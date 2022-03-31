@@ -33,7 +33,7 @@ var AdminCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:    "adminSk",
 			Aliases: []string{"as"},
-			Value:   callconts.AdminSk, //默认值为common.go中的admin账户私钥
+			Value:   "", //默认值为空，需手动输入
 			Usage:   "the admin account's secretkey",
 		},
 		&cli.StringFlag{
@@ -567,7 +567,7 @@ version - the version of Role contract
 			return err
 		}
 		fmt.Println("Role contract address:", roleAddr.Hex())
-		r = callconts.NewR(roleAddr, callconts.AdminAddr, callconts.AdminSk, txopts, endPoint, status)
+		r = callconts.NewR(roleAddr, addr, sk, txopts, endPoint, status)
 		rTokenAddr, err := r.RToken()
 		if err != nil {
 			return err

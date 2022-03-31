@@ -32,7 +32,7 @@ var MoneyCmd = &cli.Command{
 		&cli.StringFlag{
 			Name:    "adminSk",
 			Aliases: []string{"as"},
-			Value:   callconts.AdminSk, //默认值为common.go中的admin账户私钥
+			Value:   "", //默认值为空，需手动输入
 			Usage:   "the admin account's secretkey",
 		},
 		&cli.StringFlag{
