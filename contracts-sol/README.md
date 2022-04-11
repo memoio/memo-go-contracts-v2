@@ -102,7 +102,7 @@ constructor(){}
 
 ## 先决条件
 
-账户调用 RoleFS 合约中的 addOrder 函数前，需要 admin 调用 AccessControl 合约的 setUpRole 函数，为 RoleFS 合约赋予 MINTER_ROLE 权限。
+账户调用 RoleFS 合约中的 addOrder 函数前，需要 admin 调用 AccessControl 合约的 setRole 函数，为 RoleFS 合约赋予 MINTER_ROLE 权限。
 
 ## TODO list
 

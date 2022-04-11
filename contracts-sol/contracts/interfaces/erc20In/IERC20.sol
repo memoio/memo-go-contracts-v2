@@ -24,6 +24,7 @@ interface IERC20 {
 
     function approve(address spender, uint256 amount) external returns (bool);
 
+    // can remove these two; use approve instead
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
 
@@ -34,9 +35,7 @@ interface IERC20 {
     ) external returns (bool);
 
     // 代币发行相关
-    function mintToken(address target, uint256 mintedAmount, bytes[5] memory signs)
-        external
-        returns (bool);
+    function mint(address target, uint256 mintedAmount, bytes[5] memory signs) external returns (bool);
 
     // 烧毁代币
     function burn(uint256 burnAmount) external returns (bool);

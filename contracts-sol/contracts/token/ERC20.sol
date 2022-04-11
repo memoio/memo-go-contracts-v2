@@ -7,7 +7,6 @@ import "../Recover.sol";
 /// @dev This contract is about memo token.
 contract ERC20 is IERC20, AccessControl {
     mapping(address => uint256) private balances;
-
     mapping(address => mapping(address => uint256)) private allowances;
 
     uint256 private totalSupply; // 上限6亿；初始发行3亿
@@ -18,8 +17,6 @@ contract ERC20 is IERC20, AccessControl {
 
     uint16 public version;
 
-    address[5] public addrs;
-
     using Recover for bytes32;
 
     /// @dev created by admin
@@ -29,6 +26,7 @@ contract ERC20 is IERC20, AccessControl {
         addrs = _addrs;
         version = _version;
         // 初始发行3亿
+        // need public?
         uint256 initialSupply = 300000000000000000000000000;
         totalSupply = initialSupply;
         balances[msg.sender] += initialSupply;
@@ -45,6 +43,7 @@ contract ERC20 is IERC20, AccessControl {
     }
 
     // 表示代币最小单位与token之间的换算，比如 1 ether = 1*10^18 wei. 这里我们也规定为18
+    // need ?
     function getDecimals() public view virtual override returns (uint8) {
         return 18;
     }
@@ -82,6 +81,7 @@ contract ERC20 is IERC20, AccessControl {
         return true;
     }
 
+    // increaseAllowance and decreaseAllowance need? can remove it
     function increaseAllowance(address spender, uint256 addedValue) public virtual override returns (bool) {
         _approve(msg.sender, spender, allowances[msg.sender][spender]+addedValue);
         return true;
@@ -99,7 +99,7 @@ contract ERC20 is IERC20, AccessControl {
     function _transfer(address sender, address recipient, uint256 amount) internal virtual {
         require(!getPaused(), "TF"); // transfer forbidden
         require(sender != address(0), "IS"); // illegal sender
-        require(recipient != address(0), "IR"); // illegal recipient
+        require(recipient != address(0), "IR"); // illegal recipient; need?
 
         uint256 senderBalance = balances[sender];
         require(senderBalance >= amount, "AEB"); // transfer amount exceeds balance
@@ -113,32 +113,21 @@ contract ERC20 is IERC20, AccessControl {
 
     function _approve(address owner, address spender, uint256 amount) internal virtual {
         require(owner != address(0), "IO"); // illegal owner
-        require(spender != address(0), "IS"); // illegal spender
-        // require(balances[owner] >= amount); 不需要这个判断
+        require(spender != address(0), "IS"); // illegal spender; need?
         allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
-    function mintToken(address target, uint256 mintedAmount, bytes[5] memory signs) external virtual override returns(bool) {
-        uint size;
-        address c = msg.sender;
-        assembly {
-            size := extcodesize(c)
-        }
-
-        if(size==0){ // external personal address
-            bytes32 h = keccak256(abi.encodePacked(address(this),target,mintedAmount));
-            uint8 valid = 0;
-            for(uint256 i=0;i<5;i++){
-                if(h.recover(signs[i])==addrs[i]){
-                    valid++;
-                }
-            }
-            require(valid>=3,"CNM"); // can not mint
-        }
-
+    // use a mint contract if need
+    function mint(address target, uint256 mintedAmount) external virtual override returns(bool) {
+        require(!getPaused(), "TF");
         require(hasRole(MINTER_ROLE, c), "CNM"); // can not mint
-        require(target != address(0), "MZ"); // mint to zero
+
+        uint size;
+        assembly {
+            size := extcodesize(sender)
+        }
+        require(size != 0; "nca") // not contract address
 
         totalSupply += mintedAmount;
         require(totalSupply<=maxSupply, "EX"); // exceed the limit
@@ -149,8 +138,8 @@ contract ERC20 is IERC20, AccessControl {
         return true;
     }
 
+    // everyone can burn its value; need it or add it in transfer
     function burn(uint256 burnAmount) external virtual override returns (bool) {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "CNB"); // can not burn
         uint256 accountBalance = balances[msg.sender];
         require(accountBalance >= burnAmount, "BAEB"); // burn amount exceeds balance
         unchecked{
