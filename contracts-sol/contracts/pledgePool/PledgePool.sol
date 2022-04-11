@@ -17,33 +17,26 @@ contract PledgePool is IPledgePool {
     bytes4 private constant SELECTOR0 = bytes4(keccak256(bytes('balanceOf(address)')));
 
     struct RewardInfo {
-        uint256 rewardAccu; // 本代币的accumulator
+        uint256 rewardAccu; // 本代币的accumulator, multi by 10^18
         uint256 lastReward; // 上一次变更时的本代币奖励总量。等于余额加奖励
     }
 
-    // uint32 token;  // largest token-index，指示要添加进来的代币索引tokenIndex
-    // address[] tokens; // 所有支持的代币的信息,0为主代币的代币地址
     address public rToken;
     address public role;
     uint256 public totalPledge; // 账户质押量
     mapping(uint32 => RewardInfo) tInfo;  // 每种代币的信息, tokenIndex=>RewardInfo
-    mapping(uint64 => mapping(uint32 => RewardInfo)) allAmount; // 所有质押的人的信息，mapping(roleIndex => tokenIndex => RewardInfo)
+    mapping(uint64 => mapping(uint32 => RewardInfo)) allAmount; // 所有质押的人的信息，(roleIndex => tokenIndex => RewardInfo)
 
     event Pledge(address indexed from, uint256 money);
     event Withdraw(address indexed from, uint256 money);
 
     /// @dev created by admin; 'r' indicates role-contract address
-    constructor(address primeToken, address _rToken, address r) {
+    constructor(address _rToken, address _r) {
         rToken = _rToken;
-
-        role = r;
-
-        // address.call(bytes  memory) returns (bool, bytes memory)
-        (bool success, bytes memory data) = primeToken.staticcall(abi.encodeWithSelector(SELECTOR0, address(this)));
-        require(success && data.length >= 32);
-        uint256 balance = abi.decode(data, (uint256)); // PledgePool合约账户在primeToken代币中的余额
-
-        tInfo[0].lastReward = balance;
+        role = _r;
+        
+        // PledgePool合约账户在primeToken代币中的余额
+        tInfo[0].lastReward = _getBalance(RToken(rToken).getTA(0), address(this));
     }
 
     receive() external payable {}
@@ -55,29 +48,23 @@ contract PledgePool is IPledgePool {
     function updateReward(uint256 amount, uint32 i, uint64 index) internal {
         uint256 bal = _getBalance(RToken(rToken).getTA(i), address(this)); // 获取质押池在该代币上的余额
 
-        uint256 tv; // 增发量
-        if (bal > tInfo[i].lastReward){ // 有增发，针对主代币即addOrder过程触发了mintToken
-            tv = bal - tInfo[i].lastReward;
-        }
-
         // 代币i有增发，需更新tInfo[i].rewardAccu
-        if(tv>0 && totalPledge>0){
-            tv = tv * 1e9 / totalPledge; // 存在精度问题，可能一直为0，所以将totalPledge除以1e9
+        if (bal > tInfo[i].lastReward && totalPledge>0 ){
+            tv = (bal - tInfo[i].lastReward) * 1e18 / totalPledge;
             tInfo[i].rewardAccu += tv;
-        }
-        tInfo[i].lastReward = bal; // update to latest
+            tInfo[i].lastReward = bal; // update to latest
 
-        // 将账户余额加上应得的分润值
-        // res表示：距离上次更新分润值期间，每质押主代币应得的代币i分润值的累积总和
-        uint256 res = tInfo[i].rewardAccu - allAmount[index][i].rewardAccu;
-        res = res * amount / 1e9; // amount应大于1e9
-        allAmount[index][i].lastReward += res; // 添加分润值
-        allAmount[index][i].rewardAccu = tInfo[i].rewardAccu; // 更新accu
+            // 将账户余额加上应得的分润值
+            // res表示：距离上次更新分润值期间，每质押主代币应得的代币i分润值的累积总和
+            uint256 res = tInfo[i].rewardAccu - allAmount[index][i].rewardAccu;
+            res = res * amount / 1e18; // amount应大于1e18
+            allAmount[index][i].lastReward += res; // 添加分润值
+            allAmount[index][i].rewardAccu = tInfo[i].rewardAccu; // 更新accu
+        }
     }
 
-    // 非流动性质押，账户本身调用或由其他账户代为调用，质押主代币
+    // 非流动性质押，账户本身调用或由其他账户代为调用(这里可以代调用)，质押主代币
     // 调用前需要index指示的账户approve本合约（也就是pledgePool合约）账户指定的金额（也就是money）
-    // 用户调用register()后，如果想要申请keeper、provider角色，就需要先质押
     // 质押量过小时（具体值不能确定，但小于1e9），由于合约整除，可能前几次的分润值为0，随着代币的多次分发，后面才能获得分润值
     /**
      *@notice Pledge money.
@@ -86,36 +73,29 @@ contract PledgePool is IPledgePool {
      *@param money The value that the account want to pledge.
      *@param sign The signature by index-account, hash(caller,money,"pledge").
      */
-    function pledge(uint64 index, uint256 money, bytes memory sign) external override payable {
-        address caller = msg.sender;
+    function pledge(uint64 index, uint256 money) external override payable {
         IRole r = IRole(payable(role));
         address acc = r.getAddr(index-1);
         (,bool isBanned,,,,) = r.getRoleInfo(acc);
         require(!isBanned, "B"); // the index account is banned
 
-        if(caller != acc){ // 由其他账户代为调用，需要验证签名
-            bytes32 h = keccak256(abi.encodePacked(caller, money, "pledge"));
-            verifySign(acc, h, sign);
-        }
-
-        // TODO：如何防止该签名被重复利用
-
         RewardInfo memory reward = allAmount[index][0];
         uint256 amount = reward.lastReward;
 
-        // 更新token accumulator，结算奖励
+        // 更新结算奖励
         uint32 tLen = RToken(rToken).getTNum();
         for(uint32 i=0; i<tLen; i++){
             reward = allAmount[index][i];
-            if(reward.rewardAccu==0 && reward.lastReward==0){
+            if(reward.rewardAccu==0){
+                // init 
                 allAmount[index][i].rewardAccu = tInfo[i].rewardAccu;
             }
-
             updateReward(amount, i, index);
         }
 
-        IERC20(RToken(rToken).getTA(0)).transferFrom(acc, address(this), money); // msg.sender is address(this); tx.origin is acc
-
+        // send pledged money to pool 
+        IERC20(RToken(rToken).getTA(0)).transferFrom(msg.sender, address(this), money);
+        
         // update
         tInfo[0].lastReward += money;
         allAmount[index][0].lastReward += money;
@@ -127,64 +107,54 @@ contract PledgePool is IPledgePool {
     // 由账户本身调用或由其他账户代为调用
     // hash(caller, tIndex, money),  从质押池取回余额
     function withdraw(uint64 index, uint32 tIndex, uint256 money, bytes memory sign) external override {
-        // check params
+        // check account index
         address addr = IRole(payable(role)).getAddr(index-1);
-        uint256 lock;
+        (,bool isBanned,uint8 rtype,,,) = IRole(payable(role)).getRoleInfo(addr);
+        require(!isBanned, "B"); // the index account is banned
 
-        {
-            (,bool isBanned,uint8 rtype,,,) = IRole(payable(role)).getRoleInfo(addr);
-            require(!isBanned, "B"); // the index account is banned
-
-            if(msg.sender != addr){ // 由其他账户代为调用，需要验证签名
-                bytes32 h = keccak256(abi.encodePacked(msg.sender, tIndex, money));
-                verifySign(addr, h, sign);
-            }
-
-            if(rtype==2){
-                lock = IRole(payable(role)).pledgeP();
-            }
-            if(rtype==3){
-                lock = IRole(payable(role)).pledgeK();
-            }
-        }
-
-        // TODO：如何防止该签名被重复利用
-
+        // check token index
         address tAddr = RToken(rToken).getTA(tIndex);
         require(tAddr != address(0), "TE"); // tIndex error
 
-        RewardInfo memory reward = allAmount[index][0];
-        if(reward.lastReward==0 && reward.rewardAccu==0){
-            return;
+        uint256 lock; 
+        if(rtype==2){
+            lock = IRole(payable(role)).pledgeP();
+        } else if(rtype==3){
+            lock = IRole(payable(role)).pledgeK();
         }
 
+        RewardInfo memory reward = allAmount[index][0];
         uint256 amount = reward.lastReward;
 
-        if(totalPledge>0){
-            // 更新token accumulator，结算奖励
-            uint32 tLen = RToken(rToken).getTNum();
-            for(uint32 i=0; i<tLen; i++) {
-                if(tIndex!=0 && tIndex!=i){ //只更新主代币和tIndex代币
-                    continue;
-                }
-
-                updateReward(amount, i, index);
-            }
-        }
-
-        reward = allAmount[index][tIndex];
-        if(reward.rewardAccu==0 && reward.lastReward==0){
+        // no pledge
+        if(amount==0 || totalPledge == 0){
             return;
         }
+     
+        // 更新结算奖励
+        if tIndex == 0 {
+            // update all tokens due to pledge change
+            uint32 tLen = RToken(rToken).getTNum();
+            for(uint32 i=0; i<tLen; i++) {
+                updateReward(amount, i, index);
+            }
+        } else {
+            // only update i
+            updateReward(amount, i, index);
+        }
+    
+        // 确定value
+        reward = allAmount[index][tIndex];
         uint256 rw = reward.lastReward;
         if(tIndex==0){
             if (rw > lock){
-                rw -= lock;
+                rw -= lock;  // lock minimum pledge value
             }else {
                 rw = 0;
             }
         }
-        if(money>0 && money<rw){
+
+        if(money<rw){
             rw = money;
         }
 
@@ -198,17 +168,17 @@ contract PledgePool is IPledgePool {
                 tInfo[tIndex].lastReward = 0;
             }
 
-            // update value
+            // update account value
             if (allAmount[index][tIndex].lastReward > rw){
                 allAmount[index][tIndex].lastReward -= rw;
             }else {
                 allAmount[index][tIndex].lastReward = 0;
             }
-        }
 
-        if(tIndex==0){
-            totalPledge += allAmount[index][tIndex].lastReward;
-            totalPledge -= amount;
+            // update totalPledge
+            if(tIndex==0){
+                totalPledge -= rw;
+            }
         }
 
         emit Withdraw(addr, rw);
@@ -247,7 +217,7 @@ contract PledgePool is IPledgePool {
 
         // 没有质押过，返回0
         RewardInfo memory reward0 = allAmount[index][0];
-        if (reward0.rewardAccu==0 && reward0.lastReward==0) {
+        if (reward0.lastReward==0) {
             return 0;
         }
         uint256 amount = reward0.lastReward;
@@ -256,20 +226,13 @@ contract PledgePool is IPledgePool {
         uint256 val = rewardt.rewardAccu;
 
         uint256 bal = _getBalance(tAddr, address(this));
-        bal -= rewardt.lastReward;
-        if(bal > 0 && totalPledge > 0) {
-            bal = bal * 1e9 / totalPledge;
+        if(bal > rewardt.lastReward && totalPledge > 0) {
+            bal = (bal - rewardt.lastReward) * 1e18 / totalPledge;
             val = val + bal;
         }
 
         RewardInfo memory rewardi = allAmount[index][tIndex];
-        if(rewardi.rewardAccu==0 && rewardi.lastReward==0) {
-            val = val * amount / 1e9;
-        }else{
-            val = val - rewardi.rewardAccu;
-            val = val * amount / 1e9;
-            val = val + rewardi.lastReward;
-        }
+        val = rewardi.lastReward + (val - rewardi.rewardAccu)*amount/1e18;
 
         return val;
     }
