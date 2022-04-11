@@ -5,7 +5,7 @@ import "../interfaces/roleIn/IRToken.sol";
 /// @dev This contract is about the token addresses that memo supported.
 contract RToken is IRToken {
     struct TokenInfo {
-        uint32 index; // 代币序列号
+        uint32 index;  // 代币序列号
         bool isBanned; // 该币种是否被禁止
     }
 
@@ -21,7 +21,7 @@ contract RToken is IRToken {
 
     event AddT(address t, uint32 tIndex);
 
-    // called by owner only
+    // called by owner only; why not use onlyOwner?
     function addT(address t) external override returns (uint32 index) {
         require(msg.sender == owner, "NO"); // not owner. 如果revert了会传递到上层调用吗？就是Role合约中也会revert吗？答案是：会
         // check if exist
@@ -39,15 +39,27 @@ contract RToken is IRToken {
         return tIndex;
     }
 
+    // need banT 
+    function banT(address t) external {
+
+    }
+
     // =========get==========
 
     // 检查是否tokenAddress已经存在
     function _hasToken(address tAddr) internal view returns (bool) {
-        for(uint256 i=0; i<tokens.length; i++){
-            if(tokens[i]==tAddr){
-                return true;
-            }
+        if tokens.length == 0 {
+            return false
+        } 
+
+        if tInfo[tAddr].index > 0 {
+            return true
         }
+
+        if tokens[0] == tAddr {
+            return true
+        }
+
         return false;
     }
 
