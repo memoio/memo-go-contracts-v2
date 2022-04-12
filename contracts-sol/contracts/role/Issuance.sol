@@ -15,7 +15,7 @@ contract Issuance {
     MintInfo[] mint;
     uint256 public lastMint;
     uint256 public price; // totalSizePrice
-    uint256 public size; // totalSize
+    uint256 public size;  // totalSize
     uint256 public spaceTime; // totalSpaceTime
     uint256 public totalPay;
     uint256 public totalPaid;
@@ -35,11 +35,7 @@ contract Issuance {
         uint256 time = block.timestamp; // now time
         lastMint = time;
 
-        mint.push(MintInfo({
-            ratio:50,
-            size:109951162777600,
-            duration:8640000
-        })); // 50%, 100*1024*1024*1024*1024 B = 100 TB, 100*24*60*60 s = 100 days
+        mint.push(MintInfo(50,109951162777600,8640000)); // 50%, 100*1024*1024*1024*1024 B = 100 TB, 100*24*60*60 s = 100 days
         mint.push(MintInfo(80, 1125899906842624, 12960000)); // 80%, 1PB, 150*24*60*60 s = 150 days
         mint.push(MintInfo(100, 56294995342131200, 17280000)); // 100%, 50PB, 200days
         mint.push(MintInfo(80, 1152921504606846976, 8640000)); // 80%, 1EB, 300days
@@ -75,31 +71,26 @@ contract Issuance {
             uint256 midTime = nowTime/86400 * 86400; // 取整天数时间值
             uint256 sp = subPMap[uint64(midTime)];
             if(sp!=0){
-                uint256 subPay = sp * uint256(nowTime - midTime);
-                paid -= subPay;
+                paid -= sp * uint256(nowTime - midTime);
                 price -= sp;
             } 
-            uint256 ssize = subSMap[uint64(midTime)];
-            if(ssize!=0){
-                size -= ssize;
-            }
+            size -= subSMap[uint64(midTime)];
         }
         totalPaid += paid;
 
         // update info
 		// update spacetime for reward ratio
-        uint256 st = ps._size * uint256(ps._end - ps._start);
-        spaceTime += st;
+        spaceTime += ps._size * uint256(ps._end - ps._start);
 
         // update total pay
-        uint256 pay = ps.sPrice * uint256(ps._end - ps._start);
-        totalPay += pay;
+        totalPay += ps.sPrice * uint256(ps._end - ps._start);
 
         size += uint256(ps._size);
         price += ps.sPrice;
 
+        lastMint = nowTime;
+
         if(paid<=0){
-            lastMint = nowTime;
             return 0;
         }
 
@@ -120,17 +111,13 @@ contract Issuance {
             }
         }
 
-        uint256 reward = paid * uint256(issuRatio);
-        reward = reward / uint256(100);
-
-        lastMint = nowTime;
+        uint256 reward = paid * uint256(issuRatio) / uint256(100);
 
         // 如果当前阶段累积reward超出了目标激励增加值，则超出部分触发减半，ratio也需要除以2，直到ratio到达最小值minRatio，将按照最小ratio激励增加。
         uint256 _periodTotalReward = periodTotalReward + reward;
         if(_periodTotalReward>periodTarget && issuRatio>minRatio){
             uint256 left = periodTarget - periodTotalReward;
-            uint256 overflow = reward - left;
-            overflow = overflow / 2;
+            uint256 overflow = (reward - left)/2;
             reward = reward - overflow;
             periodTotalReward += reward;
             issuRatio = issuRatio / 2;
@@ -143,10 +130,9 @@ contract Issuance {
     }
 
     /// @dev set totalPaid
-    function setTP(uint256 _add, uint256 _sub) external onlyRoleFS {
-        totalPaid += _add;
-        if(totalPaid >= _sub){
-            totalPaid -= _sub;
+    function setTP(uint256 _sub) external onlyRoleFS {
+        if(totalPay >= _sub){
+            totalPay -= _sub;
         }
     }
 }

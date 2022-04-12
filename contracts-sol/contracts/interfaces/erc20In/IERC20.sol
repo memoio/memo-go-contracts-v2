@@ -35,7 +35,7 @@ interface IERC20 {
     ) external returns (bool);
 
     // 代币发行相关
-    function mint(address target, uint256 mintedAmount, bytes[5] memory signs) external returns (bool);
+    function mint(address target, uint256 mintedAmount) external returns (bool);
 
     // 烧毁代币
     function burn(uint256 burnAmount) external returns (bool);

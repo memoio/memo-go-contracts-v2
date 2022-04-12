@@ -9,31 +9,23 @@ contract FileSys is IFileSys {
 
     // StoreInfo is at some time
     struct StoreInfo {
-        uint64 time; // 什么时刻的状态，last end time
-        uint64 size; // 在该存储节点上的存储总量，byte
+        uint64 start; // last start 
+        uint64 end;   // 什么时刻的状态，last end time
+        uint64 size;   // 在该存储节点上的存储总量，byte
         uint256 price; // 按周期计费; per cycle
     }
 
-    // ChannelInfo for user pay read to provider
-    // TODO: when to change the 'amount' and 'nonce'
-    struct ChannelInfo {
-        uint256 amount; // available amount
-        uint64 nonce; // 防止channel重复提交，pro提交后+1
-        uint64 expire; // 用于channel到期，user取回
-    }
-
-    // AggOrder is AggregatedOrder is user->provider order and channel
+    // AggOrder is AggregatedOrder is user->provider order
     struct AggOrder {
-        uint64 nonce; // 防止order重复提交
+        uint64 nonce;    // 防止order重复提交
         uint64 subNonce; // 用于订单到期
         mapping(uint32 => StoreInfo) sInfo; // 不同代币的支付信息，tokenIndex => StoreInfo
-        mapping(uint32 => ChannelInfo) channel; // 不同代币的Channel支付信息，tokenaddr->ChannelInfo
     }
 
     // FsInfo each user have at most one group
     struct FsInfo {
         bool isActive;
-        uint64[] providers; // 指示provider索引
+        uint64[] providers;             // provider索引
         mapping(uint64 => AggOrder) ao; // 该User对每个Provider的订单信息
     }
 
@@ -43,54 +35,50 @@ contract FileSys is IFileSys {
         uint64 size; // 在该存储节点上的存储总量
         uint256 price; // 累积的sprice(即sizePrice)
 
-        uint256 maxPay; // 对此provider所有user聚合总额度； expected 加和
+        uint256 maxPay;  // 对此provider所有user聚合总额度； expected 加和
         uint256 hasPaid; // 已经支付
-        uint256 canPay; // 最近一次store/pay时刻，可以支付的金额
-        uint256 lost; // lost due to unable response to challenge
-        uint256 lostPaid; // pay to repair
+        uint256 canPay;  // 最近一次store/pay时刻，可以支付的金额
+        uint256 lost;    // lost due to unable response to challenge
+        uint256 lostPaid;// pay to repair
 
         uint256 managePay; // pay for group keepers >= endPaid+linearPaid
-        uint256 endPaid; // release when order expire
-        uint256 linearPaid; // release when pay for provider
+        uint256 endPaid;   // release when order expire
+        uint256 linearPaid;// release when pay for provider
     }
 
-    // fs合约状态变量
+    // fs合约状态变量, constant
     uint8 manageRate = 4; // group分得资金的百分比；4% for group, 其中3% linear and 1% at end;
-    uint8 taxRate = 1; // 基金会分得资金的百分比；1% for foundation;
-    uint64 gIndex; // 指代所属的group
-    uint64 foundation; // 基金会账户的索引（固定为0）
+    uint8 taxRate = 1;    // 基金会分得资金的百分比；1% for foundation;
+    uint64 gIndex;        // 指代所属的group
 
     mapping(uint64 => mapping(uint32 => uint256)) balances; // 账户可用的余额
     mapping(uint64 => mapping(uint32 => uint256)) penalty;  // 由于没有回应挑战而受到的惩罚
 
-    //uint64[] users; 
-    mapping(uint64 => FsInfo) fs; // user => FsInfo
-    FsInfo repairFs; // 
+    mapping(uint64 => FsInfo) fs; // user => FsInfo; user 0 is repair fs
 
-    uint64[] keepers;
-    uint64 period; // keeper根据比例获取收益的时间间隔
-    uint64 lastTime; // 上次分利润时间
+    // keeper profit related 
+    uint64[] keepers; // for profit
+    uint64 period;    // keeper根据比例获取收益的时间间隔
+    uint64 lastTime;  // 上次分利润时间
     mapping(uint32 => uint256) tAcc; // 记录分润值，每次分润后归0，tokenIndex=>num
     uint64 totalCount; // 记录所有keeper触发order相关函数的总次数
     mapping(uint64 => uint64) count; // 记录keeper触发Order相关函数的次数，用于分润
-
-    // uint64[] providers;  // 没用上
-    mapping(uint64 => mapping(uint32 => Settlement)) proInfo;
-
     uint32[] tokens; // user使用某token时候加进来
 
-    address public role; // role合约地址
-    address public rolefs; // roleFS合约地址
+    // pro聚合信息
+    mapping(uint64 => mapping(uint32 => Settlement)) proInfo;
+
+    address public role;   // role合约地址
+    address public rolefs; // roleFS合约地址; can be reset?
 
     /// @dev created by admin; 'r' indicates role-contract address, 'rfs' indicates RoleFS-contract address
-    constructor(uint64 founder, uint64 _gIndex, address r, address rfs, uint64[] memory _keepers) {
+    constructor(uint64 _gIndex, address r, address rfs, uint64[] memory _keepers) {
         role = r;
         rolefs = rfs;
 
-        foundation = founder;
         gIndex = _gIndex;
 
-        repairFs.isActive = true;
+        fs[0].isActive = true;
 
         keepers = _keepers;
         period = 1;
@@ -100,6 +88,7 @@ contract FileSys is IFileSys {
             count[keepers[i]] = 1;
         }
         totalCount = uint64(keepers.length);
+        tokens.push(0);
     }
 
     receive() external payable {}
@@ -118,66 +107,75 @@ contract FileSys is IFileSys {
     function _settlementAdd(uint64 _pIndex, uint32 _tokenIndex, uint64 start, uint64 size, uint256 sprice, uint256 pay, uint256 manage) internal {
         // update canPay
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
-        uint256 hp;
         if(se.time < start){
-            if(se.time==0){ // 首次addOrder
-                hp = 0;
-            }else {
-                hp = uint256(start-se.time);
+            if(se.time!=0){ // 非首次addOrder
+                proInfo[_pIndex][_tokenIndex].canPay += (start-se.time) * se.price;
             }
             proInfo[_pIndex][_tokenIndex].time = start;
         }else if(se.time > start){
-            hp = uint256(se.time - start);
+            proInfo[_pIndex][_tokenIndex].canPay += uint256(se.time - start)*sprice;
         }
-        hp = hp * se.price;
-        proInfo[_pIndex][_tokenIndex].canPay += hp;
 
         // update price and size
         proInfo[_pIndex][_tokenIndex].price += sprice;
         proInfo[_pIndex][_tokenIndex].size += size;
 
-        // update maxPay for pIndex
+        // update maxPay; hardlimit
         proInfo[_pIndex][_tokenIndex].maxPay += pay;
 
         // pay to keeper, 4% of pay
         proInfo[_pIndex][_tokenIndex].managePay += manage;
     }
 
+    // roughly
     function _settlementSub(uint64 _pIndex, uint32 _tokenIndex, uint64 end, uint64 size, uint256 sprice) internal {
         // update canPay
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
-        uint256 hp;
         if(se.time < end){
-            hp = end - se.time;
+            if (se.time != 0) {
+                proInfo[_pIndex][_tokenIndex].canPay += (end - se.time) * se.price;
+            }
             proInfo[_pIndex][_tokenIndex].time = end;
-        }else {
-            hp = se.time - end;
+        } else if(se.time > end) {
+            // should sub it
+            uint256 hp = (se.time - end) * sprice;
+            if (proInfo[_pIndex][_tokenIndex].canPay > hp) {
+                proInfo[_pIndex][_tokenIndex].canPay -= hp;
+            } else {
+                proInfo[_pIndex][_tokenIndex].canPay = 0;
+            }
         }
-        hp = hp * se.price;
-        proInfo[_pIndex][_tokenIndex].canPay += hp;
 
         // update size and price
-        // 内含判断：
-        // require(proInfo[_pIndex][_tokenIndex].price > sprice)
-        // require(proInfo[_pIndex][_tokenIndex].size > size)
-        proInfo[_pIndex][_tokenIndex].price -= sprice;
-        proInfo[_pIndex][_tokenIndex].size -= size;
+        if (proInfo[_pIndex][_tokenIndex].price > sprice) {
+            proInfo[_pIndex][_tokenIndex].price -= sprice;  
+        } else {
+            proInfo[_pIndex][_tokenIndex].price = 0; 
+        }
+
+        if (proInfo[_pIndex][_tokenIndex].size > size) {
+            proInfo[_pIndex][_tokenIndex].size -= size;
+        } else {
+            proInfo[_pIndex][_tokenIndex].size = 0;
+        }
     }
 
     // _settlementCal called by func withdraw
     function _settlementCal(uint64 _pIndex, uint32 _tokenIndex, uint256 pay, uint256 lost) internal returns (uint256) {
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
+        if(proInfo[_pIndex][_tokenIndex].maxPay<pay){
+            return 0;
+        }
+        
         // 'has paid', or 'lost' is not right
-        if(se.hasPaid>pay || lost < se.lost){
+        if(se.hasPaid > pay || se.lost > lost){
             return 0;
         }
         proInfo[_pIndex][_tokenIndex].lost = lost;
 
         uint64 ntime = uint64(block.timestamp);
         if(se.time < ntime){
-            uint256 hp = ntime - se.time;
-            hp = hp * se.price;
-            proInfo[_pIndex][_tokenIndex].canPay += hp;
+            proInfo[_pIndex][_tokenIndex].canPay += (ntime - se.time) * se.price;
             proInfo[_pIndex][_tokenIndex].time = ntime;
         }
 
@@ -193,20 +191,16 @@ contract FileSys is IFileSys {
 
     // called by Role-contract，在user注册时被role合约调用
     function createFs(uint64 _uIndex) external override onlyRole {
-        // 不需要判断_uIndex，因为下面会自动判断,solidity的算术运算是安全运算
         require(!fs[_uIndex].isActive, "E"); // the fs already exists
-
-        //users.push(_uIndex);
         fs[_uIndex].isActive = true;
     }
 
-    // called by Role-contract
+    // called by Role-contract; when add keeper to group
     function addKeeper(uint64 _kIndex) external override onlyRole {
         keepers.push(_kIndex);
         count[_kIndex] = 1;
         totalCount++;
     }
-
 
     // called by RoleFS-contract
     function addOrder(AOParams memory ps) external override onlyRoleFS {
@@ -217,45 +211,41 @@ contract FileSys is IFileSys {
         }
 
         // 验证金额是否足够
-        // 内含判断：
-        // require(end >= start)
-        uint256 pay = uint256(ps._end-ps._start);
-        pay = pay * ps.sPrice;
+        uint256 pay = (ps._end-ps._start) * ps.sPrice;
         uint256 manage = pay / 100 * uint256(manageRate);
         uint256 tax = pay / 100 * uint256(taxRate);
         uint256 payAndTax = pay + manage + tax;
-        require(balances[ps.uIndex][ps.tIndex] >= payAndTax, "NE"); // balance is not enough
+        require(balances[ps.uIndex][ps.tIndex] >= payAndTax, "BNE"); // balance not enough
 
-        if(fs[ps.uIndex].ao[ps.pIndex].channel[ps.tIndex].expire == 0){
-            fs[ps.uIndex].providers.push(ps.pIndex);
-            fs[ps.uIndex].ao[ps.pIndex].channel[ps.tIndex].expire = ps._end; // cann't be added
-        }
+        // 验证nonce
         require(fs[ps.uIndex].ao[ps.pIndex].nonce == ps.nonce, "NE"); // nonce error
-        require(fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].time <= ps._end, "EE"); // end error, end shouldn't less than last order's end
+        // start不减, end不减
+        require(fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].start <= ps._start, "SE"); // start error, start shouldn't less than last order's start
+        require(fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].end <= ps._end, "EE"); // end error, end shouldn't less than last order's end
 
         fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].price += ps.sPrice;
         fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].size += ps._size;
-        fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].time = ps._end;
+        fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].start = ps._start;
+        fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].end = ps._end;
 
         _settlementAdd(ps.pIndex, ps.tIndex, ps._start, ps._size, ps.sPrice, pay, manage);
 
         fs[ps.uIndex].ao[ps.pIndex].nonce++;
 
         // add to foundation
-        balances[foundation][ps.tIndex] += tax;
+        balances[0][ps.tIndex] += tax;
         balances[ps.uIndex][ps.tIndex] -= payAndTax;
     }
 
     // called by RoleFS-contract
-    function subOrder(SOParams memory ps) external override onlyRoleFS {
-        // check params
+    function subOrder(uint64 kIndex, AOParams memory ps) external override onlyRoleFS {
+        if(!_hasToken(ps.tIndex)){
+            tokens.push(ps.tIndex);
+        }
+
         require(fs[ps.uIndex].ao[ps.pIndex].subNonce == ps.nonce, "EN"); // nonce error
-        require(fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].size >= ps._size, "ES"); // size error
 
         // update size and price
-        // 内含判断：
-        // require(fs[uIndex].ao[_pIndex].sInfo[_tokenIndex].price >= sprice)
-        // require(fs[uIndex].ao[_pIndex].sInfo[_tokenIndex].size >= size)
         fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].price -= ps.sPrice;
         fs[ps.uIndex].ao[ps.pIndex].sInfo[ps.tIndex].size -= ps._size;
 
@@ -263,16 +253,15 @@ contract FileSys is IFileSys {
         _settlementSub(ps.pIndex, ps.tIndex, ps._end, ps._size, ps.sPrice);
 
         // pay to keeper, 其中的1%在结束时才支付,存储在endPaid中
-        uint256 endPaid = ps.sPrice * uint256(ps._end-ps._start);
-        endPaid = endPaid / 100;
+        uint256 endPaid = ps.sPrice * uint256(ps._end-ps._start) / 100;
         proInfo[ps.pIndex][ps.tIndex].endPaid += endPaid;
         tAcc[ps.tIndex] += endPaid;
 
         // pay to keeper, 3% for linear, do in proWithdraw
 
         fs[ps.uIndex].ao[ps.pIndex].subNonce++;
-        if(ps.kIndex!=ps.uIndex){
-            count[ps.kIndex]++;
+        if(kIndex!=ps.uIndex){
+            count[kIndex]++;
         }
         totalCount++;
     }
@@ -280,21 +269,20 @@ contract FileSys is IFileSys {
     // 由Role合约调用
     // 调用前需要uAddr先approve本合约地址（FileSys.sol）账户指定金额
     // user往文件系统FileSys合约中充值
-    function recharge(uint64 uIndex, uint32 tIndex, address uAddr, address tAddr, uint256 money) external override onlyRole {
+    function recharge(address sender, uint64 uIndex, uint32 tIndex, address tAddr, uint256 money) external override onlyRole {
         require(fs[uIndex].isActive, "NA"); // the fs with user is not active
+
+        IERC20(tAddr).transferFrom(sender, address(this), money);
+        balances[uIndex][tIndex] += money;
 
         // add tIndex
         if(!_hasToken(tIndex)){
             tokens.push(tIndex);
         }
-
-        IERC20(tAddr).transferFrom(uAddr, address(this), money);
-
-        balances[uIndex][tIndex] += money;
     }
 
     // provider withdraw money, called by owner
-    function proWithdraw(PWParams memory ps) external override onlyRoleFS {
+    function proWithdraw(address pAddr,address tAddr ,PWParams memory ps) external override onlyRoleFS {
         // pay to provider
         uint256 thisPay = _settlementCal(ps.pIndex, ps.tIndex, ps.pay, ps.lost);
         if(thisPay==0){
@@ -306,7 +294,7 @@ contract FileSys is IFileSys {
         proInfo[ps.pIndex][ps.tIndex].linearPaid += lpay;
         tAcc[ps.tIndex] += lpay;
 
-        IERC20(ps.tAddr).transfer(ps.pAddr, thisPay); // transfer fail, the previous operation will be rolled back 
+        IERC20(tAddr).transfer(pAddr, thisPay); // transfer fail, the previous operation will be rolled back 
     }
 
     // user、keeper、foundation取回余额, called by owner
@@ -347,120 +335,44 @@ contract FileSys is IFileSys {
     }
 
     // called by owner
-    function addRepair(uint64 kIndex, uint64 pIndex, uint64 newPro, uint64 start, uint64 end, uint64 size, uint64 nonce, uint32 tokenIndex, uint256 sprice) external override onlyRoleFS {
-        // verify money is enough
-        Settlement memory se = proInfo[pIndex][tokenIndex];
-        uint256 bal = se.lost - se.lostPaid;
-        uint256 pay = sprice * uint256(end-start);
-        uint256 per = pay / 100;
-        uint256 manage = per * manageRate;
-        require(bal >= pay, "NE"); // balance not enough
-
-        // add newProvider
-        if(!_hasP(newPro)){
-            repairFs.providers.push(newPro);
-        }
-        require(repairFs.ao[newPro].nonce == nonce, "IN"); // illegal nonce, nonce should be same
-        // start > current - 2*epoch
-        repairFs.ao[newPro].sInfo[tokenIndex].price += sprice;
-        repairFs.ao[newPro].sInfo[tokenIndex].size += size;
-
-        _settlementAdd(newPro, tokenIndex, start, size, sprice, pay, manage);
-
-        repairFs.ao[newPro].nonce++;
-        proInfo[pIndex][tokenIndex].lostPaid += pay;
-        count[kIndex]++;
-        totalCount++;
+    function addRepair(uint64 kIndex, uint64 pIndex, uint64 newPro, uint64 start, uint64 end, uint64 size, uint64 nonce, uint32 tokenIndex, uint256 sprice) external override onlyRoleFS {  
     }
 
     // called by owner
     function subRepair(uint64 kIndex, uint64 newPro, uint64 start, uint64 end, uint64 size, uint64 nonce, uint32 tokenIndex, uint256 sprice) external override onlyRoleFS {
-        require(repairFs.ao[newPro].subNonce == nonce, "EN"); // error nonce
-
-        require(repairFs.ao[newPro].sInfo[tokenIndex].size >= size, "ES"); // error size
-        // change
-        repairFs.ao[newPro].sInfo[tokenIndex].price -= sprice; // 等价于 require(repairFs.ao[newPro].sInfo[tokenIndex].price > sprice)
-        repairFs.ao[newPro].sInfo[tokenIndex].size -= size; // 等价于 require(repairFs.ao[newPro].sInfo[tokenIndex].size > size)
-
-        _settlementSub(newPro, tokenIndex, end,size,sprice);
-
-        // pay to keeper, 1% for endpay
-        uint256 endPaid = sprice * uint256(end-start);
-        endPaid = endPaid / 100;
-        proInfo[newPro][tokenIndex].endPaid += endPaid;
-        tAcc[tokenIndex] += endPaid;
-
-        // pay to keeper, 4% for linear;due to pro no trigger pay
-
-        repairFs.ao[newPro].subNonce++;
-        count[kIndex]++;
-        totalCount++;
     }
 
     // ================get=============
 
     // get some parameters in FsInfo
     function getFsInfo(uint64 user) external view override returns (bool){
-        if(user==0){
-            return repairFs.isActive;
-        }
         return fs[user].isActive;
     }
 
     // get providers sum in fs info
     function getFsPSum(uint64 user) external view override returns (uint64) {
-        if(user==0){
-            return uint64(repairFs.providers.length);
-        }
         return uint64(fs[user].providers.length);
     }
 
     // get provider in fs info by array index
     function getFsPro(uint64 user, uint64 i) external view override returns (uint64) {
-        if(user==0){
-            return repairFs.providers[i];
-        }
         return fs[user].providers[i];
     }
 
     // get provider's aggregate order in FsInfo
     function getFsInfoAggOrder(uint64 user, uint64 provider) external view override returns (uint64, uint64) {
-        if(user==0){
-            return (repairFs.ao[provider].nonce, repairFs.ao[provider].subNonce);
-        }
         return (fs[user].ao[provider].nonce,fs[user].ao[provider].subNonce);
     }
 
     // get storeInfo in fs
-    function getStoreInfo(uint64 user, uint64 provider, uint32 token) external view override returns (uint64, uint64, uint256){
-        if(user==0){
-            return (repairFs.ao[provider].sInfo[token].time, repairFs.ao[provider].sInfo[token].size, repairFs.ao[provider].sInfo[token].price);
-        }
-        return (fs[user].ao[provider].sInfo[token].time, fs[user].ao[provider].sInfo[token].size, fs[user].ao[provider].sInfo[token].price);
-    }
-    
-    // get channelInfo in fs
-    function getChannelInfo(uint64 user, uint64 provider, uint32 token) external view override returns (uint256, uint64, uint64){
-        if(user==0){
-            return (repairFs.ao[provider].channel[token].amount, repairFs.ao[provider].channel[token].nonce, repairFs.ao[provider].channel[token].expire);
-        }
-        return (fs[user].ao[provider].channel[token].amount, fs[user].ao[provider].channel[token].nonce, fs[user].ao[provider].channel[token].expire);
+    function getStoreInfo(uint64 user, uint64 provider, uint32 token) external view override returns (uint64, uint64, uint64, uint256){
+        return (fs[user].ao[provider].sInfo[token].start, fs[user].ao[provider].sInfo[token].end,fs[user].ao[provider].sInfo[token].size, fs[user].ao[provider].sInfo[token].price);
     }
 
     // judge if tokens has the _tokenIndex
     function _hasToken(uint32 _tokenIndex) internal view returns (bool) {
         for(uint32 i = 0; i<tokens.length; i++){
             if(tokens[i]==_tokenIndex){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // judge if FsInfo.providers include the pIndex
-    function _hasP(uint64 pIndex) internal view returns (bool) {
-        for(uint256 i = 0; i<repairFs.providers.length; i++){
-            if(repairFs.providers[i]==pIndex){
                 return true;
             }
         }
@@ -478,11 +390,11 @@ contract FileSys is IFileSys {
         uint256 avail = balances[index][tIndex];
         Settlement memory se = proInfo[index][tIndex];
         uint256 canPay = se.canPay;
-        uint256 tmp = uint256(block.timestamp - se.time);
-        tmp = tmp * se.size;
-        tmp = tmp * se.price;
-
-        canPay += tmp;
+        if (block.timestamp > se.time) {
+            canPay += uint256(block.timestamp - se.time) * se.price;
+        }
+        
+        uint256 tmp = 0; 
         tmp = se.maxPay - se.lost;
         if(canPay > tmp){
             canPay = tmp;
