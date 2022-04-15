@@ -229,4 +229,8 @@ contract Control is IControl, Owner {
         uint256 _money = IFileSys(r.getFs(gIndex)).proWithdraw(ps);
         IPool(r.getPool(gIndex)).outflow(_t, pOwner, _money);
     }
+
+    function get(uint8 _type) external override(IControl,Owner) view returns(address) {
+        return instances[_type];
+    } 
 }

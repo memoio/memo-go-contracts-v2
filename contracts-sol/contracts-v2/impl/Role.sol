@@ -137,18 +137,13 @@ contract Role is IRole, Owner {
         require(IFileSysGetter(_fsAddr).gIndex() == _gIndex, "GD");
 
         // create pool address; force each group has unique pool due to fsAddr can be upgrade  
-        // need modify to get params
-        address pool;
-        bytes memory b = type(Pool).creationCode;
-        assembly {
-            pool := create(0, add(b, 0x20), mload(b))
-        }
-
+        Pool p = new Pool(instances[1],instances[2]);
+        
         GroupInfo memory g;
         g.level = _level;
         g.kpr = _kr;
         g.ppr = _pr; 
-        g.pool = pool;
+        g.pool = address(p);
         g.fsAddr = _fsAddr;
         groups.push(g);
 
