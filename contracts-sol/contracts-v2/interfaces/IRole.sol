@@ -21,6 +21,7 @@ struct GroupOut {
     uint64 uCnt;   // keeper count
     uint256 size;   // storeSize
     uint256 price;  // storePrice
+    address pool;
     address fsAddr; // fs contract address
 }
 
@@ -33,32 +34,37 @@ struct PledgeOut {
 // re:register; ac: account; t: token; p: provider; k: keeper; u: user; pp: pledgepool
 interface IRoleSetter {
     // called by admin
-    function activate(uint64 _index, bool _active) external;
-    function ban(uint64 _index, bool _banned) external;
+    function activate(uint64 _i, bool _active) external;
+    function ban(uint64 _i, bool _ban) external;
 
     // called by admin, create a group, owner新建一个 FileSys 合约
-    function createGroup(uint16 _level, address fsAddr, uint64[] memory indexes) external;
+    function createGroup(uint16 _level, address _fs, uint256 _kr, uint256 _pr) external;
 
     // register self to get index
-    function registerAccount(address a) external; 
+    function registerAccount(address _a) external; 
     // combine as registerRole?
-    function registerRole(uint64 index, uint8 rtype, bytes memory extra) external;
+    function registerRole(uint64 _i, uint8 _rtype, bytes memory extra) external;
     // 向组中新加一个user/keeper/provider
-    function addToGroup(uint64 _index, uint64 _gIndex) external;
+    function addToGroup(uint64 _i, uint64 _gi, uint256 money) external;
 }
 
 interface IRoleGetter {
     // index is rType and not in some group
-    function checkIR(uint64 _index, uint8 _rType) external view returns (address);
+    function checkIR(uint64 _i, uint8 _rType) external view returns (address);
     // index is rType and in some group
-    function checkIG(uint64 _index, uint8 _rType) external view returns (address, address, uint64);
+    function checkIG(uint64 _i, uint8 _rType) external view returns (address, address, uint64, uint256);
     
-    
-    function getAddr(uint64 i) external view returns (address);
-    function getRoleInfo(address acc) external view returns (RoleOut memory);
-    function getGroupInfo(uint64 i) external view returns (GroupOut memory);
+    function getIndex(address _a) external view returns (uint64);
+    function getAddr(uint64 _i) external view returns (address);
+    function getRInfo(address _a) external view returns (RoleOut memory);
+    function getGInfo(uint64 _i) external view returns (GroupOut memory);
+    function getPInfo(uint64 _i) external view returns (uint256, uint256);
 
-    function getFsAddr(uint64 i) external view returns (address);
+    function getFs(uint64 _i) external view returns (address);
+    function getPool(uint64 _i) external view returns (address);
+    function getKCnt(uint64 _i) external view returns (uint64);
     function getGroupK(uint64 ig, uint64 ik) external view returns (uint64);
     function getGroupP(uint64 ig, uint64 ip) external view returns (uint64);
 }
+
+interface IRole is IRoleSetter,IRoleGetter {}

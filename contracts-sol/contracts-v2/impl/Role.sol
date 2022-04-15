@@ -5,13 +5,14 @@ import "../interfaces/IRole.sol";
 import "../interfaces/IAuth.sol";
 import "../interfaces/IFileSys.sol";
 import "./Owner.sol";
+import "./Pool.sol";
 import "../Recover.sol";
 
 /**
  *@author MemoLabs
  *@title Used to register account roles for people participating in the memo system
  */
-contract Role is IRoleSetter, IRoleGetter, Owner {
+contract Role is IRole, Owner {
     using Recover for bytes32;
 
     struct RoleInfo {
@@ -25,16 +26,18 @@ contract Role is IRoleSetter, IRoleGetter, Owner {
     }
 
     struct GroupInfo {
-        bool isActive; // true when keeper count >= level 
-        bool isBanned; // 组是否已被禁用
-        bool isReady;  // 是否已在线下成组; 由签名触发
-        uint16 level;  // security level
+        bool isActive;    // true when keeper count >= level 
+        bool isBanned;    // 组是否已被禁用
+        uint16 level;     // security level
+        uint256 kpr;      // keeper pledge require 
+        uint256 ppr;      // provider pledge require
+        address pool;   // poolAddr
+        address fsAddr; // fs contract address
+        uint256 size;   // storeSize
+        uint256 price;  // storePrice
         uint64[] keepers;   // 里面有哪些keeper
         uint64[] providers; // 有哪些provider
         uint64[] users;     // 有哪些provider
-        uint256 size;   // storeSize
-        uint256 price;  // storePrice
-        address fsAddr; // fs contract address
     }
 
     uint16 public version = 2;
@@ -44,57 +47,80 @@ contract Role is IRoleSetter, IRoleGetter, Owner {
     address[] addrs; // all roles 序列号即为index,从1开始
     mapping(address => RoleInfo) info;
 
-    // manage group
-    GroupInfo[] groups;
+    GroupInfo[] groups; // manage group
 
     event ReAcc(address addr, uint64 index);
     event ReRole(uint64 index, uint8 _rType);
     event CreateGroup(uint64 gIndex);
 
-    constructor(address f, address _rfs, address _a) Owner(_rfs, _a) {
-        foundation = f;
+    constructor(address _rfs, address _a, address f) Owner(_rfs, _a) {
+        addrs.push(f);
+        info[f].payee = f;
+        info[f].isActive = true;
+        emit ReAcc(f, 0);
+
+        GroupInfo memory g;
+        g.isBanned = true;
+        groups.push(g);
     }
 
     // used for keeper
     function activate(uint64 _index, bool _active) external onlyOwner override {
-        address a = addrs[_index-1];
+        address a = addrs[_index];
         require(!info[a].isBanned, "IB"); // is banned
         if (info[a].roleType == 3 && _active && !info[a].isActive && info[a].gIndex > 0) {
             uint64 gIndex = info[a].gIndex; 
-            groups[gIndex-1].keepers.push(_index);
-            if (groups[gIndex-1].keepers.length >= groups[gIndex-1].level) {
-                groups[gIndex-1].isActive = true;
-                IFileSysSetter(groups[gIndex-1].fsAddr).addKeeper(_index);
+            groups[gIndex].keepers.push(_index);
+            if (groups[gIndex].keepers.length >= groups[gIndex].level) {
+                groups[gIndex].isActive = true;
+                IFileSysSetter(groups[gIndex].fsAddr).addKeeper(_index);
             }
         }
         info[a].isActive = _active;
     }
 
     function ban(uint64 _index, bool _banned) external onlyOwner override {
-        address a = addrs[_index-1];
+        address a = addrs[_index];
         info[a].isBanned = _banned;
     }
 
     /// @dev check if 'index' is rType and not in some group
     function checkIR(uint64 _index, uint8 _rType) external view override returns (address) {
-        address a = addrs[_index-1];
+        address a = addrs[_index];
         require(info[a].roleType==_rType && !info[a].isActive && !info[a].isBanned, "AE"); // account error
         return a;
     }
 
     // role is already in some group
-    function checkIG(uint64 _index, uint8 _rType) external view override returns (address, address, uint64) {
-        address a = addrs[_index-1];
-        require(info[a].roleType==_rType && info[a].isActive && !info[a].isBanned, "AE"); // account error
-        return (a,info[a].payee, info[a].gIndex);
+    function checkIG(uint64 _index, uint8 _rType) external view override returns (address,address, uint64, uint256) {
+        address a = addrs[_index];
+        require( !info[a].isBanned, "AE"); // account error
+        if (_rType > 0) {
+            require(info[a].isActive && info[a].roleType==_rType, "TE"); // Type error
+        }
+
+        uint256 lock;
+        uint64 gIndex = info[a].gIndex;
+        if (gIndex > 0) {
+            require(groups[gIndex].isActive&&!groups[gIndex].isBanned, "GE");
+            if (_rType == 2) {
+                lock = groups[gIndex].ppr;
+            }
+            if (_rType == 3) {
+                lock = groups[gIndex].kpr;
+            }
+        }
+        
+        return (a,info[a].payee, gIndex, lock);
     }
 
+
     function registerAccount(address a) external onlyOwner override {
-        if(info[a].index == 0) {
-            addrs.push(a);
+        if(info[a].index == 0 && !info[a].isActive) {
             uint64 len = uint64(addrs.length);
             info[a].index = len;
             info[a].payee = a;
+            addrs.push(a);
             emit ReAcc(a, len);
         }
     }
@@ -106,86 +132,109 @@ contract Role is IRoleSetter, IRoleGetter, Owner {
         emit ReRole(_index, _rType);
     }
 
-    function createGroup(uint16 _level, address fsAddr, uint64[] memory indexes) external onlyOwner override {
-        GroupInfo memory g;
-        groups.push(g);
+    function createGroup(uint16 _level, address _fsAddr, uint256 _kr, uint256 _pr) external onlyOwner override {
         uint64 _gIndex = uint64(groups.length);
+        require(IFileSysGetter(_fsAddr).gIndex() == _gIndex, "GD");
 
-        IFileSysSetter ifs = IFileSysSetter(fsAddr);
-        for(uint8 i = 0; i<indexes.length; i++) {
-            address addr = this.checkIR(indexes[i], 3);
-            info[addr].gIndex = _gIndex;
-            info[addr].isActive = true;
-            ifs.addKeeper(indexes[i]);
+        // create pool address; force each group has unique pool due to fsAddr can be upgrade  
+        // need modify to get params
+        address pool;
+        bytes memory b = type(Pool).creationCode;
+        assembly {
+            pool := create(0, add(b, 0x20), mload(b))
         }
 
-        groups[_gIndex-1].level = _level;
-        groups[_gIndex-1].fsAddr = fsAddr;
-        groups[_gIndex-1].keepers = indexes;
+        GroupInfo memory g;
+        g.level = _level;
+        g.kpr = _kr;
+        g.ppr = _pr; 
+        g.pool = pool;
+        g.fsAddr = _fsAddr;
+        groups.push(g);
 
-        if(indexes.length >= uint(_level)) {
-            groups[_gIndex-1].isActive = true;
-        }
         emit CreateGroup(_gIndex);
     }
 
-    function addToGroup(uint64 _index, uint64 _gIndex) external onlyOwner override {
-        require(!groups[_gIndex-1].isBanned, "GB"); // group is banned
+    function addToGroup(uint64 _index, uint64 _gIndex, uint256 _pm) external onlyOwner override {
+        require(!groups[_gIndex].isBanned, "GB"); // group is banned
     
-        address a = addrs[_index-1];
-        require(!info[a].isActive && !info[a].isBanned, "AE"); // account error
+        address a = addrs[_index];
+        require(!info[a].isActive && !info[a].isBanned && info[a].gIndex == 0, "AE"); // account error
 
-        info[a].gIndex = _gIndex;
         if (info[a].roleType == 1) {
             info[a].isActive = true;
-            groups[_gIndex-1].users.push(_index);
+            groups[_gIndex].users.push(_index);
         }
 
         if (info[a].roleType == 2) {
+            require(_pm >= groups[_gIndex].ppr, "KPI"); // pledge insuf
             info[a].isActive = true;
-            groups[_gIndex-1].providers.push(_index);
+            groups[_gIndex].providers.push(_index);
         }
+
+        if (info[a].roleType == 3) {
+            require(_pm >= groups[_gIndex].kpr, "PPI"); // pledge insuf
+        }
+
+        info[a].gIndex = _gIndex;
     }
 
     function setGF(uint64 _gIndex, address _fsAddr) external onlyOwner {
-        require(groups[_gIndex-1].fsAddr == address(0), "NE"); // not empty
-        groups[_gIndex-1].fsAddr = _fsAddr;
+        require(!groups[_gIndex].isBanned, "IB"); // is banned
+        require(IFileSysGetter(_fsAddr).gIndex() == _gIndex, "GD");
+        groups[_gIndex].fsAddr = _fsAddr;
     }
 
     // ===================get===================
-    function getAddrCnt() external view returns (uint64) {
+    function getACnt() external view returns (uint64) {
         return uint64(addrs.length);
     }
 
-    // 根据数组索引值（不是账户index）获取相应的账户地址，超出数组范围将revert
-    function getRoleIndex(address acc) external view returns (uint64) {
-        return info[acc].index;
+    function getGCnt() external view returns (uint64) {
+        return uint64(groups.length);
     }
 
-    function getAddr(uint64 i) external view override returns (address) {
-        return addrs[i-1];
+    function getAddr(uint64 _i) external view override returns (address) {
+        return addrs[_i];
     }
 
-    function getRoleInfo(address acc) external view override returns (RoleOut memory) {
+    function getIndex(address _a) external view override returns (uint64) {
+        return info[_a].index;
+    }
+
+    function getRInfo(address acc) external view override returns (RoleOut memory) {
         RoleOut memory r;
         r.isActive = info[acc].isActive;
         return r;
     }
 
-    function getGroupInfo(uint64 i) external view override returns (GroupOut memory) {
+    function getPInfo(uint64 i) external view override returns (uint256, uint256) {
+        return (groups[i].kpr, groups[i].ppr);
+    }
+
+    function getGInfo(uint64 i) external view override returns (GroupOut memory) {
         GroupOut memory g;
+        g.isActive = groups[i].isActive;
         return g;
     }
 
-    function getFsAddr(uint64 i) external view override returns (address) {
-        return groups[i-1].fsAddr;
+    function getFs(uint64 i) external view override returns (address) {
+        return groups[i].fsAddr;
     }
 
-    function getGroupK(uint64 ig, uint64 ik) external view override returns (uint64) {
-        return 0;
+    function getPool(uint64 i) external view override returns (address) {
+        return groups[i].pool;
     }
 
-    function getGroupP(uint64 ig, uint64 ip) external view override returns (uint64) {
-        return 0;
+    function getKCnt(uint64 i) external view override returns (uint64) {
+        return uint64(groups[i].keepers.length);
+    }
+
+    function getGroupK(uint64 _ig, uint64 _ik) external view override returns (uint64) {
+        return groups[_ig].keepers[_ik];
+    }
+
+    function getGroupP(uint64 _ig, uint64 _ip) external view override returns (uint64) {
+        return groups[_ig].providers[_ip];
     }
 }

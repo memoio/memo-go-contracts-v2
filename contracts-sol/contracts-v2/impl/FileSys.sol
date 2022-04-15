@@ -6,10 +6,8 @@ import "../interfaces/IAuth.sol";
 import "../interfaces/IERC20.sol";
 import "./Owner.sol";
 
-// base
-
 /// @dev This contract is related to data storage and data reading payment in the file system.
-contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
+contract FileSys is IFileSys, Owner {
 
     // StoreInfo is at some time
     struct StoreInfo {
@@ -22,7 +20,7 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
     struct AggOrder {
         uint64 nonce;    // 防止order重复提交
         uint64 subNonce; // 用于订单到期
-        mapping(uint32 => StoreInfo) sInfo; // 不同代币的支付信息，tokenIndex => StoreInfo
+        mapping(uint8 => StoreInfo) sInfo; // 不同代币的支付信息，tokenIndex => StoreInfo
     }
 
     // FsInfo each user have at most one group
@@ -51,29 +49,33 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
 
     uint16 public version = 2;
 
+    uint64 public override gIndex;
+
     // fs合约状态变量, constant
     uint8 public constant manageRate = 4; // group分得资金的百分比；4% for group, 其中3% linear and 1% at end;
     uint8 public constant taxRate = 1;    // 基金会分得资金的百分比；1% for foundation;
 
-    mapping(uint64 => mapping(uint32 => uint256)) balances; // 账户可用的余额
-    mapping(uint64 => mapping(uint32 => uint256)) penalty;  // 由于没有回应挑战而受到的惩罚
+    mapping(uint64 => mapping(uint8 => uint256)) balances; // 账户可用的余额
+    mapping(uint64 => mapping(uint8 => uint256)) penalty;  // 由于没有回应挑战而受到的惩罚
 
     mapping(uint64 => FsInfo) fs; // user => FsInfo; user 0 is repair fs
 
-    mapping(uint64 => mapping(uint32 => Settlement)) proInfo; // pro => token => income
+    mapping(uint64 => mapping(uint8 => Settlement)) proInfo; // pro => token => income
 
     // keeper profit related 
     uint64[] keepers; // for profit
     uint64 period;    // keeper根据比例获取收益的时间间隔
     uint64 lastTime;  // 上次分利润时间
-    mapping(uint32 => uint256) tAcc; // 记录分润值，每次分润后归0，tokenIndex=>num
+    mapping(uint8 => uint256) tAcc; // 记录分润值，每次分润后归0，tokenIndex=>num
     uint64 totalCount; // 记录所有keeper触发order相关函数的总次数
     mapping(uint64 => uint64) count; // 记录keeper触发Order相关函数的次数，用于分润
-    uint32[] tokens; // user使用某token时候加进来
+    uint8[] tokens; // user使用某token时候加进来
 
     /// @dev created by admin; 'r' indicates role-contract address, 'rfs' indicates RoleFS-contract address
-    constructor(address _rfs, address _a, address _pool) Owner(_rfs, _a) {
-        instances[5] = _pool;
+    constructor(address _rfs, address _a, uint64 _gIndex) Owner(_rfs, _a) {
+
+
+        gIndex = _gIndex;
 
         fs[0].isActive = true; // for repair
 
@@ -82,7 +84,7 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
         tokens.push(0);
     }
 
-    function _settlementAdd(uint64 _pIndex, uint32 _tokenIndex, uint64 start, uint64 size, uint256 sprice, uint256 pay, uint256 manage) internal {
+    function _settlementAdd(uint64 _pIndex, uint8 _tokenIndex, uint64 start, uint64 size, uint256 sprice, uint256 pay, uint256 manage) internal {
         // update canPay
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
         if(se.time < start){
@@ -106,7 +108,7 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
     }
 
     // roughly
-    function _settlementSub(uint64 _pIndex, uint32 _tokenIndex, uint64 end, uint64 size, uint256 sprice) internal {
+    function _settlementSub(uint64 _pIndex, uint8 _tokenIndex, uint64 end, uint64 size, uint256 sprice) internal {
         // update canPay
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
         if(se.time < end){
@@ -139,7 +141,7 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
     }
 
     // _settlementCal called by func withdraw
-    function _settlementCal(uint64 _pIndex, uint32 _tokenIndex, uint256 pay, uint256 lost) internal returns (uint256) {
+    function _settlementCal(uint64 _pIndex, uint8 _tokenIndex, uint256 pay, uint256 lost) internal returns (uint256) {
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
         if(proInfo[_pIndex][_tokenIndex].maxPay<pay){
             return 0;
@@ -246,9 +248,7 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
         totalCount++;
     }
 
-    function recharge(uint64 uIndex, uint32 tIndex, uint256 money) external override onlyOwner {
-        require(fs[uIndex].isActive, "NA"); // the fs with user is not active
-
+    function recharge(uint64 uIndex, uint8 tIndex, uint256 money) external override onlyOwner {
         balances[uIndex][tIndex] += money;
 
         // add tIndex
@@ -273,7 +273,7 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
         return thisPay;
     }
 
-    function withdraw(uint64 index, uint32 tokenIndex, uint256 amount) external override onlyOwner returns(uint256){
+    function withdraw(uint64 index, uint8 tokenIndex, uint256 amount) external override onlyOwner returns(uint256){
         if (count[index] > 0) {
             uint64 ntime = uint64(block.timestamp);
             if(ntime-lastTime > period){
@@ -305,8 +305,8 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
     }
 
      // judge if tokens has the _tokenIndex
-    function _hasToken(uint32 _tokenIndex) internal view returns (bool) {
-        for(uint32 i = 0; i<tokens.length; i++){
+    function _hasToken(uint8 _tokenIndex) internal view returns (bool) {
+        for(uint8 i = 0; i<tokens.length; i++){
             if(tokens[i]==_tokenIndex){
                 return true;
             }
@@ -324,21 +324,21 @@ contract FileSys is IFileSysSetter, IFileSysGetter, Owner {
     }
 
     // get storeInfo in fs
-    function getStoreInfo(uint64 user, uint64 provider, uint32 token) external view override returns (StoreOut memory){
+    function getStoreInfo(uint64 user, uint64 provider, uint8 token) external view override returns (StoreOut memory){
         StoreOut memory s;
         s.start = fs[user].ao[provider].sInfo[token].start;
         return s;
     }
 
     // 获得支付计费相关的信息
-    function getSettleInfo(uint64 pIndex, uint32 tIndex) external view override returns (SettleOut memory){
+    function getSettleInfo(uint64 pIndex, uint8 tIndex) external view override returns (SettleOut memory){
         SettleOut memory s;
         s.time = proInfo[pIndex][tIndex].time;
         return s;
     }
 
     // 获得账户收益余额
-    function balanceOf(uint64 index, uint32 tIndex) external view override returns(uint256, uint256){
+    function balanceOf(uint64 index, uint8 tIndex) external view override returns(uint256, uint256){
         uint256 avail = balances[index][tIndex];
         Settlement memory se = proInfo[index][tIndex];
         uint256 canPay = se.canPay;

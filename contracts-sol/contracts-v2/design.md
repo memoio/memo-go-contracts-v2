@@ -1,6 +1,6 @@
 # design
 
-## contarct type
+## contract type
 
 + 1 owner
 + 2 auth
@@ -10,4 +10,23 @@
 + 6 role
 + 7 token
 + 8 pledge
-+ 9 rfs
++ 9 issue
++ 10 control
++ 11 getter
+
+
+## base contracts
+
+erc
+token
+pool
+pledge
+role
+issue
+fs
+
+## layer
+
+proxy -> control -> base contracts 
+
+getter -> base contracts 

@@ -12,7 +12,7 @@ import "../Recover.sol";
  *@author MemoLabs
  *@title Any who has registered can introduce the pledge and get staking income
  */
-contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
+contract Pledge is IPledge, Owner {
     using Recover for bytes32;
 
     bytes4 private constant SELECTOR0 = bytes4(keccak256(bytes('balanceOf(address)')));
@@ -24,19 +24,19 @@ contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
 
     uint16 public version = 2;
 
-    uint32 private cnt;       
+    uint8 private cnt;       
 
     uint256 public totalPledge; // 账户质押量
 
-    mapping(uint32 => RewardInfo) tInfo;  // 每种代币的信息, tokenIndex=>RewardInfo
-    mapping(uint64 => mapping(uint32 => RewardInfo)) allAmount; // 所有质押的人的信息，(roleIndex => tokenIndex => RewardInfo)
+    mapping(uint8 => RewardInfo) tInfo;  // 每种代币的信息, tokenIndex=>RewardInfo
+    mapping(uint64 => mapping(uint8 => RewardInfo)) allAmount; // 所有质押的人的信息，(roleIndex => tokenIndex => RewardInfo)
 
     constructor(address _rfs, address _a, address _token, address _pool) Owner(_rfs, _a){
         instances[5] = _pool;
         instances[7] = _token;
     }
 
-    function _updateReward(uint256 amount, uint32 i, uint64 index) internal {
+    function _updateReward(uint256 amount, uint8 i, uint64 index) internal {
         uint256 bal = _getBalance(i); // 获取质押池在该代币上的余额
 
         // 代币i有增发，需更新tInfo[i].rewardAccu
@@ -64,7 +64,7 @@ contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
         uint256 amount = reward.lastReward;
 
         // 更新结算奖励
-        for(uint32 i=0; i<cnt; i++){
+        for(uint8 i=0; i<cnt; i++){
             reward = allAmount[index][i];
             if(reward.rewardAccu==0){
                 // init 
@@ -79,7 +79,7 @@ contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
         totalPledge += money;
     }
 
-    function withdraw(uint64 index, uint32 tIndex, uint256 money, uint256 lock) external onlyOwner override returns (uint256) {
+    function withdraw(uint64 index, uint8 tIndex, uint256 money, uint256 lock) external onlyOwner override returns (uint256) {
         RewardInfo memory reward = allAmount[index][0];
         uint256 amount = reward.lastReward;
 
@@ -91,7 +91,7 @@ contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
         // 更新结算奖励
         if (tIndex == 0) {
             // update all tokens due to pledge change
-            for(uint32 i=0; i<cnt; i++) {
+            for(uint8 i=0; i<cnt; i++) {
                 _updateReward(amount, i, index);
             }
         } else {
@@ -138,7 +138,7 @@ contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
         return rw;
     }
 
-    function addT(uint32 tIndex) external onlyOwner override {
+    function addT(uint8 tIndex) external onlyOwner override {
         tInfo[tIndex].rewardAccu = 0;
         tInfo[tIndex].lastReward = _getBalance(tIndex);
         if (tIndex +1 > cnt) {
@@ -149,7 +149,7 @@ contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
     // ========== get ===========
 
     // 获得账户在指定代币上的余额
-    function _getBalance(uint32 tIndex) internal view returns (uint256) {
+    function _getBalance(uint8 tIndex) internal view returns (uint256) {
         (address tAddr, ) = ITokenGetter(instances[7]).getTA(tIndex);
         (bool success, bytes memory data) = tAddr.staticcall(abi.encodeWithSelector(SELECTOR0, instances[5]));
         require(success && data.length >= 32, "CE"); // staticcall error
@@ -157,12 +157,12 @@ contract Pledge is IPledgeSetter, IPledgeGetter, Owner {
     }
 
     // pledge + mint, balance of pool
-    function getPledge(uint32 tIndex) external view returns (uint256) {
+    function getPledge(uint8 tIndex) external view returns (uint256) {
         return _getBalance(tIndex);
     }
 
     // 获得指定账户index对于指定代币tindex的分润值
-    function balanceOf(uint64 index, uint32 tIndex) external view override returns (uint256) {
+    function balanceOf(uint64 index, uint8 tIndex) external view override returns (uint256) {
         RewardInfo memory reward0 = allAmount[index][0];
         if (reward0.lastReward==0) {
             return 0;

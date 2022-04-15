@@ -1,6 +1,8 @@
 // SPDX-License-Identifier:UNLICENSED
 pragma solidity ^0.8.0;
 
+import "./IPool.sol";
+
 // struct for addOrder params
 struct OrderIn {
     uint64 uIndex;
@@ -9,7 +11,7 @@ struct OrderIn {
         uint64 end;
         uint64 size;
         uint64 nonce;
-        uint32 tIndex;
+        uint8 tIndex;
         uint256 sPrice;
         bytes usign;
         bytes psign;
@@ -18,7 +20,7 @@ struct OrderIn {
 // struct for proWithdraw params
 struct PWIn {
     uint64 pIndex;
-    uint32 tIndex;
+    uint8 tIndex;
     uint256 pay;
     uint256 lost;
 }
@@ -54,19 +56,22 @@ struct SettleOut {
 }
 
 interface IFileSysSetter {
-    function addUser(uint64 _uIndex) external;
-    function addKeeper(uint64 _kIndex) external;
+    function addUser(uint64 _ui) external;
+    function addKeeper(uint64 _ki) external;
     function addOrder(OrderIn memory ps) external;
-    function subOrder(uint64 _kIndex, OrderIn memory ps) external;
+    function subOrder(uint64 _ki, OrderIn memory ps) external;
 
-    function recharge(uint64 uIndex, uint32 tIndex, uint256 money) external;
-    function withdraw(uint64 uIndex, uint32 tIndex, uint256 money) external returns (uint256);
+    function recharge(uint64 _i, uint8 _ti, uint256 money) external;
+    function withdraw(uint64 _i, uint8 _ti, uint256 money) external returns (uint256);
     function proWithdraw(PWIn memory ps) external returns(uint256);
 }
 
 interface IFileSysGetter {
-    function balanceOf(uint64 index, uint32 tIndex) external view returns(uint256, uint256);
-    function getFsInfo(uint64 user, uint64 provider) external view returns (FsOut memory);
-    function getStoreInfo(uint64 user, uint64 provider, uint32 token) external view returns (StoreOut memory);
-    function getSettleInfo(uint64 index, uint32 tIndex) external view returns (SettleOut memory);
+    function gIndex() external view returns(uint64);
+    function balanceOf(uint64 _i, uint8 _ti) external view returns(uint256, uint256);
+    function getFsInfo(uint64 _ui, uint64 _pi) external view returns (FsOut memory);
+    function getStoreInfo(uint64 _ui, uint64 _pi, uint8 _ti) external view returns (StoreOut memory);
+    function getSettleInfo(uint64 _pi, uint8 _ti) external view returns (SettleOut memory);
 }
+
+interface IFileSys is IFileSysSetter, IFileSysGetter {}

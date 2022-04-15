@@ -7,7 +7,7 @@ import "../interfaces/IPool.sol";
 import "../Recover.sol";
 import "./Owner.sol";
 
-contract Pool is IPoolSetter, Owner {
+contract Pool is IPool, Owner {
     using Recover for bytes32;
 
     uint16 public version = 2;

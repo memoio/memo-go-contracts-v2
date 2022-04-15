@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 // for manage other contracts
 interface IAuth {
     // change owner, control etc...
-    function perm(bytes32 h, bytes[] memory signs) external;
-    function set(address con, address account, bool isSet, bytes[] memory signs) external;
-    function can(address con,address account) external view returns (bool);
+    function perm(bytes32 _h, bytes[] memory signs) external;
+    function set(address _c, address _a, bool _set, bytes[] memory signs) external;
+    function can(address _c,address _a) external view returns (bool);
 }

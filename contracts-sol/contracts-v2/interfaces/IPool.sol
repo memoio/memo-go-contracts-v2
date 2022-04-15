@@ -2,11 +2,7 @@
 pragma solidity ^0.8.0;
 
 // receive 
-interface IPoolSetter {
+interface IPool {
     function inflow(address tAddr, address from, uint256 money) external payable;
     function outflow(address tAddr, address to, uint256 money) external payable;
-}
-
-interface IPoolGetter {
-    function balanceOf(address tAddr, address to) external view returns (uint256);
 }
