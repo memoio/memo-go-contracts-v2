@@ -59,7 +59,7 @@ interface IFileSysSetter {
     function addOrder(OrderIn memory ps, uint256 _mr) external;
     function subOrder(OrderIn memory ps) external returns (uint256) ;
 
-    function recharge(uint64 _i, uint8 _ti, uint256 money) external;
+    function recharge(uint64 _i, uint8 _ti, uint256 money, bool isLock) external;
     function withdraw(uint64 _i, uint8 _ti, uint256 money) external returns (uint256);
     function proWithdraw(PWIn memory ps) external returns(uint256, uint256);
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IRole.sol";
 import "../interfaces/IAuth.sol";
-import "../interfaces/IFileSys.sol";
+import "../interfaces/IKmanage.sol";
 import "./Owner.sol";
 import "./Pool.sol";
 import "./Kmanage.sol";
@@ -72,7 +72,7 @@ contract Role is IRole, Owner {
             groups[gIndex].keepers.push(_index);
             if (groups[gIndex].keepers.length >= groups[gIndex].level) {
                 groups[gIndex].isActive = true;
-                //IFileSysSetter(groups[gIndex].fsAddr).addKeeper(_index);
+                IKmanageSetter(groups[gIndex].kManage).addKeeper(_index);
             }
         }
         info[a].isActive = _active;
@@ -147,6 +147,10 @@ contract Role is IRole, Owner {
         groups.push(g);
 
         emit CreateGroup(_gIndex);
+    }
+
+    function banG(uint64 _gi, bool _isBan) external onlyOwner override {
+        groups[_gi].isBanned = _isBan;
     }
 
     function addToGroup(uint64 _index, uint64 _gIndex, uint256 _pm) external onlyOwner override {

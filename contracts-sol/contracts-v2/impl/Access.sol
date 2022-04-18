@@ -8,6 +8,7 @@ contract Access is IAccess {
     using Recover for bytes32;
 
     uint16 public version = 2;
+    uint8 public constant floor = 3;
     
     address[] public controls; // five address
     uint256 public nonce;
@@ -30,10 +31,10 @@ contract Access is IAccess {
         uint8 valid = 0;
         for(uint256 i=0;i<signs.length;i++){
             if(h.recover(signs[i])==controls[i]){
-                valid++;
+                valid+=1;
             }
         }
-        require(valid>=3,"SNE"); // sign not enough
+        require(valid>=floor,"SNE"); // sign not enough
 
         access[account] = isSet;
         nonce+=1;

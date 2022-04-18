@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "../interfaces/IAuth.sol";
 
 contract Owner {
+    // can support mask if using uint32 instead of uint8 
     mapping(uint8=>address) public instances;
 
     event Alter(uint8, address from, address to);
@@ -20,6 +21,12 @@ contract Owner {
     }
 
     function alter(uint8 _type, address _a, bytes[] memory signs) external {
+        uint size;
+        assembly {
+            size := extcodesize(_a)
+        }
+        require(size != 0,"NE"); // need ext addr
+        
         address au = instances[2];
         bytes32 h = keccak256(abi.encodePacked(address(this), "alter", _type, _a));
         IAuth(au).perm(h, signs);

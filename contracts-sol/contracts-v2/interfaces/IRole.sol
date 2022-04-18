@@ -36,15 +36,11 @@ interface IRoleSetter {
     // called by admin
     function activate(uint64 _i, bool _active) external;
     function ban(uint64 _i, bool _ban) external;
+    function banG(uint64 _gi, bool _isBan) external;
 
-    // called by admin, create a group, owner新建一个 FileSys 合约
     function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external;
-
-    // register self to get index
     function registerAccount(address _a) external; 
-    // combine as registerRole?
     function registerRole(uint64 _i, uint8 _rtype, bytes memory extra) external;
-    // 向组中新加一个user/keeper/provider
     function addToGroup(uint64 _i, uint64 _gi, uint256 money) external;
 }
 

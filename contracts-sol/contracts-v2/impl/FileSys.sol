@@ -49,6 +49,7 @@ contract FileSys is IFileSys, Owner {
     uint8 public constant taxRate = 1;
 
     mapping(uint64 => mapping(uint8 => uint256)) balances; // 账户可用的余额
+    mapping(uint64 => mapping(uint8 => uint256)) lock;     // cannot withdraw 
 
     mapping(uint64 => FsInfo) fs; // user => FsInfo; user 0 is repair fs
 
@@ -108,7 +109,6 @@ contract FileSys is IFileSys, Owner {
         }
     }
 
-    // _settlementCal called by func withdraw
     function _settlementCal(uint64 _pIndex, uint8 _tokenIndex, uint256 pay, uint256 lost) internal returns (uint256) {
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
         if(proInfo[_pIndex][_tokenIndex].maxPay<pay){
@@ -185,8 +185,12 @@ contract FileSys is IFileSys, Owner {
         return endPaid;
     }
 
-    function recharge(uint64 uIndex, uint8 tIndex, uint256 money) external override onlyOwner {
-        balances[uIndex][tIndex] += money;
+    function recharge(uint64 _i, uint8 _ti, uint256 money, bool isLock) external override onlyOwner {
+        if (isLock) {
+            lock[_i][_ti] += money;
+        } else {
+            balances[_i][_ti] += money;
+        }  
     }
 
     // provider withdraw money, called by owner
@@ -215,29 +219,29 @@ contract FileSys is IFileSys, Owner {
     }
 
     // ================get=============
-    function getFsInfo(uint64 user, uint64 pro) external view override returns (FsOut memory){
+    function getFsInfo(uint64 _ui, uint64 _pi) external view override returns (FsOut memory){
         FsOut memory f;
+        f.nonce = fs[_ui].ao[_pi].nonce;
         return f;
     }
 
     // get storeInfo in fs
-    function getStoreInfo(uint64 user, uint64 provider, uint8 token) external view override returns (StoreOut memory){
+    function getStoreInfo(uint64 _ui, uint64 _pi, uint8 _ti) external view override returns (StoreOut memory){
         StoreOut memory s;
-        s.start = fs[user].ao[provider].sInfo[token].start;
+        s.start = fs[_ui].ao[_pi].sInfo[_ti].start;
         return s;
     }
 
     // 获得支付计费相关的信息
-    function getSettleInfo(uint64 pIndex, uint8 tIndex) external view override returns (SettleOut memory){
+    function getSettleInfo(uint64 _pi, uint8 _ti) external view override returns (SettleOut memory){
         SettleOut memory s;
-        s.time = proInfo[pIndex][tIndex].time;
+        s.time = proInfo[_pi][_ti].time;
         return s;
     }
 
-    // 获得账户收益余额
-    function balanceOf(uint64 index, uint8 tIndex) external view override returns(uint256, uint256){
-        uint256 avail = balances[index][tIndex];
-        Settlement memory se = proInfo[index][tIndex];
+    function balanceOf(uint64 _i, uint8 _ti) external view override returns(uint256, uint256){
+        uint256 avail = balances[_i][_ti];
+        Settlement memory se = proInfo[_i][_ti];
         uint256 canPay = se.canPay;
         if (block.timestamp > se.time) {
             canPay += uint256(block.timestamp - se.time) * se.price;

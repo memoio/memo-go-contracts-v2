@@ -22,8 +22,12 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).ban(_i, _ban, signs);
     }
 
-    function addT(address _t, bytes[] memory signs) external override {
-        IControl(instances[100]).addT(_t, signs);
+    function addT(address _t,bool _ban, bytes[] memory signs) external override {
+        IControl(instances[100]).addT(_t, _ban, signs);
+    }
+
+    function ban(uint64 _gi, bool _ban, bytes[] memory signs) external override {
+        IControl(instances[100]).banG(_i, _ban, signs);
     }
 
     function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external override {
@@ -34,12 +38,12 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).registerAccount(msg.sender);
     }
     
-    function registerRole(uint64 _i, uint8 _rtype, bytes memory _extra) external override {
-        IControl(instances[100]).registerRole(msg.sender, _i, _rtype, _extra);
+    function registerRole(uint8 _rtype, bytes memory _extra) external override {
+        IControl(instances[100]).registerRole(msg.sender, _rtype, _extra);
     }
 
-    function addToGroup(uint64 _i, uint64 _gi) external override {
-        IControl(instances[100]).addToGroup(msg.sender, _i, _gi);
+    function addToGroup(uint64 _gi) external override {
+        IControl(instances[100]).addToGroup(msg.sender, _gi);
     }
     
     function pledge(uint64 _i, uint256 _money) external override {
@@ -58,8 +62,8 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).subOrder(msg.sender, _oi);
     }
 
-    function recharge(uint64 _i, uint8 _ti, uint256 _money) external override {
-        IControl(instances[100]).recharge(msg.sender, _i, _ti, _money);
+    function recharge(uint64 _i, uint8 _ti, uint256 _money, bool isLock) external override {
+        IControl(instances[100]).recharge(msg.sender, _i, _ti, _money, isLock);
     }
 
     function withdraw(uint64 _i, uint8 _ti, uint256 _money) external override {

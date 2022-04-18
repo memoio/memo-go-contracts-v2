@@ -41,13 +41,24 @@ contract Control is IControl, Owner {
         IRoleSetter(instances[6]).ban(_i, _ban);
     } 
 
-    function addT(address _t, bytes[] memory signs) external override {
+    function addT(address _t, bool _ban, bytes[] memory signs) external override {
         IAuth ia = IAuth(instances[2]);
-        bytes32 h = keccak256(abi.encodePacked(address(this), "addT", _t));
+        bytes32 h = keccak256(abi.encodePacked(address(this), "addT", _t, _ban));
+        ia.perm(h, signs);
+        if (_ban) {
+            ITokenSetter(instances[7]).banT(_t);
+        } else {
+            uint8 ti = ITokenSetter(instances[7]).addT(_t);
+            IPledgeSetter(instances[8]).addT(ti);
+        }
+    }
+
+    function banG(uint64 _gi, bool _isBan, bytes[] memory signs) external override {
+        IAuth ia = IAuth(instances[2]);
+        bytes32 h = keccak256(abi.encodePacked(address(this), "banG", _gi, _isBan));
         ia.perm(h, signs);
 
-        uint8 ti = ITokenSetter(instances[7]).addT(_t);
-        IPledgeSetter(instances[8]).addT(ti);
+        IRoleSetter(instances[6]).banG(_gi, _isBan);
     }
 
     function createGroup(uint16 _level, uint256 _k, uint256 _p, uint8 _mr) external override {
@@ -61,15 +72,13 @@ contract Control is IControl, Owner {
     } 
 
     // register as user/keeper/provider
-    function registerRole(address _a, uint64 _i, uint8 _rtype, bytes memory extra) external onlyOwner override {
-        address a = IRoleGetter(instances[6]).getAddr(_i);
-        require(a==_a, "IC");// should called self
+    function registerRole(address _a, uint8 _rtype, bytes memory extra) external onlyOwner override {
+        uint64 _i = IRoleGetter(instances[6]).getIndex(_a);
         return IRoleSetter(instances[6]).registerRole(_i, _rtype, extra);
     }
     
-    function addToGroup(address _a, uint64 _i, uint64 _gi) external onlyOwner override {
-        address a = IRoleGetter(instances[6]).getAddr(_i);
-        require(a==_a, "IC");// should called self
+    function addToGroup(address _a, uint64 _gi) external onlyOwner override {
+        uint64 _i = IRoleGetter(instances[6]).getIndex(_a);
         uint256 bal = IPledgeGetter(instances[8]).balanceOf(_i, 0);
         return IRoleSetter(instances[6]).addToGroup(_i, _gi, bal);
     }
@@ -97,7 +106,7 @@ contract Control is IControl, Owner {
         IPool(instances[5]).outflow(_t, _re, _money);
     }
 
-    function recharge(address _a, uint64 _ui, uint8 _ti, uint256 money) external override {
+    function recharge(address _a, uint64 _ui, uint8 _ti, uint256 money, bool isLock) external override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(0);
         require(!_v, "TB"); // token banned
         
@@ -106,7 +115,7 @@ contract Control is IControl, Owner {
         
         IPool(r.getPool(_gi)).inflow(_t, _a, money);
         
-        IFileSys(instances[10]).recharge(_ui, _ti, money); 
+        IFileSys(instances[10]).recharge(_ui, _ti, money, isLock); 
     }
 
     function withdraw(address _a, uint64 _i, uint8 _ti, uint256 money) external onlyOwner override {
@@ -200,7 +209,7 @@ contract Control is IControl, Owner {
             require(_gi == _ngi, "GD");
 
             IKmanage ikm =  IKmanage(r.getKManage(_gi));
-            ikm.add(kIndex);
+            ikm.addCnt(kIndex, 1);
             ikm.addProfit(ps.tIndex, ep);
         }     
     }

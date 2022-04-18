@@ -47,11 +47,11 @@ contract Kmanage is IKmanage, Owner {
     }
 
     // after sub order
-    function add(uint64 _ki) external override onlyOwner {
+    function addCnt(uint64 _ki, uint64 cnt) external override onlyOwner {
         require(count[_ki] > 0, "IC");
 
-        count[_ki]++;
-        totalCount++;
+        count[_ki]+= cnt;
+        totalCount+= cnt;
     }
 
     // after pro withdraw
@@ -95,16 +95,16 @@ contract Kmanage is IKmanage, Owner {
         return manageRate;
     }
 
-    function balanceOf(uint64 _i, uint8 _ti) external view override returns(uint256, uint256){
-        uint256 avail = balances[_i][_ti];
+    function balanceOf(uint64 _ki, uint8 _ti) external view override returns(uint256, uint256){
+        uint256 avail = balances[_ki][_ti];
         uint256 tmp = 0;
 
         if(totalCount == 0){
             return (avail, tmp);
         }
 
-        if(count[_i]!=0){
-            uint256 sum = tAcc[_ti] * count[_i];
+        if(count[_ki]!=0){
+            uint256 sum = tAcc[_ti] * count[_ki];
             uint256 pro = sum / totalCount;
             if((block.timestamp-lastTime)>=period){
                 avail += pro;

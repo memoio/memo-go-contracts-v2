@@ -143,7 +143,7 @@ contract Pledge is IPledge, Owner {
         tInfo[tIndex].lastReward = _getBalance(tIndex);
         if (tIndex +1 > cnt) {
             cnt = tIndex + 1;
-        } // else?
+        }
     }
 
     // ========== get ===========
