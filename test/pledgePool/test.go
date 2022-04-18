@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"math/big"
-	callconts "memoContract/callcontracts"
-	"memoContract/test"
+	callconts "memoc/callcontracts"
+	"memoc/test"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -23,11 +23,12 @@ func main() {
 	flag.Parse()
 	ethEndPoint = *eth
 	qethEndPoint = *qeth
+	_ = qethEndPoint
 	callconts.EndPoint = ethEndPoint
 
 	// 用于测试的一些参数
 	adminAddr := common.HexToAddress(test.AdminAddr)
-	roleAddr := common.HexToAddress("0xcB94eeEA7c35eB9eC32CE40fE1B07C99E9dE663d")
+	roleAddr := common.HexToAddress("0xA2f493B23a23A39d3f1072f3961dbAe53EAe384a")
 	pledgeMoney := big.NewInt(1e6)
 
 	// 查看余额，支付交易Gas费，余额不足时，需充值（暂时手动）
@@ -36,93 +37,117 @@ func main() {
 
 	txopts := &callconts.TxOpts{
 		Nonce:    nil,
-		GasPrice: big.NewInt(callconts.DefaultGasPrice),
+		GasPrice: nil,
 		GasLimit: callconts.DefaultGasLimit,
 	}
 
 	// 查询在erc20代币上的余额
-	erc20 := callconts.NewERC20(adminAddr, test.AdminSk, txopts)
-	bal, err := erc20.BalanceOf(test.PrimaryToken, adminAddr)
+	status := make(chan error)
+	erc20 := callconts.NewERC20(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
+	bal, err := erc20.BalanceOf(adminAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("admin balance in primaryToken is ", bal)
-	if bal.Cmp(big.NewInt(test.MoneyTo)) < 0 {
-		// mintToken
-		err = erc20.MintToken(test.PrimaryToken, adminAddr, big.NewInt(test.MoneyTo))
-		if err != nil {
-			log.Fatal(err)
-		}
-		bal, err = erc20.BalanceOf(test.PrimaryToken, adminAddr)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("after mint, admin balance in primaryToken is ", bal)
-	}
 
-	pp := callconts.NewPledgePool(adminAddr, test.AdminSk, txopts)
+	pp := callconts.NewPledgePool(test.PrimaryToken, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
 
 	fmt.Println("============1. begin test deploy PledgePool contract============")
 	ppAddr, _, err := pp.DeployPledgePool(test.PrimaryToken, test.RTokenAddr, roleAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
 	fmt.Println("The PledgePool contract address is ", ppAddr.Hex())
 
 	fmt.Println("============2. begin test Pledge============")
 	// 首先需approve
-	err = erc20.Approve(test.PrimaryToken, ppAddr, pledgeMoney)
+	err = erc20.Approve(ppAddr, pledgeMoney)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
 	// 然后质押账户需要在Role合约中Register从而获得rindex
-	r := callconts.NewR(adminAddr, test.AdminSk, txopts)
-	err = r.Register(roleAddr, adminAddr, nil)
+	r := callconts.NewR(roleAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
+	err = r.Register(adminAddr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	rIndex, err := r.GetRoleIndex(roleAddr, adminAddr)
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	rIndex, err := r.GetRoleIndex(adminAddr)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The account's role index is ", rIndex)
+	
 	// 开始pledge
-	err = pp.Pledge(ppAddr, test.PrimaryToken, roleAddr, rIndex, pledgeMoney, nil)
+	pp = callconts.NewPledgePool(ppAddr, adminAddr, test.AdminSk, txopts, ethEndPoint, status)
+	err = pp.Pledge(test.PrimaryToken, roleAddr, rIndex, pledgeMoney, nil)
 	if err != nil {
+		log.Fatal(err)
+	}
+	if err = <-status; err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("============3. begin test GetPledge============")
-	p, err := pp.GetPledge(ppAddr, 0)
+	p, err := pp.GetPledge(0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The total pledge value of token0 is ", p)
+	if p.Cmp(pledgeMoney) != 0 {
+		log.Fatal("pledge value should be ", pledgeMoney)
+	}
 
 	fmt.Println("============4. begin test GetBalanceInPPool============")
-	p, err = pp.GetBalanceInPPool(ppAddr, rIndex, 0)
+	p, err = pp.GetBalanceInPPool(rIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The balance value of token0 in PledgePool contract is ", p)
+	if p.Cmp(pledgeMoney) != 0 {
+		log.Fatal("balance value in PledgePool should be ", pledgeMoney)
+	}
 
 	fmt.Println("============5. begin test TotalPledge============")
-	p, err = pp.TotalPledge(ppAddr)
+	p, err = pp.TotalPledge()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("The total pledge of primaryToken is ", p)
+	if p.Cmp(pledgeMoney) != 0 {
+		log.Fatal("totalPledge should be ", pledgeMoney)
+	}
 
 	fmt.Println("============6. begin test Withdraw============")
-	err = pp.Withdraw(ppAddr, roleAddr, test.RTokenAddr, rIndex, 0, pledgeMoney, nil)
+	_addrNum, err := r.GetAddrsNum()
+	if err != nil {
+		log.Fatal("get addrNum failed: ", err)
+	}
+	fmt.Println("addrNum: ", _addrNum)
+
+	err = pp.Withdraw(roleAddr, test.RTokenAddr, rIndex, 0, pledgeMoney, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	p, err = pp.GetBalanceInPPool(ppAddr, rIndex, 0)
+	if err = <-status; err != nil {
+		log.Fatal(err)
+	}
+	p, err = pp.GetBalanceInPPool(rIndex, 0)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("After Withdraw, the balance value of token0 in PledgePool contract is ", p)
+	if p.Cmp(big.NewInt(0)) != 0 {
+		log.Fatal("After Withdraw, the balance in PledgePool should be 0")
+	}
 
 	fmt.Println("============test success!============")
 }
