@@ -10,6 +10,7 @@ import "../interfaces/IERC20.sol";
 import "../interfaces/IAuth.sol";
 import "../interfaces/IPledge.sol";
 import "../interfaces/IPool.sol";
+import "../interfaces/IKmanage.sol";
 import "./Owner.sol";
 import "../Recover.sol";
 
@@ -49,8 +50,8 @@ contract Control is IControl, Owner {
         IPledgeSetter(instances[8]).addT(ti);
     }
 
-    function createGroup(uint16 _level, address _fs, uint256 _k, uint256 _p) external override {
-       IRoleSetter(instances[6]).createGroup(_level, _fs, _k, _p);
+    function createGroup(uint16 _level, uint256 _k, uint256 _p, uint8 _mr) external override {
+       IRoleSetter(instances[6]).createGroup(_level, _k, _p, _mr);
     }
 
     // register self to get index
@@ -105,7 +106,7 @@ contract Control is IControl, Owner {
         
         IPool(r.getPool(_gi)).inflow(_t, _a, money);
         
-        IFileSys(r.getFs(_gi)).recharge(_ui, _ti, money); 
+        IFileSys(instances[10]).recharge(_ui, _ti, money); 
     }
 
     function withdraw(address _a, uint64 _i, uint8 _ti, uint256 money) external onlyOwner override {
@@ -116,7 +117,7 @@ contract Control is IControl, Owner {
         (address _w, address _re, uint64 _gi, ) = r.checkIG(_i, 0);
         require((_w == _a ||_re == _a), "IC");
 
-        uint256 _money = IFileSys(r.getFs(_gi)).withdraw(_i, _ti, money);
+        uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money);
         IPool(r.getPool(_gi)).outflow(_t, _re, _money);
     }
 
@@ -163,7 +164,8 @@ contract Control is IControl, Owner {
         require(_a == _u, "IC"); // illegal caller
         
         IRoleGetter r = IRoleGetter(instances[6]);
-        IFileSys(payable(r.getFs(_gi))).addOrder(ps);        
+        IKmanage ikm =  IKmanage(r.getKManage(_gi));
+        IFileSys(instances[10]).addOrder(ps, uint256(ikm.getRate()));        
         
         // 产生奖励
         if (ps.tIndex == 0) { 
@@ -187,6 +189,8 @@ contract Control is IControl, Owner {
         (address uAddr, uint64 _gi) = checkParam(ps);
         require(ps.end <= block.timestamp, "ET"); // time error
 
+        uint256 ep = IFileSys(instances[10]).subOrder(ps);
+
         IRoleGetter r = IRoleGetter(instances[6]);
         uint64 kIndex = ps.uIndex;
         if (_a != uAddr) {
@@ -194,9 +198,11 @@ contract Control is IControl, Owner {
             // not user, should be keeper
             (,,uint64 _ngi,) = r.checkIG(kIndex, 3);
             require(_gi == _ngi, "GD");
-        }    
-        
-        IFileSys(payable(r.getFs(_gi))).subOrder(kIndex,ps);
+
+            IKmanage ikm =  IKmanage(r.getKManage(_gi));
+            ikm.add(kIndex);
+            ikm.addProfit(ps.tIndex, ep);
+        }     
     }
 
     // kIndexes is incremental
@@ -206,7 +212,7 @@ contract Control is IControl, Owner {
 
         IRoleGetter r = IRoleGetter(instances[6]);  
 
-        (address _w, address pOwner, uint64 gIndex, ) = r.checkIG(ps.pIndex, 2);
+        (address _w, address pOwner, uint64 _gi, ) = r.checkIG(ps.pIndex, 2);
         require((_a == _w || _a == pOwner), "IC");
 
         uint256 indexNum = kIndexes.length;
@@ -217,17 +223,20 @@ contract Control is IControl, Owner {
         bytes32 h = keccak256(abi.encodePacked(ps.pIndex,ps.tIndex,ps.pay,ps.lost));
         for(uint64 i = 0; i < indexNum; i++) {
             require(kIndexes[i] > _start, "DI"); // larger than previous
-            (address kAddr,, uint64 _gi,) = r.checkIG(kIndexes[i], 3);
+            (address kAddr,, uint64 gIndex,) = r.checkIG(kIndexes[i], 3);
             if (gIndex == _gi && h.recover(ksigns[i]) == kAddr) {
                 sigCnt += 1;
             }
             _start = kIndexes[i];           
         }
         // valid sig should not less than 2*(N+1)/3, N: kNum of group
-        require(sigCnt >= 2 * (r.getKCnt(gIndex) + 1) / 3, "KSE"); // kSigns error
+        require(sigCnt >= 2 * (r.getKCnt(_gi) + 1) / 3, "KSE"); // kSigns error
 
-        uint256 _money = IFileSys(r.getFs(gIndex)).proWithdraw(ps);
-        IPool(r.getPool(gIndex)).outflow(_t, pOwner, _money);
+        (uint256 _money, uint256 _pr) = IFileSys(instances[10]).proWithdraw(ps);
+        IPool(r.getPool(_gi)).outflow(_t, pOwner, _money);
+
+        IKmanage ikm =  IKmanage(r.getKManage(_gi));
+        ikm.addProfit(ps.tIndex, _pr);
     }
 
     function get(uint8 _type) external override(IControl,Owner) view returns(address) {

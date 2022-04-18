@@ -15,8 +15,11 @@
 + 7 token (token data) non-upgrade
 + 8 pledge (pledge control) can upgrade
 + 9 issue (issue control) can upgrade
-+ 10 control (interact control) can upgrade
-+ 11 getter
++ 10 fs (fs data) non-upgrade
+
+
++ 100 control (interact control) can upgrade
++ 101 getter
 
 ## base contracts
 

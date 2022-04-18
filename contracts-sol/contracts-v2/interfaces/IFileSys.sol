@@ -56,18 +56,15 @@ struct SettleOut {
 }
 
 interface IFileSysSetter {
-    function addUser(uint64 _ui) external;
-    function addKeeper(uint64 _ki) external;
-    function addOrder(OrderIn memory ps) external;
-    function subOrder(uint64 _ki, OrderIn memory ps) external;
+    function addOrder(OrderIn memory ps, uint256 _mr) external;
+    function subOrder(OrderIn memory ps) external returns (uint256) ;
 
     function recharge(uint64 _i, uint8 _ti, uint256 money) external;
     function withdraw(uint64 _i, uint8 _ti, uint256 money) external returns (uint256);
-    function proWithdraw(PWIn memory ps) external returns(uint256);
+    function proWithdraw(PWIn memory ps) external returns(uint256, uint256);
 }
 
 interface IFileSysGetter {
-    function gIndex() external view returns(uint64);
     function balanceOf(uint64 _i, uint8 _ti) external view returns(uint256, uint256);
     function getFsInfo(uint64 _ui, uint64 _pi) external view returns (FsOut memory);
     function getStoreInfo(uint64 _ui, uint64 _pi, uint8 _ti) external view returns (StoreOut memory);

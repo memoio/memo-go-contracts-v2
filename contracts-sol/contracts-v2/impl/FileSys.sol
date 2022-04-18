@@ -9,7 +9,6 @@ import "./Owner.sol";
 /// @dev This contract is related to data storage and data reading payment in the file system.
 contract FileSys is IFileSys, Owner {
 
-    // StoreInfo is at some time
     struct StoreInfo {
         uint64 start; // last start 
         uint64 end;   // 什么时刻的状态，last end time
@@ -23,9 +22,7 @@ contract FileSys is IFileSys, Owner {
         mapping(uint8 => StoreInfo) sInfo; // 不同代币的支付信息，tokenIndex => StoreInfo
     }
 
-    // FsInfo each user have at most one group
     struct FsInfo {
-        bool isActive;
         uint64[] providers;             // provider索引
         mapping(uint64 => AggOrder) ao; // 该User对每个Provider的订单信息
     }
@@ -49,39 +46,15 @@ contract FileSys is IFileSys, Owner {
 
     uint16 public version = 2;
 
-    uint64 public override gIndex;
-
-    // fs合约状态变量, constant
-    uint8 public constant manageRate = 4; // group分得资金的百分比；4% for group, 其中3% linear and 1% at end;
-    uint8 public constant taxRate = 1;    // 基金会分得资金的百分比；1% for foundation;
+    uint8 public constant taxRate = 1;
 
     mapping(uint64 => mapping(uint8 => uint256)) balances; // 账户可用的余额
-    mapping(uint64 => mapping(uint8 => uint256)) penalty;  // 由于没有回应挑战而受到的惩罚
 
     mapping(uint64 => FsInfo) fs; // user => FsInfo; user 0 is repair fs
 
     mapping(uint64 => mapping(uint8 => Settlement)) proInfo; // pro => token => income
 
-    // keeper profit related 
-    uint64[] keepers; // for profit
-    uint64 period;    // keeper根据比例获取收益的时间间隔
-    uint64 lastTime;  // 上次分利润时间
-    mapping(uint8 => uint256) tAcc; // 记录分润值，每次分润后归0，tokenIndex=>num
-    uint64 totalCount; // 记录所有keeper触发order相关函数的总次数
-    mapping(uint64 => uint64) count; // 记录keeper触发Order相关函数的次数，用于分润
-    uint8[] tokens; // user使用某token时候加进来
-
-    /// @dev created by admin; 'r' indicates role-contract address, 'rfs' indicates RoleFS-contract address
-    constructor(address _rfs, address _a, uint64 _gIndex) Owner(_rfs, _a) {
-
-
-        gIndex = _gIndex;
-
-        fs[0].isActive = true; // for repair
-
-        period = 1;
-        lastTime = uint64(block.timestamp);
-        tokens.push(0);
+    constructor(address _rfs, address _a) Owner(_rfs, _a) {
     }
 
     function _settlementAdd(uint64 _pIndex, uint8 _tokenIndex, uint64 start, uint64 size, uint256 sprice, uint256 pay, uint256 manage) internal {
@@ -96,15 +69,10 @@ contract FileSys is IFileSys, Owner {
             proInfo[_pIndex][_tokenIndex].canPay += uint256(se.time - start)*sprice;
         }
 
-        // update price and size
         proInfo[_pIndex][_tokenIndex].price += sprice;
         proInfo[_pIndex][_tokenIndex].size += size;
-
-        // update maxPay; hardlimit
-        proInfo[_pIndex][_tokenIndex].maxPay += pay;
-
-        // pay to keeper, 4% of pay
-        proInfo[_pIndex][_tokenIndex].managePay += manage;
+        proInfo[_pIndex][_tokenIndex].maxPay += pay; // update maxPay; hardlimit
+        proInfo[_pIndex][_tokenIndex].managePay += manage; // pay to keeper, 4% of pay
     }
 
     // roughly
@@ -169,29 +137,9 @@ contract FileSys is IFileSys, Owner {
         return res;
     }
 
-    function addUser(uint64 _uIndex) external override onlyOwner {
-        require(!fs[_uIndex].isActive, "E"); // the fs already exists
-        fs[_uIndex].isActive = true;
-    }
-
-    // called by Role-contract; when add keeper to group
-    function addKeeper(uint64 _kIndex) external override onlyOwner {
-        keepers.push(_kIndex);
-        count[_kIndex] = 1;
-        totalCount++;
-    }
-
-    // called by RoleFS-contract
-    function addOrder(OrderIn memory ps) external override onlyOwner {
-        require(fs[ps.uIndex].isActive, "NE"); // the fs does not exist
-
-        if(!_hasToken(ps.tIndex)){
-            tokens.push(ps.tIndex);
-        }
-
-        // 验证金额是否足够
+    function addOrder(OrderIn memory ps, uint256 mr) external override onlyOwner {
         uint256 pay = (ps.end-ps.start) * ps.sPrice;
-        uint256 manage = pay / 100 * uint256(manageRate);
+        uint256 manage = pay / 100 * uint256(mr);
         uint256 tax = pay / 100 * uint256(taxRate);
         uint256 payAndTax = pay + manage + tax;
         require(balances[ps.uIndex][ps.tIndex] >= payAndTax, "BNE"); // balance not enough
@@ -216,15 +164,7 @@ contract FileSys is IFileSys, Owner {
         balances[ps.uIndex][ps.tIndex] -= payAndTax;
     }
 
-    // called by RoleFS-contract
-    function subOrder(uint64 kIndex, OrderIn memory ps) external override onlyOwner {
-        if(kIndex!=ps.uIndex){
-            require(count[kIndex] > 0,"NK");// not keeper
-        }
-        
-        if(!_hasToken(ps.tIndex)){
-            tokens.push(ps.tIndex);
-        }
+    function subOrder(OrderIn memory ps) external override onlyOwner returns(uint256) {
 
         require(fs[ps.uIndex].ao[ps.pIndex].subNonce == ps.nonce, "EN"); // nonce error
 
@@ -238,63 +178,33 @@ contract FileSys is IFileSys, Owner {
         // pay to keeper, 其中的1%在结束时才支付,存储在endPaid中
         uint256 endPaid = ps.sPrice * uint256(ps.end-ps.start) / 100;
         proInfo[ps.pIndex][ps.tIndex].endPaid += endPaid;
-        tAcc[ps.tIndex] += endPaid;
-
-        // pay to keeper, 3% for linear, do in proWithdraw
 
         fs[ps.uIndex].ao[ps.pIndex].subNonce++;
         
-        count[kIndex]++;
-        totalCount++;
+        // pay to keeper, 3% for linear, do in proWithdraw
+        return endPaid;
     }
 
     function recharge(uint64 uIndex, uint8 tIndex, uint256 money) external override onlyOwner {
         balances[uIndex][tIndex] += money;
-
-        // add tIndex
-        if(!_hasToken(tIndex)){
-            tokens.push(tIndex);
-        }
     }
 
     // provider withdraw money, called by owner
-    function proWithdraw(PWIn memory ps) external override onlyOwner returns(uint256) {
+    function proWithdraw(PWIn memory ps) external override onlyOwner returns(uint256, uint256) {
         // pay to provider
         uint256 thisPay = _settlementCal(ps.pIndex, ps.tIndex, ps.pay, ps.lost);
         if(thisPay==0){
-            return 0;
+            return (0,0);
         }
 
         // linear pay to keepers
         uint256 lpay = thisPay * 3 / 100; // 3% thisPay for linearPaid
         proInfo[ps.pIndex][ps.tIndex].linearPaid += lpay;
-        tAcc[ps.tIndex] += lpay;
         
-        return thisPay;
+        return (thisPay, lpay);
     }
 
     function withdraw(uint64 index, uint8 tokenIndex, uint256 amount) external override onlyOwner returns(uint256){
-        if (count[index] > 0) {
-            uint64 ntime = uint64(block.timestamp);
-            if(ntime-lastTime > period){
-                if(totalCount != 0){
-                    for(uint i = 0; i< tokens.length; i++){
-                        uint256 value = tAcc[tokens[i]]; // 分润值
-                        if(value==0){
-                            continue;
-                        }
-                        uint256 per = value / uint256(totalCount);
-                        for(uint j =0; j<keepers.length; j++){
-                            uint256 pro = per * count[keepers[j]];
-                            balances[keepers[j]][tokens[i]] += pro;
-                            tAcc[tokens[i]] -= pro;
-                        }
-                    }
-                }
-                lastTime = ntime;
-            }
-        }
-    
         uint256 bal = balances[index][tokenIndex];
         if(amount>bal){
             amount=bal;
@@ -304,22 +214,9 @@ contract FileSys is IFileSys, Owner {
         return amount;
     }
 
-     // judge if tokens has the _tokenIndex
-    function _hasToken(uint8 _tokenIndex) internal view returns (bool) {
-        for(uint8 i = 0; i<tokens.length; i++){
-            if(tokens[i]==_tokenIndex){
-                return true;
-            }
-        }
-        return false;
-    }
-
     // ================get=============
-
-    // get some parameters in FsInfo
     function getFsInfo(uint64 user, uint64 pro) external view override returns (FsOut memory){
         FsOut memory f;
-        f.isActive = fs[user].isActive;
         return f;
     }
 
@@ -351,20 +248,6 @@ contract FileSys is IFileSys, Owner {
             canPay = tmp;
         }
         tmp = canPay - se.hasPaid;
-
-        if(totalCount == 0){
-            return (avail, tmp);
-        }
-
-        if(count[index]!=0){
-            uint256 sum = tAcc[tIndex] * count[index];
-            uint256 pro = sum / totalCount;
-            if((block.timestamp-lastTime)>=period){
-                avail += pro;
-            }else{
-                tmp+=pro;
-            }
-        }
 
         return (avail, tmp);
     }

@@ -38,7 +38,7 @@ interface IRoleSetter {
     function ban(uint64 _i, bool _ban) external;
 
     // called by admin, create a group, owner新建一个 FileSys 合约
-    function createGroup(uint16 _level, address _fs, uint256 _kr, uint256 _pr) external;
+    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external;
 
     // register self to get index
     function registerAccount(address _a) external; 
@@ -60,7 +60,7 @@ interface IRoleGetter {
     function getGInfo(uint64 _i) external view returns (GroupOut memory);
     function getPInfo(uint64 _i) external view returns (uint256, uint256);
 
-    function getFs(uint64 _i) external view returns (address);
+    function getKManage(uint64 _i) external view returns (address);
     function getPool(uint64 _i) external view returns (address);
     function getKCnt(uint64 _i) external view returns (uint64);
     function getGroupK(uint64 ig, uint64 ik) external view returns (uint64);

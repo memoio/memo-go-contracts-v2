@@ -6,6 +6,7 @@ import "../interfaces/IAuth.sol";
 import "../interfaces/IFileSys.sol";
 import "./Owner.sol";
 import "./Pool.sol";
+import "./Kmanage.sol";
 import "../Recover.sol";
 
 /**
@@ -31,10 +32,8 @@ contract Role is IRole, Owner {
         uint16 level;     // security level
         uint256 kpr;      // keeper pledge require 
         uint256 ppr;      // provider pledge require
-        address pool;   // poolAddr
-        address fsAddr; // fs contract address
-        uint256 size;   // storeSize
-        uint256 price;  // storePrice
+        address pool;     // poolAddr
+        address kManage;  // keeper manage contract address
         uint64[] keepers;   // 里面有哪些keeper
         uint64[] providers; // 有哪些provider
         uint64[] users;     // 有哪些provider
@@ -73,7 +72,7 @@ contract Role is IRole, Owner {
             groups[gIndex].keepers.push(_index);
             if (groups[gIndex].keepers.length >= groups[gIndex].level) {
                 groups[gIndex].isActive = true;
-                IFileSysSetter(groups[gIndex].fsAddr).addKeeper(_index);
+                //IFileSysSetter(groups[gIndex].fsAddr).addKeeper(_index);
             }
         }
         info[a].isActive = _active;
@@ -132,19 +131,19 @@ contract Role is IRole, Owner {
         emit ReRole(_index, _rType);
     }
 
-    function createGroup(uint16 _level, address _fsAddr, uint256 _kr, uint256 _pr) external onlyOwner override {
+    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 mr) external onlyOwner override {
         uint64 _gIndex = uint64(groups.length);
-        require(IFileSysGetter(_fsAddr).gIndex() == _gIndex, "GD");
 
-        // create pool address; force each group has unique pool due to fsAddr can be upgrade  
+        // create pool address; force each group has unique pool  
         Pool p = new Pool(instances[1],instances[2]);
+        Kmanage k = new Kmanage(instances[1], instances[2], mr);
         
         GroupInfo memory g;
         g.level = _level;
         g.kpr = _kr;
         g.ppr = _pr; 
         g.pool = address(p);
-        g.fsAddr = _fsAddr;
+        g.kManage = address(k);
         groups.push(g);
 
         emit CreateGroup(_gIndex);
@@ -172,12 +171,6 @@ contract Role is IRole, Owner {
         }
 
         info[a].gIndex = _gIndex;
-    }
-
-    function setGF(uint64 _gIndex, address _fsAddr) external onlyOwner {
-        require(!groups[_gIndex].isBanned, "IB"); // is banned
-        require(IFileSysGetter(_fsAddr).gIndex() == _gIndex, "GD");
-        groups[_gIndex].fsAddr = _fsAddr;
     }
 
     // ===================get===================
@@ -213,8 +206,8 @@ contract Role is IRole, Owner {
         return g;
     }
 
-    function getFs(uint64 i) external view override returns (address) {
-        return groups[i].fsAddr;
+    function getKManage(uint64 _i) external view override returns (address) {
+        return groups[_i].kManage;
     }
 
     function getPool(uint64 i) external view override returns (address) {
