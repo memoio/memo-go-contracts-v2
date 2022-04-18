@@ -26,7 +26,7 @@ interface IProxy {
     function withdraw(uint64 _i, uint8 _ti, uint256 _money) external;
     function proWithdraw(PWIn memory _ps, uint64[] memory _kis, bytes[] memory ksigns) external;
 
-    function get(uint8 _type) external view returns(address)
+    function get(uint8 _type) external view returns(address);
 }
 
    
