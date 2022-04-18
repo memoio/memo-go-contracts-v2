@@ -6,14 +6,17 @@ import "../interfaces/IAuth.sol";
 import "../interfaces/IERC20.sol";
 import "./Owner.sol";
 
-/// @dev This contract is related to data storage and data reading payment in the file system.
+/**
+ *@author MemoLabs
+ *@title manage fs in memo system
+ */
 contract FileSys is IFileSys, Owner {
 
     struct StoreInfo {
-        uint64 start; // last start 
-        uint64 end;   // 什么时刻的状态，last end time
+        uint64 start;  // last start 
+        uint64 end;    // 什么时刻的状态，last end time
         uint64 size;   // 在该存储节点上的存储总量，byte
-        uint256 price; // 按周期计费; per cycle
+        uint256 price; 
     }
 
     struct AggOrder {
@@ -40,8 +43,8 @@ contract FileSys is IFileSys, Owner {
         uint256 lostPaid;// pay to repair
 
         uint256 managePay; // pay for group keepers >= endPaid+linearPaid
-        uint256 endPaid;   // release when order expire
-        uint256 linearPaid;// release when pay for provider
+        uint256 endPaid;   // release 25% of manage when order expire; need?
+        uint256 linearPaid;// release 75% of manage when pay for provider; need?
     }
 
     uint16 public version = 2;
@@ -61,7 +64,7 @@ contract FileSys is IFileSys, Owner {
     function _settlementAdd(uint64 _pIndex, uint8 _tokenIndex, uint64 start, uint64 size, uint256 sprice, uint256 pay, uint256 manage) internal {
         // update canPay
         Settlement memory se = proInfo[_pIndex][_tokenIndex];
-        if(se.time < start){
+        if(se.time < start){ 
             if(se.time!=0){ // 非首次addOrder
                 proInfo[_pIndex][_tokenIndex].canPay += (start-se.time) * se.price;
             }
@@ -142,7 +145,7 @@ contract FileSys is IFileSys, Owner {
         uint256 manage = pay / 100 * uint256(mr);
         uint256 tax = pay / 100 * uint256(taxRate);
         uint256 payAndTax = pay + manage + tax;
-        require(balances[ps.uIndex][ps.tIndex] >= payAndTax, "BNE"); // balance not enough
+        require(balances[ps.uIndex][ps.tIndex] + lock[ps.uIndex][ps.tIndex] >= payAndTax, "BNE"); // balance not enough
 
         // 验证nonce
         require(fs[ps.uIndex].ao[ps.pIndex].nonce == ps.nonce, "NE"); // nonce error
@@ -161,11 +164,18 @@ contract FileSys is IFileSys, Owner {
 
         // add to foundation
         balances[0][ps.tIndex] += tax;
-        balances[ps.uIndex][ps.tIndex] -= payAndTax;
+
+        // pay from lock first
+        if (lock[ps.uIndex][ps.tIndex] >= payAndTax) {
+            lock[ps.uIndex][ps.tIndex] -= payAndTax;
+        } else {
+            payAndTax -= lock[ps.uIndex][ps.tIndex]; 
+            lock[ps.uIndex][ps.tIndex] = 0;
+            balances[ps.uIndex][ps.tIndex] -= payAndTax;
+        }
     }
 
-    function subOrder(OrderIn memory ps) external override onlyOwner returns(uint256) {
-
+    function subOrder(OrderIn memory ps, uint256 mr) external override onlyOwner returns(uint256) {
         require(fs[ps.uIndex].ao[ps.pIndex].subNonce == ps.nonce, "EN"); // nonce error
 
         // update size and price
@@ -175,13 +185,11 @@ contract FileSys is IFileSys, Owner {
         // update settlement
         _settlementSub(ps.pIndex, ps.tIndex, ps.end, ps.size, ps.sPrice);
 
-        // pay to keeper, 其中的1%在结束时才支付,存储在endPaid中
-        uint256 endPaid = ps.sPrice * uint256(ps.end-ps.start) / 100;
+        uint256 endPaid = ps.sPrice * uint256(ps.end-ps.start) * mr / 400;
         proInfo[ps.pIndex][ps.tIndex].endPaid += endPaid;
 
         fs[ps.uIndex].ao[ps.pIndex].subNonce++;
         
-        // pay to keeper, 3% for linear, do in proWithdraw
         return endPaid;
     }
 
@@ -194,7 +202,7 @@ contract FileSys is IFileSys, Owner {
     }
 
     // provider withdraw money, called by owner
-    function proWithdraw(PWIn memory ps) external override onlyOwner returns(uint256, uint256) {
+    function proWithdraw(PWIn memory ps, uint256 _mr) external override onlyOwner returns(uint256, uint256) {
         // pay to provider
         uint256 thisPay = _settlementCal(ps.pIndex, ps.tIndex, ps.pay, ps.lost);
         if(thisPay==0){
@@ -202,7 +210,7 @@ contract FileSys is IFileSys, Owner {
         }
 
         // linear pay to keepers
-        uint256 lpay = thisPay * 3 / 100; // 3% thisPay for linearPaid
+        uint256 lpay = thisPay * _mr * 3 / 400; // 3% thisPay for linearPaid
         proInfo[ps.pIndex][ps.tIndex].linearPaid += lpay;
         
         return (thisPay, lpay);
@@ -241,18 +249,22 @@ contract FileSys is IFileSys, Owner {
 
     function balanceOf(uint64 _i, uint8 _ti) external view override returns(uint256, uint256){
         uint256 avail = balances[_i][_ti];
+        uint256 _lock = lock[_i][_ti];
         Settlement memory se = proInfo[_i][_ti];
         uint256 canPay = se.canPay;
-        if (block.timestamp > se.time) {
-            canPay += uint256(block.timestamp - se.time) * se.price;
-        }
+        if (se.time > 0) {
+            if (block.timestamp > se.time) {
+                canPay += uint256(block.timestamp - se.time) * se.price;
+            }
 
-        uint256 tmp = se.maxPay - se.lost;
-        if(canPay > tmp){
-            canPay = tmp;
-        }
-        tmp = canPay - se.hasPaid;
+            uint256 tmp = se.maxPay - se.lost;
+            if(canPay > tmp){
+                canPay = tmp;
+            }
 
-        return (avail, tmp);
+            _lock += (canPay - se.hasPaid);
+        }
+        
+        return (avail, _lock);
     }
 }

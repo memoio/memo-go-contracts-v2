@@ -4,7 +4,10 @@ pragma solidity ^0.8.0;
 import "../interfaces/IToken.sol";
 import "./Owner.sol";
 
-/// @dev This contract is about the token addresses that memo supported.
+/**
+ *@author MemoLabs
+ *@title Manage token addresses that memo supported.
+ */
 contract Token is IToken, Owner {
     struct TokenInfo {
         uint8 index;  // 代币序列号
@@ -18,11 +21,7 @@ contract Token is IToken, Owner {
 
     event AddT(address t, uint8 tIndex);
 
-    constructor(address _rfs, address _a, address _t) Owner(_rfs, _a) {
-        instances[1] = _rfs;
-        instances[2] = _a;
-        tokens.push(_t);
-        tInfo[_t].index = 0;
+    constructor(address _rfs, address _a) Owner(_rfs, _a) {
     }
 
     function addT(address t) external override onlyOwner returns(uint8) {

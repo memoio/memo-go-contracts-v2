@@ -5,27 +5,36 @@ import "../interfaces/IKmanage.sol";
 import "../interfaces/IAuth.sol";
 import "./Owner.sol";
 
-/// @dev This contract is related to data storage and data reading payment in the file system.
+/**
+ *@author MemoLabs
+ *@title keeper management in memo system, per group
+ */
 contract Kmanage is IKmanage, Owner {
+
+    struct StoreInfo {
+        uint64 size; 
+        uint256 price; 
+    }
+
     uint16 public version = 2;
 
     uint8 public manageRate = 4; // group分得资金的百分比；4% for group, 其中3% linear and 1% at end;
 
-    uint64 period;    // keeper根据比例获取收益的时间间隔
-    uint64 lastTime;  // 上次分利润时间
+    uint64 period = 7*86400;     // keeper根据比例获取收益的时间间隔, one week
+    uint64 lastTime;             // 上次分利润时间
 
-    uint64[] keepers; // for profits
-    mapping(uint8 => uint256) tAcc; // 记录分润值，每次分润后归0，tokenIndex=>num
-    uint64 totalCount; // 记录所有keeper触发order相关函数的总次数
+    uint64[] keepers;
+    uint8[] tokens;
+    mapping(uint8 => uint256) tAcc; // 记录分润值
+    
     mapping(uint64 => uint64) count; // 记录keeper触发Order相关函数的次数，用于分润
+    uint64 totalCount; // 记录所有keeper触发order相关函数的总次数
 
     mapping(uint64 => mapping(uint8 => uint256)) balances; // 账户可用的余额
-    uint8[] tokens;
-
-    /// @dev created by admin; 'r' indicates role-contract address, 'rfs' indicates RoleFS-contract address
+    mapping(uint8 => StoreInfo) sinfo;
+    
     constructor(address _o, address _a, uint8 mr) Owner(_o, _a) {
-        manageRate = mr;
-        period = 7*86400; // one week
+        manageRate = mr; 
         lastTime = uint64(block.timestamp);
     }
 
@@ -57,6 +66,16 @@ contract Kmanage is IKmanage, Owner {
     // after pro withdraw
     function addProfit(uint8 _ti, uint256 _money) external override onlyOwner {
         tAcc[_ti] += _money;
+    }
+
+    function addSP(uint8 _ti, uint64 _size, uint256 _price, bool isAdded) external override onlyOwner {
+        if (isAdded) {
+            sinfo[_ti].size += _size;
+            sinfo[_ti].price += _price;
+        } else {
+           sinfo[_ti].size -= _size;
+            sinfo[_ti].price -= _price; 
+        }
     }
 
     function withdraw(uint64 _ki, uint8 _ti, uint256 amount) external override onlyOwner returns(uint256){
@@ -93,6 +112,10 @@ contract Kmanage is IKmanage, Owner {
     // ================get=============
     function getRate() external view override returns (uint8) {
         return manageRate;
+    }
+
+    function getSP(uint8 _ti) external view override returns (uint64, uint256) {
+        return (sinfo[_ti].size, sinfo[_ti].price);
     }
 
     function balanceOf(uint64 _ki, uint8 _ti) external view override returns(uint256, uint256){

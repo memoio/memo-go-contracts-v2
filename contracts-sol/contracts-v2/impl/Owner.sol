@@ -3,6 +3,10 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IAuth.sol";
 
+/**
+ *@author MemoLabs
+ *@title Manage owner and auth in memo system
+ */
 contract Owner {
     // can support mask if using uint32 instead of uint8 
     mapping(uint8=>address) public instances;

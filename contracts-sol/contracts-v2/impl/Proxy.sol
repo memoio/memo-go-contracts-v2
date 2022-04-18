@@ -5,7 +5,10 @@ import "../interfaces/IProxy.sol";
 import "../interfaces/IControl.sol";
 import "./Owner.sol";
 
-/// @dev This contract contains functions controlling Role, Pledge, FileSys
+/**
+ *@author MemoLabs
+ *@title Operate Interface in the memo system.
+ */
 contract Proxy is IProxy, Owner {
     uint16 public version = 2;
 

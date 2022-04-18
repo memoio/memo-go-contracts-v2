@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 import "../interfaces/IAccess.sol";
 import "../Recover.sol";
 
+/**
+ *@author MemoLabs
+ *@title manage erc20
+ */
 contract Access is IAccess {
     using Recover for bytes32;
 

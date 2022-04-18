@@ -11,7 +11,7 @@ import "../Recover.sol";
 
 /**
  *@author MemoLabs
- *@title Used to register account roles for people participating in the memo system
+ *@title Manage account, roles and groups in the memo system.
  */
 contract Role is IRole, Owner {
     using Recover for bytes32;
@@ -83,6 +83,10 @@ contract Role is IRole, Owner {
         info[a].isBanned = _banned;
     }
 
+    function banG(uint64 _gi, bool _isBan) external onlyOwner override {
+        groups[_gi].isBanned = _isBan;
+    }
+
     /// @dev check if 'index' is rType and not in some group
     function checkIR(uint64 _index, uint8 _rType) external view override returns (address) {
         address a = addrs[_index];
@@ -112,7 +116,6 @@ contract Role is IRole, Owner {
         
         return (a,info[a].payee, gIndex, lock);
     }
-
 
     function registerAccount(address a) external onlyOwner override {
         if(info[a].index == 0 && !info[a].isActive) {
@@ -147,10 +150,6 @@ contract Role is IRole, Owner {
         groups.push(g);
 
         emit CreateGroup(_gIndex);
-    }
-
-    function banG(uint64 _gi, bool _isBan) external onlyOwner override {
-        groups[_gi].isBanned = _isBan;
     }
 
     function addToGroup(uint64 _index, uint64 _gIndex, uint256 _pm) external onlyOwner override {

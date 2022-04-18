@@ -5,7 +5,10 @@ import "../interfaces/IERC20.sol";
 import "../interfaces/IAccess.sol";
 import "../Recover.sol";
 
-/// @dev This contract is memo token.
+/**
+ *@author MemoLabs
+ *@title erc20 token in memo system
+ */
 contract ERC20 is IERC20 {
     using Recover for bytes32;
 

@@ -14,7 +14,10 @@ import "../interfaces/IKmanage.sol";
 import "./Owner.sol";
 import "../Recover.sol";
 
-/// @dev This contract contains functions controlling Role, Pledge, FileSys
+/**
+ *@author MemoLabs
+ *@title controlling Role, Pledge, FileSys, Issue, Pool in memo system
+ */
 contract Control is IControl, Owner {
     using Recover for bytes32;
 
@@ -62,16 +65,15 @@ contract Control is IControl, Owner {
     }
 
     function createGroup(uint16 _level, uint256 _k, uint256 _p, uint8 _mr) external override {
-       IRoleSetter(instances[6]).createGroup(_level, _k, _p, _mr);
+        require(_mr > 1 && _mr % 4 == 0, "MRL");
+        IRoleSetter(instances[6]).createGroup(_level, _k, _p, _mr);
     }
 
-    // register self to get index
     function registerAccount(address _a) external onlyOwner override {
         IRoleSetter r = IRoleSetter(instances[6]);
         return r.registerAccount(_a);
-    } 
+    }
 
-    // register as user/keeper/provider
     function registerRole(address _a, uint8 _rtype, bytes memory extra) external onlyOwner override {
         uint64 _i = IRoleGetter(instances[6]).getIndex(_a);
         return IRoleSetter(instances[6]).registerRole(_i, _rtype, extra);
@@ -100,7 +102,7 @@ contract Control is IControl, Owner {
         (,address _re, , uint256 _lock) = IRoleGetter(instances[6]).checkIG(_i, 0);
         require(_re == _a, "IC");
 
-        // todo: need lock more from fssys
+        // todo: need lock more from fs
 
         uint256 _money = IPledgeSetter(instances[8]).withdraw(_i, _ti, money, _lock);
         IPool(instances[5]).outflow(_t, _re, _money);
@@ -127,6 +129,11 @@ contract Control is IControl, Owner {
         require((_w == _a ||_re == _a), "IC");
 
         uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money);
+        if (money > _money) {
+            money -= _money;
+            uint256 _m = IKmanage(r.getKManage(_gi)).withdraw(_i, _ti, money);
+            _money += _m;
+        } 
         IPool(r.getPool(_gi)).outflow(_t, _re, _money);
     }
 
@@ -189,6 +196,7 @@ contract Control is IControl, Owner {
                 IERC20(_t).mint(instances[5], reward);
             }
         }
+        ikm.addSP(ps.tIndex, ps.size, ps.sPrice, true);  
     }
 
     function subOrder(address _a, OrderIn memory ps) external onlyOwner override {
@@ -198,20 +206,23 @@ contract Control is IControl, Owner {
         (address uAddr, uint64 _gi) = checkParam(ps);
         require(ps.end <= block.timestamp, "ET"); // time error
 
-        uint256 ep = IFileSys(instances[10]).subOrder(ps);
-
         IRoleGetter r = IRoleGetter(instances[6]);
+        IKmanage ikm =  IKmanage(r.getKManage(_gi));
+
+        uint256 ep = IFileSys(instances[10]).subOrder(ps, uint256(ikm.getRate()));
+
         uint64 kIndex = ps.uIndex;
         if (_a != uAddr) {
             kIndex = r.getIndex(_a);
             // not user, should be keeper
             (,,uint64 _ngi,) = r.checkIG(kIndex, 3);
             require(_gi == _ngi, "GD");
-
-            IKmanage ikm =  IKmanage(r.getKManage(_gi));
+            
             ikm.addCnt(kIndex, 1);
             ikm.addProfit(ps.tIndex, ep);
-        }     
+        }   
+
+        ikm.addSP(ps.tIndex, ps.size, ps.sPrice, false);  
     }
 
     // kIndexes is incremental
@@ -241,10 +252,11 @@ contract Control is IControl, Owner {
         // valid sig should not less than 2*(N+1)/3, N: kNum of group
         require(sigCnt >= 2 * (r.getKCnt(_gi) + 1) / 3, "KSE"); // kSigns error
 
-        (uint256 _money, uint256 _pr) = IFileSys(instances[10]).proWithdraw(ps);
+        IKmanage ikm =  IKmanage(r.getKManage(_gi));
+        
+        (uint256 _money, uint256 _pr) = IFileSys(instances[10]).proWithdraw(ps, uint256(ikm.getRate()));
         IPool(r.getPool(_gi)).outflow(_t, pOwner, _money);
 
-        IKmanage ikm =  IKmanage(r.getKManage(_gi));
         ikm.addProfit(ps.tIndex, _pr);
     }
 

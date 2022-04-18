@@ -4,7 +4,10 @@ pragma solidity ^0.8.0;
 import "../interfaces/IIssuance.sol";
 import "./Owner.sol";
 
-/// @dev This contract is about the issuance of token
+/**
+ *@author MemoLabs
+ *@title mint reward in memo system
+ */
 contract Issuance is IIssuance, Owner {
     struct MintInfo {
         uint16 ratio;

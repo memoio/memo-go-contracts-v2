@@ -126,6 +126,9 @@ admin禁止某组
 
 + function subOrder(address _a, OrderIn memory _oi) external;
 
+验证账户，token合法性
+验证订单合法
+分润给kmanage
 
 + function recharge(address _a, uint64 _i, uint8 _ti, uint256 _money, bool isLock) external;
 

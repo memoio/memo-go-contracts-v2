@@ -10,7 +10,7 @@ import "../Recover.sol";
 
 /**
  *@author MemoLabs
- *@title Any who has registered can introduce the pledge and get staking income
+ *@title Manage pledge in memo system
  */
 contract Pledge is IPledge, Owner {
     using Recover for bytes32;
@@ -52,13 +52,7 @@ contract Pledge is IPledge, Owner {
             allAmount[index][i].rewardAccu = tInfo[i].rewardAccu; // 更新accu
         }
     }
-
-    /**
-     *@notice Pledge money.
-     *@dev Called by the account itself or by another account on its behalf.
-     *@param index The index of the account.
-     *@param money The value that the account want to pledge.
-     */
+    
     function pledge(uint64 index, uint256 money) external onlyOwner override {
         RewardInfo memory reward = allAmount[index][0];
         uint256 amount = reward.lastReward;
@@ -147,8 +141,6 @@ contract Pledge is IPledge, Owner {
     }
 
     // ========== get ===========
-
-    // 获得账户在指定代币上的余额
     function _getBalance(uint8 tIndex) internal view returns (uint256) {
         (address tAddr, ) = ITokenGetter(instances[7]).getTA(tIndex);
         (bool success, bytes memory data) = tAddr.staticcall(abi.encodeWithSelector(SELECTOR0, instances[5]));
@@ -161,7 +153,6 @@ contract Pledge is IPledge, Owner {
         return _getBalance(tIndex);
     }
 
-    // 获得指定账户index对于指定代币tindex的分润值
     function balanceOf(uint64 index, uint8 tIndex) external view override returns (uint256) {
         RewardInfo memory reward0 = allAmount[index][0];
         if (reward0.lastReward==0) {

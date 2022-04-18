@@ -7,6 +7,10 @@ import "../interfaces/IPool.sol";
 import "../Recover.sol";
 import "./Owner.sol";
 
+/**
+ *@author MemoLabs
+ *@title Pool for receiving and sending tokens in the memo system.
+ */
 contract Pool is IPool, Owner {
     using Recover for bytes32;
 
@@ -16,8 +20,6 @@ contract Pool is IPool, Owner {
     event Outflow(address indexed to, uint256 money);
 
     constructor(address _rfs, address _a) Owner(_rfs, _a) {
-        instances[1] = _rfs;
-        instances[2] = _a;
     }
 
     receive() external payable {}

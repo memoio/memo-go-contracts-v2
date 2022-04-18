@@ -4,7 +4,10 @@ import "../interfaces/IProxy.sol";
 import "../interfaces/IToken.sol";
 import "../interfaces/IToken.sol";
 
-/// @dev This contract contains functions controlling Role, Pledge, FileSys
+/**
+ *@author MemoLabs
+ *@title get interface in memo system
+ */
 contract Getter is IGetter {
     uint16 public version = 2;
     address public owner;
