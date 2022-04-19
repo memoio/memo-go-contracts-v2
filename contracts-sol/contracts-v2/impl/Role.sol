@@ -48,8 +48,8 @@ contract Role is IRole, Owner {
 
     GroupInfo[] groups; // manage group
 
-    event ReAcc(address addr, uint64 index);
-    event ReRole(uint64 index, uint8 _rType);
+    event ReAcc(address addr, uint64 index); // to get all registered account by filter logs
+    event ReRole(uint8 indexed _rType, uint64 index); // to get all users/keepers/providers by filter logs
     event CreateGroup(uint64 gIndex);
 
     constructor(address _rfs, address _a, address f) Owner(_rfs, _a) {
@@ -131,7 +131,7 @@ contract Role is IRole, Owner {
         address a = this.checkIR(_index, 0);
         info[a].roleType = _rType;
         info[a].extra = _extra;
-        emit ReRole(_index, _rType);
+        emit ReRole(_rType, _index);
     }
 
     function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 mr) external onlyOwner override {

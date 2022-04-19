@@ -1,8 +1,9 @@
+// SPDX-License-Identifier:UNLICENSED
 pragma solidity ^0.8.0;
 
 import "../interfaces/IProxy.sol";
 import "../interfaces/IToken.sol";
-import "../interfaces/IToken.sol";
+import "../interfaces/IGetter.sol";
 
 /**
  *@author MemoLabs

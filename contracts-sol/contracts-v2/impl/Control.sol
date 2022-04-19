@@ -12,15 +12,12 @@ import "../interfaces/IPledge.sol";
 import "../interfaces/IPool.sol";
 import "../interfaces/IKmanage.sol";
 import "./Owner.sol";
-import "../Recover.sol";
 
 /**
  *@author MemoLabs
  *@title controlling Role, Pledge, FileSys, Issue, Pool in memo system
  */
 contract Control is IControl, Owner {
-    using Recover for bytes32;
-
     uint16 public version = 2;
 
     constructor(address _o,address _a) Owner(_o, _a) {
@@ -85,7 +82,7 @@ contract Control is IControl, Owner {
         return IRoleSetter(instances[6]).addToGroup(_i, _gi, bal);
     }
 
-    // anyone can pledge using its money
+    // anyone can pledge using its money, use a's money, pledge for i
     function pledge(address _a ,uint64 _i, uint256 money) external override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(0);
         require(!_v, "TB"); // token banned
@@ -108,6 +105,7 @@ contract Control is IControl, Owner {
         IPool(instances[5]).outflow(_t, _re, _money);
     }
 
+    // use a's money, recharge for ui
     function recharge(address _a, uint64 _ui, uint8 _ti, uint256 money, bool isLock) external override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(0);
         require(!_v, "TB"); // token banned
@@ -120,6 +118,7 @@ contract Control is IControl, Owner {
         IFileSys(instances[10]).recharge(_ui, _ti, money, isLock); 
     }
 
+    // called by Proxy.sol, tx.origin = a, need a = addr[i] or a = addr[i].payee
     function withdraw(address _a, uint64 _i, uint8 _ti, uint256 money) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(_ti);
         require(!_v, "TB"); // token banned
@@ -260,7 +259,7 @@ contract Control is IControl, Owner {
         ikm.addProfit(ps.tIndex, _pr);
     }
 
-    function get(uint8 _type) external override(IControl,Owner) view returns(address) {
+    function get(uint8 _type) external override view returns(address) {
         return instances[_type];
     } 
 }
