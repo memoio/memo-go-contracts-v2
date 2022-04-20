@@ -13,7 +13,7 @@ contract Kmanage is IKmanage, Owner {
 
     struct StoreInfo {
         uint64 size; 
-        uint256 price; 
+        uint256 sprice; 
     }
 
     uint16 public version = 2;
@@ -68,13 +68,13 @@ contract Kmanage is IKmanage, Owner {
         tAcc[_ti] += _money;
     }
 
-    function addSP(uint8 _ti, uint64 _size, uint256 _price, bool isAdded) external override onlyOwner {
+    function addSP(uint8 _ti, uint64 _size, uint256 _sprice, bool isAdded) external override onlyOwner {
         if (isAdded) {
             sinfo[_ti].size += _size;
-            sinfo[_ti].price += _price;
+            sinfo[_ti].sprice += _sprice;
         } else {
            sinfo[_ti].size -= _size;
-            sinfo[_ti].price -= _price; 
+            sinfo[_ti].sprice -= _sprice; 
         }
     }
 
@@ -115,7 +115,7 @@ contract Kmanage is IKmanage, Owner {
     }
 
     function getSP(uint8 _ti) external view override returns (uint64, uint256) {
-        return (sinfo[_ti].size, sinfo[_ti].price);
+        return (sinfo[_ti].size, sinfo[_ti].sprice);
     }
 
     function balanceOf(uint64 _ki, uint8 _ti) external view override returns(uint256, uint256){

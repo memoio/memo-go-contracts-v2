@@ -58,7 +58,7 @@ contract Token is IToken, Owner {
 
     // =========get==========
     function getTA(uint8 tIndex) external view override returns (address, bool) {
-        return (tokens[tIndex],!tInfo[tokens[tIndex]].isBanned);
+        return (tokens[tIndex],tInfo[tokens[tIndex]].isBanned);
     }
 
     function getTI(address t) external view override returns (uint8, bool) {

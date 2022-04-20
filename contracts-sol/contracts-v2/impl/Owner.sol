@@ -9,12 +9,6 @@ import "../interfaces/IAuth.sol";
  */
 contract Owner {
     // can support mask if using uint32 instead of uint8 
-    // instances[100] = control-address
-    // instances[5] = pool-address
-    // instances[6] = role-address
-    // instances[7] = token-address
-    // instances[8] = pledge-address
-    // instances[10] = filesys-address
     mapping(uint8=>address) public instances;
 
     event Alter(uint8, address from, address to);
@@ -44,8 +38,4 @@ contract Owner {
         emit Alter(_type, instances[_type], _a);
         instances[_type] = _a;
     }
-
-    function getIns(uint8 _type) external view returns(address) {
-        return instances[_type];
-    } 
 }

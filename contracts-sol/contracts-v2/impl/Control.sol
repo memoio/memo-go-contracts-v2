@@ -12,12 +12,14 @@ import "../interfaces/IPledge.sol";
 import "../interfaces/IPool.sol";
 import "../interfaces/IKmanage.sol";
 import "./Owner.sol";
+import "../Recover.sol";
 
 /**
  *@author MemoLabs
  *@title controlling Role, Pledge, FileSys, Issue, Pool in memo system
  */
 contract Control is IControl, Owner {
+    using Recover for bytes32;
     uint16 public version = 2;
 
     constructor(address _o,address _a) Owner(_o, _a) {
@@ -127,7 +129,7 @@ contract Control is IControl, Owner {
         (address _w, address _re, uint64 _gi, ) = r.checkIG(_i, 0);
         require((_w == _a ||_re == _a), "IC");
 
-        uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money);
+        uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money); // reduce balances[i] in fs
         if (money > _money) {
             money -= _money;
             uint256 _m = IKmanage(r.getKManage(_gi)).withdraw(_i, _ti, money);
@@ -140,7 +142,7 @@ contract Control is IControl, Owner {
         IRoleGetter r = IRoleGetter(instances[6]);
 
         require(ps.size > 0, "sz"); // size zero
-        require(ps.sPrice > 0, "pz" ); // price zero
+        require(ps.sPrice > 0, "pz" ); // sizePrice zero
         require(ps.end > ps.start + 8640000, "es"); // end more than start+100 day
         require(ps.end < ps.start + 86400000, "el"); // end no more than start+1000 day
         require(ps.end%86400 == 0, "te"); // end time error; align to day
@@ -171,6 +173,7 @@ contract Control is IControl, Owner {
         return (uAddr, _gi);
     }
 
+    // order duration >= 100 days & <= 1000 days, a = tx.origin, a is user
     function addOrder(address _a, OrderIn memory ps) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(ps.tIndex);
         require(!_v, "TB"); //
@@ -210,7 +213,7 @@ contract Control is IControl, Owner {
 
         uint256 ep = IFileSys(instances[10]).subOrder(ps, uint256(ikm.getRate()));
 
-        uint64 kIndex = ps.uIndex;
+        uint64 kIndex;
         if (_a != uAddr) {
             kIndex = r.getIndex(_a);
             // not user, should be keeper
@@ -224,7 +227,7 @@ contract Control is IControl, Owner {
         ikm.addSP(ps.tIndex, ps.size, ps.sPrice, false);  
     }
 
-    // kIndexes is incremental
+    // kIndexes is incremental, a = tx.origin, a should be ps.pIndex or ps.pIndex.payee
     function proWithdraw(address _a, PWIn memory ps, uint64[] memory kIndexes, bytes[] memory ksigns) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(ps.tIndex);
         require(!_v, "TB"); 

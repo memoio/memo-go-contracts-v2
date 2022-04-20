@@ -57,10 +57,12 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).unpledge(msg.sender, _i, _ti, _money);
     }
 
+    // called by user
     function addOrder( OrderIn memory _oi) external override {
         IControl(instances[100]).addOrder(msg.sender, _oi);
     }
 
+    // called by user or keeper
     function subOrder(OrderIn memory _oi) external override {
         IControl(instances[100]).subOrder(msg.sender, _oi);
     }

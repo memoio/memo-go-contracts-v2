@@ -2,12 +2,15 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IAuth.sol";
+import "../Recover.sol";
 
 /**
  *@author MemoLabs
  *@title auth in memo system
  */
 contract Auth is IAuth {
+    using Recover for bytes32;
+    
     uint16 public version = 2;
     uint8 public constant floor = 3;
     
