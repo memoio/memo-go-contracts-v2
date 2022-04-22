@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IKmanage.sol";
-import "../interfaces/IAuth.sol";
 import "./Owner.sol";
 
 /**
@@ -33,6 +32,7 @@ contract Kmanage is IKmanage, Owner {
     mapping(uint64 => mapping(uint8 => uint256)) balances; // 账户可用的余额
     mapping(uint8 => StoreInfo) sinfo;
     
+    // owner: Control-contract-address
     constructor(address _o, address _a, uint8 mr) Owner(_o, _a) {
         manageRate = mr; 
         lastTime = uint64(block.timestamp);
@@ -48,14 +48,14 @@ contract Kmanage is IKmanage, Owner {
         return false;
     }
 
-    // after add keeper to group
+    // after add keeper to group, called by Control.sol
     function addKeeper(uint64 _ki) external override onlyOwner {
         keepers.push(_ki);
         count[_ki] = 1;
         totalCount++;
     }
 
-    // after sub order
+    // after sub order, called by Control.sol
     function addCnt(uint64 _ki, uint64 cnt) external override onlyOwner {
         require(count[_ki] > 0, "IC");
 
@@ -63,11 +63,12 @@ contract Kmanage is IKmanage, Owner {
         totalCount+= cnt;
     }
 
-    // after pro withdraw
+    // after pro withdraw and subOrder, called by Control.sol
     function addProfit(uint8 _ti, uint256 _money) external override onlyOwner {
         tAcc[_ti] += _money;
     }
 
+    // after addOrder and subOrder, called by Control.sol
     function addSP(uint8 _ti, uint64 _size, uint256 _sprice, bool isAdded) external override onlyOwner {
         if (isAdded) {
             sinfo[_ti].size += _size;
@@ -78,6 +79,7 @@ contract Kmanage is IKmanage, Owner {
         }
     }
 
+    // after withdraw, called by Control.sol
     function withdraw(uint64 _ki, uint8 _ti, uint256 amount) external override onlyOwner returns(uint256){
         if (count[_ki] > 0) {
             uint64 ntime = uint64(block.timestamp);
@@ -92,8 +94,8 @@ contract Kmanage is IKmanage, Owner {
                         for(uint j =0; j<keepers.length; j++){
                             uint256 pro = per * count[keepers[j]];
                             balances[keepers[j]][tokens[i]] += pro;
-                            tAcc[tokens[i]] -= pro;
                         }
+                        tAcc[tokens[i]] = 0;
                     }
                 }
                 lastTime = ntime;

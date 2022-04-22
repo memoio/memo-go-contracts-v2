@@ -19,7 +19,7 @@ contract Access is IAccess {
     
     mapping(address => bool) private access;
 
-    // how to contruct?
+    // how to contruct? deployed by admin?
     constructor(address[] memory _addrs) {
         controls = _addrs;
     }

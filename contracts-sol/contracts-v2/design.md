@@ -41,8 +41,8 @@ getter -> base contracts
 
 ### deploy erc
 
-+ deploy access 
-+ deploy erc
++ deploy access => access address
++ deploy erc(access) => erc address
 
 ### deploy role
 

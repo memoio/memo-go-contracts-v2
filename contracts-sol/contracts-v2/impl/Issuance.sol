@@ -20,7 +20,7 @@ contract Issuance is IIssuance, Owner {
     uint public mintLevel;
     MintInfo[] mint;
     uint256 public lastMint;
-    uint256 public price; // totalSizePrice
+    uint256 public sprice; // totalSizePrice
     uint256 public size;  // totalSize
     uint256 public spaceTime; // totalSpaceTime
     uint256 public totalPay;
@@ -32,7 +32,7 @@ contract Issuance is IIssuance, Owner {
     uint16 public issuRatio; // issuance ratio
     uint16 public minRatio; // minimum issuance ratio
 
-    mapping(uint64 => uint256) public subPMap; // 保存price
+    mapping(uint64 => uint256) public subPMap; // 保存sprice
     mapping(uint64 => uint256) public subSMap; // 保存size
 
     constructor(address _rfs, address _a) Owner(_rfs,_a) {
@@ -52,7 +52,7 @@ contract Issuance is IIssuance, Owner {
 
     // 主代币激励增加量计算
     function issu(IssuIn memory ps) external onlyOwner returns (uint256) {
-        // add sub price and size
+        // add sub sprice and size
         subPMap[ps.end] += ps.sPrice;
         subSMap[ps.end] += uint256(ps.size);
 
@@ -63,14 +63,14 @@ contract Issuance is IIssuance, Owner {
         }
 
         uint256 dur = nowTime - uint256(lastMint);
-        uint256 paid = price * dur;
+        uint256 paid = sprice * dur;
         // 至少一天后调用
         if(lastMint/86400 < nowTime/86400){
             uint256 midTime = nowTime/86400 * 86400; // 取整天数时间值
             uint256 sp = subPMap[uint64(midTime)];
             if(sp!=0){
                 paid -= sp * uint256(nowTime - midTime);
-                price -= sp;
+                sprice -= sp;
             } 
             size -= subSMap[uint64(midTime)];
         }
@@ -84,7 +84,7 @@ contract Issuance is IIssuance, Owner {
         totalPay += ps.sPrice * uint256(ps.end - ps.start);
 
         size += uint256(ps.size);
-        price += ps.sPrice;
+        sprice += ps.sPrice;
 
         lastMint = nowTime;
 

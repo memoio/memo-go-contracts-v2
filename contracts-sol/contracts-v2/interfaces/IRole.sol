@@ -34,7 +34,7 @@ struct PledgeOut {
 // re:register; ac: account; t: token; p: provider; k: keeper; u: user; pp: pledgepool
 interface IRoleSetter {
     // called by admin
-    function activate(uint64 _i, bool _active) external;
+    function activate(uint64 _i, bool _active) external returns (address);
     function ban(uint64 _i, bool _ban) external;
     function banG(uint64 _gi, bool _isBan) external;
 

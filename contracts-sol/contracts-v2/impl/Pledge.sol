@@ -1,20 +1,15 @@
 //SPDX-License-Identifier:UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../interfaces/IAuth.sol";
-import "../interfaces/IERC20.sol";
 import "../interfaces/IPledge.sol";
 import "../interfaces/IToken.sol";
 import "./Owner.sol";
-import "../Recover.sol";
 
 /**
  *@author MemoLabs
  *@title Manage pledge in memo system
  */
 contract Pledge is IPledge, Owner {
-    using Recover for bytes32;
-
     bytes4 private constant SELECTOR0 = bytes4(keccak256(bytes('balanceOf(address)')));
 
     struct RewardInfo {
@@ -41,7 +36,7 @@ contract Pledge is IPledge, Owner {
 
         // 代币i有增发，需更新tInfo[i].rewardAccu
         if (bal > tInfo[i].lastReward && totalPledge>0 ){
-            tInfo[i].rewardAccu += (bal - tInfo[i].lastReward) * 1e18 / totalPledge;
+            tInfo[i].rewardAccu += (bal - tInfo[i].lastReward) * 1e18 / totalPledge; // 此刻每质押主代币应分得的利润
             tInfo[i].lastReward = bal; // update to latest
 
             // 将账户余额加上应得的分润值
@@ -141,6 +136,7 @@ contract Pledge is IPledge, Owner {
     }
 
     // ========== get ===========
+    // get balance of Pool-address with tIndex 
     function _getBalance(uint8 tIndex) internal view returns (uint256) {
         (address tAddr, ) = ITokenGetter(instances[7]).getTA(tIndex);
         (bool success, bytes memory data) = tAddr.staticcall(abi.encodeWithSelector(SELECTOR0, instances[5]));
@@ -153,6 +149,7 @@ contract Pledge is IPledge, Owner {
         return _getBalance(tIndex);
     }
 
+    // get balance of index, only calculate the reward, don't update the reward
     function balanceOf(uint64 index, uint8 tIndex) external view override returns (uint256) {
         RewardInfo memory reward0 = allAmount[index][0];
         if (reward0.lastReward==0) {

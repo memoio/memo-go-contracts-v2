@@ -16,12 +16,13 @@ import "../Recover.sol";
 
 /**
  *@author MemoLabs
- *@title controlling Role, Pledge, FileSys, Issue, Pool in memo system
+ *@title controlling Role, Pledge, FileSys, Issue, Token, erc20, Pool, Kmanage in memo system
  */
 contract Control is IControl, Owner {
     using Recover for bytes32;
     uint16 public version = 2;
 
+    // deployed by admin
     constructor(address _o,address _a) Owner(_o, _a) {
     }
 
@@ -32,7 +33,10 @@ contract Control is IControl, Owner {
         bytes32 h = keccak256(abi.encodePacked(address(this), "activate", _i, _active));
         ia.perm(h, signs);
 
-        IRoleSetter(instances[6]).activate(_i, _active);
+        address kmanage = IRoleSetter(instances[6]).activate(_i, _active);
+        if (kmanage != address(0)) {
+            IKmanageSetter(kmanage).addKeeper(_i);
+        }
     }
 
     function ban(uint64 _i, bool _ban, bytes[] memory signs) external override {
