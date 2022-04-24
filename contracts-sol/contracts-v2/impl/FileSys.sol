@@ -56,7 +56,7 @@ contract FileSys is IFileSys, Owner {
 
     mapping(uint64 => mapping(uint8 => Settlement)) proInfo; // pro => token => income
 
-    constructor(address _rfs, address _a) Owner(_rfs, _a) {
+    constructor(address _ctl, address _a) Owner(_ctl, _a) {
     }
 
     function _settlementAdd(uint64 _pIndex, uint8 _tokenIndex, uint64 start, uint64 size, uint256 sprice, uint256 pay, uint256 manage) internal {

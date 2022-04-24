@@ -20,6 +20,8 @@
 + 100 control (interact control) can upgrade
 + 101 getter
 
+kmanage has no contract type, get it by role.getKManage()
+
 ## base contracts
 
 erc
@@ -29,6 +31,7 @@ pledge
 role
 issue
 fs
+kmanage
 
 ## layer
 
@@ -51,12 +54,14 @@ getter -> base contracts
 + deploy getter(proxy) => getter address
 + deploy control(proxy, auth) => control address 
 + deploy token(control, auth) => token address
-+ deploy pool(control, auth) => pool address
-+ deploy pledge(control, auth) => pledge address
-+ deploy role(control, auth) => role address
++ deploy pool(control, auth) => pool address, deployed when createGroup by Role.sol
++ deploy kmanage(control, auth) => kmanage address, deployed when createGroup by Role.sol
++ deploy pledge(control, auth, token, pool) => pledge address
++ deploy role(control, auth, foundation) => role address
 + deploy fs(control, auth) => fs address
++ deploy issuance(control, auth) => issu address
 
-+ set token, pool, pledge, role, fs to control address
++ set token, pool, kmanage, pledge, role, fs, issuance to control address
 
 ### add token
 
@@ -64,8 +69,7 @@ getter -> base contracts
 
 ### create group
 
-+ deploy fs(control, auth, gIndex) => fs address
-+ createGroup(level, fsAddr, kpledge, ppledge) => create fs pool(control, auth) => fs pool address
++ createGroup(level, kpledge, ppledge, manageRatio) => create pool(control, auth), create kmanage(control, auth) => g.pool, g.kmanage
  
 ### register
 
@@ -75,7 +79,7 @@ getter -> base contracts
 
 note: keeper need activate
 
-## control
+## proxy/control
 
 + function activate(uint64 _i, bool _active, bytes[] memory signs) external
 
@@ -128,7 +132,7 @@ admin禁止某组
 
 验证账户，token合法性
 验证订单合法
-分润给kmanage
+分润给provider、kmanage
 
 + function recharge(address _a, uint64 _i, uint8 _ti, uint256 _money, bool isLock) external;
 
@@ -148,11 +152,11 @@ pro取钱
 
 ## golang
 
-+ go-mefs only need proxy.sol and getter.sol; 
++ go-mefs only need proxy.sol(include Owner.sol, which contains address of other contracts) and getter.sol; 
 
 ## upgrade
 
-+ data sol: better no upgrade
-+ control sol: can upgrade 
++ data sol(erc、pool、role、token、fs、kmanage): better no upgrade
++ control sol(access、pledge、issu): can upgrade 
 + base control sol: can upgrage
 + auth sol: can upgrade, be caution;

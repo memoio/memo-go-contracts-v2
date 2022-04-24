@@ -35,7 +35,7 @@ contract Issuance is IIssuance, Owner {
     mapping(uint64 => uint256) public subPMap; // 保存sprice
     mapping(uint64 => uint256) public subSMap; // 保存size
 
-    constructor(address _rfs, address _a) Owner(_rfs,_a) {
+    constructor(address _ctl, address _a) Owner(_ctl,_a) {
         uint256 time = block.timestamp; // now time
         lastMint = time;
 

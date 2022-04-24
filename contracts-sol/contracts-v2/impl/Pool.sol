@@ -15,7 +15,7 @@ contract Pool is IPool, Owner {
     event Inflow(address indexed from, uint256 money);
     event Outflow(address indexed to, uint256 money);
 
-    constructor(address _rfs, address _a) Owner(_rfs, _a) {
+    constructor(address _ctl, address _a) Owner(_ctl, _a) {
     }
 
     receive() external payable {}

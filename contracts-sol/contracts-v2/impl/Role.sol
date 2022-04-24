@@ -38,9 +38,7 @@ contract Role is IRole, Owner {
 
     uint16 public version = 2;
 
-    address public foundation; //基金会账户地址，索引默认为0,不需要进行register
-
-    address[] addrs; // all roles 序列号即为index,从1开始
+    address[] addrs; // all roles 序列号即为index,从0开始, addrs[0]为foundation地址
     mapping(address => RoleInfo) info;
 
     GroupInfo[] groups; // manage group
@@ -49,7 +47,7 @@ contract Role is IRole, Owner {
     event ReRole(uint8 indexed _rType, uint64 index); // to get all users/keepers/providers by filter logs
     event CreateGroup(uint64 gIndex);
 
-    constructor(address _rfs, address _a, address f) Owner(_rfs, _a) {
+    constructor(address _ctl, address _a, address f) Owner(_ctl, _a) {
         addrs.push(f);
         info[f].payee = f;
         info[f].isActive = true;

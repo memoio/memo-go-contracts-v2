@@ -33,7 +33,7 @@ contract Kmanage is IKmanage, Owner {
     mapping(uint8 => StoreInfo) sinfo;
     
     // owner: Control-contract-address
-    constructor(address _o, address _a, uint8 mr) Owner(_o, _a) {
+    constructor(address _ctl, address _a, uint8 mr) Owner(_ctl, _a) {
         manageRate = mr; 
         lastTime = uint64(block.timestamp);
     }

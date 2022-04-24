@@ -26,7 +26,7 @@ contract Pledge is IPledge, Owner {
     mapping(uint8 => RewardInfo) tInfo;  // 每种代币的信息, tokenIndex=>RewardInfo
     mapping(uint64 => mapping(uint8 => RewardInfo)) allAmount; // 所有质押的人的信息，(roleIndex => tokenIndex => RewardInfo)
 
-    constructor(address _rfs, address _a, address _token, address _pool) Owner(_rfs, _a){
+    constructor(address _ctl, address _a, address _token, address _pool) Owner(_ctl, _a){
         instances[5] = _pool;
         instances[7] = _token;
     }
