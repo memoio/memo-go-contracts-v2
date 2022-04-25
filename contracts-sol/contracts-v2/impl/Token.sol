@@ -21,7 +21,7 @@ contract Token is IToken, Owner {
 
     event AddT(address t, uint8 tIndex);
 
-    constructor(address _rfs, address _a) Owner(_rfs, _a) {
+    constructor(address _ctl, address _a) Owner(_ctl, _a) {
     }
 
     function addT(address t) external override onlyOwner returns(uint8) {
@@ -58,7 +58,7 @@ contract Token is IToken, Owner {
 
     // =========get==========
     function getTA(uint8 tIndex) external view override returns (address, bool) {
-        return (tokens[tIndex],!tInfo[tokens[tIndex]].isBanned);
+        return (tokens[tIndex],tInfo[tokens[tIndex]].isBanned);
     }
 
     function getTI(address t) external view override returns (uint8, bool) {

@@ -29,11 +29,10 @@ struct StoreOut {
     uint64 start; // last start 
     uint64 end;   // 什么时刻的状态，last end time
     uint64 size;   // 在该存储节点上的存储总量，byte
-    uint256 price; // 按周期计费; per cycle
+    uint256 sprice; // 按周期计费; per cycle
 }
 
 struct FsOut {
-    bool isActive;
     uint64 nonce;    // 防止order重复提交
     uint64 subNonce; // 用于订单到期
 }

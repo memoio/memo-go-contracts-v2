@@ -3,33 +3,32 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IERC20.sol";
 import "../interfaces/IAccess.sol";
-import "../Recover.sol";
 
 /**
  *@author MemoLabs
  *@title erc20 token in memo system
  */
 contract ERC20 is IERC20 {
-    using Recover for bytes32;
 
     uint16 public version = 2;
     
-    address public control;
+    address public access;
 
-    string public override name;
-    string public override symbol;
     uint256 public override totalSupply; // 上限6亿；初始发行3亿
     uint256 public constant initialSupply = 3*10**26;
     uint256 public constant maxSupply = 6*10**26;
+
+    string public override name;
+    string public override symbol;
 
     mapping(address => uint256) private balances;
     mapping(address => mapping(address => uint256)) private allowances;
 
     /// @dev created by admin
-    constructor(address _control, string memory _name, string memory _symbol) {
+    constructor(address _access, string memory _name, string memory _symbol) {
         name = _name;
         symbol = _symbol;
-        control = _control;
+        access = _access;
         totalSupply = initialSupply;
         balances[msg.sender] += initialSupply;
 
@@ -86,7 +85,7 @@ contract ERC20 is IERC20 {
 
     // use a mint contract if need
     function mint(address target, uint256 mintedAmount) external virtual override {
-        require(IAccess(control).can(msg.sender), "CNM"); // can not mint
+        require(IAccess(access).can(msg.sender), "CNM"); // can not mint
 
         totalSupply += mintedAmount;
         require(totalSupply<=maxSupply, "EX"); // exceed the limit

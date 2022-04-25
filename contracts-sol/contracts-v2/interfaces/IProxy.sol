@@ -9,7 +9,7 @@ interface IProxy {
     function addT(address _t, bool _ban, bytes[] memory signs) external;
     function banG(uint64 _gi, bool _ban, bytes[] memory signs) external;
 
-    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external;
+    function createGroup(uint16 _level, uint8 _mr, uint256 _kr, uint256 _pr) external;
     // register self to get index
     function registerAccount() external; 
     function registerRole(uint8 _rtype, bytes memory _extra) external;
@@ -26,7 +26,7 @@ interface IProxy {
     function withdraw(uint64 _i, uint8 _ti, uint256 _money) external;
     function proWithdraw(PWIn memory _ps, uint64[] memory _kis, bytes[] memory ksigns) external;
 
-    function get(uint8 _type) external view returns(address)
+    function get(uint8 _type) external view returns(address);
 }
 
    

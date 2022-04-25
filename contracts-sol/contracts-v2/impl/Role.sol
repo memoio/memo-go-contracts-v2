@@ -3,18 +3,15 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IRole.sol";
 import "../interfaces/IAuth.sol";
-import "../interfaces/IKmanage.sol";
 import "./Owner.sol";
 import "./Pool.sol";
 import "./Kmanage.sol";
-import "../Recover.sol";
 
 /**
  *@author MemoLabs
  *@title Manage account, roles and groups in the memo system.
  */
 contract Role is IRole, Owner {
-    using Recover for bytes32;
 
     struct RoleInfo {
         bool isActive;  // user注册后即生效，k-p注册后还需要质押才能生效
@@ -41,18 +38,16 @@ contract Role is IRole, Owner {
 
     uint16 public version = 2;
 
-    address public foundation; //基金会账户地址，索引默认为0,不需要进行register
-
-    address[] addrs; // all roles 序列号即为index,从1开始
+    address[] addrs; // all roles 序列号即为index,从0开始, addrs[0]为foundation地址
     mapping(address => RoleInfo) info;
 
     GroupInfo[] groups; // manage group
 
-    event ReAcc(address addr, uint64 index);
-    event ReRole(uint64 index, uint8 _rType);
+    event ReAcc(address addr, uint64 index); // to get all registered account by filter logs
+    event ReRole(uint8 indexed _rType, uint64 index); // to get all users/keepers/providers by filter logs
     event CreateGroup(uint64 gIndex);
 
-    constructor(address _rfs, address _a, address f) Owner(_rfs, _a) {
+    constructor(address _ctl, address _a, address f) Owner(_ctl, _a) {
         addrs.push(f);
         info[f].payee = f;
         info[f].isActive = true;
@@ -64,7 +59,7 @@ contract Role is IRole, Owner {
     }
 
     // used for keeper
-    function activate(uint64 _index, bool _active) external onlyOwner override {
+    function activate(uint64 _index, bool _active) external onlyOwner override returns (address) {
         address a = addrs[_index];
         require(!info[a].isBanned, "IB"); // is banned
         if (info[a].roleType == 3 && _active && !info[a].isActive && info[a].gIndex > 0) {
@@ -72,10 +67,11 @@ contract Role is IRole, Owner {
             groups[gIndex].keepers.push(_index);
             if (groups[gIndex].keepers.length >= groups[gIndex].level) {
                 groups[gIndex].isActive = true;
-                IKmanageSetter(groups[gIndex].kManage).addKeeper(_index);
             }
+            return groups[gIndex].kManage;
         }
         info[a].isActive = _active;
+        return address(0);
     }
 
     function ban(uint64 _index, bool _banned) external onlyOwner override {
@@ -131,10 +127,10 @@ contract Role is IRole, Owner {
         address a = this.checkIR(_index, 0);
         info[a].roleType = _rType;
         info[a].extra = _extra;
-        emit ReRole(_index, _rType);
+        emit ReRole(_rType, _index);
     }
 
-    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 mr) external onlyOwner override {
+    function createGroup(uint16 _level, uint8 mr, uint256 _kr, uint256 _pr) external onlyOwner override {
         uint64 _gIndex = uint64(groups.length);
 
         // create pool address; force each group has unique pool  

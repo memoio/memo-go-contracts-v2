@@ -38,8 +38,4 @@ contract Owner {
         emit Alter(_type, instances[_type], _a);
         instances[_type] = _a;
     }
-
-    function get(uint8 _type) external view returns(address) {
-        return instances[_type];
-    } 
 }

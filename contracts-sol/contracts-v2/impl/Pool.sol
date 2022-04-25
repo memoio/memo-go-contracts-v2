@@ -1,10 +1,8 @@
 //SPDX-License-Identifier:UNLICENSED
 pragma solidity ^0.8.0;
 
-import "../interfaces/IAuth.sol";
 import "../interfaces/IERC20.sol";
 import "../interfaces/IPool.sol";
-import "../Recover.sol";
 import "./Owner.sol";
 
 /**
@@ -12,19 +10,17 @@ import "./Owner.sol";
  *@title Pool for receiving and sending tokens in the memo system.
  */
 contract Pool is IPool, Owner {
-    using Recover for bytes32;
-
     uint16 public version = 2;
 
     event Inflow(address indexed from, uint256 money);
     event Outflow(address indexed to, uint256 money);
 
-    constructor(address _rfs, address _a) Owner(_rfs, _a) {
+    constructor(address _ctl, address _a) Owner(_ctl, _a) {
     }
 
     receive() external payable {}
 
-    // onlyOwner not need
+    // onlyOwner not need. from should approve address(this) before call 'inflow'
     function inflow(address tAddr, address from, uint256 money) external override  payable {
         IERC20(tAddr).transferFrom(from, address(this), money);
         emit Inflow(from, money);

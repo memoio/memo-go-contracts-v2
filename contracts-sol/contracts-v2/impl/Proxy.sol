@@ -29,12 +29,12 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).addT(_t, _ban, signs);
     }
 
-    function ban(uint64 _gi, bool _ban, bytes[] memory signs) external override {
-        IControl(instances[100]).banG(_i, _ban, signs);
+    function banG(uint64 _gi, bool _ban, bytes[] memory signs) external override {
+        IControl(instances[100]).banG(_gi, _ban, signs);
     }
 
-    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external override {
-        IControl(instances[100]).createGroup(_level, _kr, _pr, _mr);
+    function createGroup(uint16 _level, uint8 _mr, uint256 _kr, uint256 _pr) external override {
+        IControl(instances[100]).createGroup(_level, _mr, _kr, _pr);
     }
 
     function registerAccount() external override {
@@ -57,10 +57,12 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).unpledge(msg.sender, _i, _ti, _money);
     }
 
+    // called by user
     function addOrder( OrderIn memory _oi) external override {
         IControl(instances[100]).addOrder(msg.sender, _oi);
     }
 
+    // called by user or keeper
     function subOrder(OrderIn memory _oi) external override {
         IControl(instances[100]).subOrder(msg.sender, _oi);
     }

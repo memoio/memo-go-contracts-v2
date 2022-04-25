@@ -11,15 +11,15 @@ import "../Recover.sol";
 contract Access is IAccess {
     using Recover for bytes32;
 
-    uint16 public version = 2;
     uint8 public constant floor = 3;
+    uint16 public version = 2;
     
     address[] public controls; // five address
     uint256 public nonce;
     
     mapping(address => bool) private access;
 
-    // how to contruct?
+    // how to contruct? deployed by admin?
     constructor(address[] memory _addrs) {
         controls = _addrs;
     }

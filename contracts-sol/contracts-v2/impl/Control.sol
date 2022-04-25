@@ -16,13 +16,13 @@ import "../Recover.sol";
 
 /**
  *@author MemoLabs
- *@title controlling Role, Pledge, FileSys, Issue, Pool in memo system
+ *@title controlling Role, Pledge, FileSys, Issue, Token, erc20, Pool, Kmanage in memo system
  */
 contract Control is IControl, Owner {
     using Recover for bytes32;
-
     uint16 public version = 2;
 
+    // deployed by admin
     constructor(address _o,address _a) Owner(_o, _a) {
     }
 
@@ -33,7 +33,10 @@ contract Control is IControl, Owner {
         bytes32 h = keccak256(abi.encodePacked(address(this), "activate", _i, _active));
         ia.perm(h, signs);
 
-        IRoleSetter(instances[6]).activate(_i, _active);
+        address kmanage = IRoleSetter(instances[6]).activate(_i, _active);
+        if (kmanage != address(0)) {
+            IKmanageSetter(kmanage).addKeeper(_i);
+        }
     }
 
     function ban(uint64 _i, bool _ban, bytes[] memory signs) external override {
@@ -64,9 +67,9 @@ contract Control is IControl, Owner {
         IRoleSetter(instances[6]).banG(_gi, _isBan);
     }
 
-    function createGroup(uint16 _level, uint256 _k, uint256 _p, uint8 _mr) external override {
+    function createGroup(uint16 _level, uint8 _mr, uint256 _k, uint256 _p) external override {
         require(_mr > 1 && _mr % 4 == 0, "MRL");
-        IRoleSetter(instances[6]).createGroup(_level, _k, _p, _mr);
+        IRoleSetter(instances[6]).createGroup(_level, _mr, _k, _p);
     }
 
     function registerAccount(address _a) external onlyOwner override {
@@ -85,7 +88,7 @@ contract Control is IControl, Owner {
         return IRoleSetter(instances[6]).addToGroup(_i, _gi, bal);
     }
 
-    // anyone can pledge using its money
+    // anyone can pledge using its money, use a's money, pledge for i
     function pledge(address _a ,uint64 _i, uint256 money) external override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(0);
         require(!_v, "TB"); // token banned
@@ -108,6 +111,7 @@ contract Control is IControl, Owner {
         IPool(instances[5]).outflow(_t, _re, _money);
     }
 
+    // use a's money, recharge for ui
     function recharge(address _a, uint64 _ui, uint8 _ti, uint256 money, bool isLock) external override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(0);
         require(!_v, "TB"); // token banned
@@ -120,6 +124,7 @@ contract Control is IControl, Owner {
         IFileSys(instances[10]).recharge(_ui, _ti, money, isLock); 
     }
 
+    // called by Proxy.sol, tx.origin = a, need a = addr[i] or a = addr[i].payee
     function withdraw(address _a, uint64 _i, uint8 _ti, uint256 money) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(_ti);
         require(!_v, "TB"); // token banned
@@ -128,7 +133,7 @@ contract Control is IControl, Owner {
         (address _w, address _re, uint64 _gi, ) = r.checkIG(_i, 0);
         require((_w == _a ||_re == _a), "IC");
 
-        uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money);
+        uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money); // reduce balances[i] in fs
         if (money > _money) {
             money -= _money;
             uint256 _m = IKmanage(r.getKManage(_gi)).withdraw(_i, _ti, money);
@@ -141,7 +146,7 @@ contract Control is IControl, Owner {
         IRoleGetter r = IRoleGetter(instances[6]);
 
         require(ps.size > 0, "sz"); // size zero
-        require(ps.sPrice > 0, "pz" ); // price zero
+        require(ps.sPrice > 0, "pz" ); // sizePrice zero
         require(ps.end > ps.start + 8640000, "es"); // end more than start+100 day
         require(ps.end < ps.start + 86400000, "el"); // end no more than start+1000 day
         require(ps.end%86400 == 0, "te"); // end time error; align to day
@@ -172,6 +177,7 @@ contract Control is IControl, Owner {
         return (uAddr, _gi);
     }
 
+    // order duration >= 100 days & <= 1000 days, a = tx.origin, a is user
     function addOrder(address _a, OrderIn memory ps) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(ps.tIndex);
         require(!_v, "TB"); //
@@ -211,7 +217,7 @@ contract Control is IControl, Owner {
 
         uint256 ep = IFileSys(instances[10]).subOrder(ps, uint256(ikm.getRate()));
 
-        uint64 kIndex = ps.uIndex;
+        uint64 kIndex;
         if (_a != uAddr) {
             kIndex = r.getIndex(_a);
             // not user, should be keeper
@@ -225,7 +231,7 @@ contract Control is IControl, Owner {
         ikm.addSP(ps.tIndex, ps.size, ps.sPrice, false);  
     }
 
-    // kIndexes is incremental
+    // kIndexes is incremental, a = tx.origin, a should be ps.pIndex or ps.pIndex.payee
     function proWithdraw(address _a, PWIn memory ps, uint64[] memory kIndexes, bytes[] memory ksigns) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(ps.tIndex);
         require(!_v, "TB"); 
@@ -260,7 +266,7 @@ contract Control is IControl, Owner {
         ikm.addProfit(ps.tIndex, _pr);
     }
 
-    function get(uint8 _type) external override(IControl,Owner) view returns(address) {
+    function get(uint8 _type) external override view returns(address) {
         return instances[_type];
     } 
 }
