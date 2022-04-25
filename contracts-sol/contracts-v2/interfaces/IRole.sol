@@ -38,7 +38,7 @@ interface IRoleSetter {
     function ban(uint64 _i, bool _ban) external;
     function banG(uint64 _gi, bool _isBan) external;
 
-    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external;
+    function createGroup(uint16 _level, uint8 _mr, uint256 _kr, uint256 _pr) external;
     function registerAccount(address _a) external; 
     function registerRole(uint64 _i, uint8 _rtype, bytes memory extra) external;
     function addToGroup(uint64 _i, uint64 _gi, uint256 money) external;

@@ -130,7 +130,7 @@ contract Role is IRole, Owner {
         emit ReRole(_rType, _index);
     }
 
-    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 mr) external onlyOwner override {
+    function createGroup(uint16 _level, uint8 mr, uint256 _kr, uint256 _pr) external onlyOwner override {
         uint64 _gIndex = uint64(groups.length);
 
         // create pool address; force each group has unique pool  

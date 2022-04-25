@@ -10,12 +10,13 @@ import "./Owner.sol";
  *@title Manage pledge in memo system
  */
 contract Pledge is IPledge, Owner {
-    bytes4 private constant SELECTOR0 = bytes4(keccak256(bytes('balanceOf(address)')));
 
     struct RewardInfo {
         uint256 rewardAccu; // 本代币的accumulator, multi by 10^18
         uint256 lastReward; // 上一次变更时的本代币奖励总量。等于余额加奖励
     }
+
+    bytes4 private constant SELECTOR0 = bytes4(keccak256(bytes('balanceOf(address)')));
 
     uint16 public version = 2;
 

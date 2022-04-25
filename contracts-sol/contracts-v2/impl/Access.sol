@@ -11,8 +11,8 @@ import "../Recover.sol";
 contract Access is IAccess {
     using Recover for bytes32;
 
-    uint16 public version = 2;
     uint8 public constant floor = 3;
+    uint16 public version = 2;
     
     address[] public controls; // five address
     uint256 public nonce;

@@ -14,11 +14,12 @@ contract ERC20 is IERC20 {
     
     address public access;
 
-    string public override name;
-    string public override symbol;
     uint256 public override totalSupply; // 上限6亿；初始发行3亿
     uint256 public constant initialSupply = 3*10**26;
     uint256 public constant maxSupply = 6*10**26;
+
+    string public override name;
+    string public override symbol;
 
     mapping(address => uint256) private balances;
     mapping(address => mapping(address => uint256)) private allowances;

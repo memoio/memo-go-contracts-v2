@@ -10,7 +10,7 @@ interface IControl {
     function addT(address _t, bool _ban, bytes[] memory signs) external;
     function banG(uint64 _gi, bool _ban, bytes[] memory signs) external;
 
-    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external;
+    function createGroup(uint16 _level, uint8 _mr, uint256 _kr, uint256 _pr) external;
     function registerAccount(address _a) external; 
     function registerRole(address _a, uint8 _rtype, bytes memory _extra) external;
     function addToGroup(address _a, uint64 _gi) external;

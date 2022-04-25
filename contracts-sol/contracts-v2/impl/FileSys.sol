@@ -45,9 +45,9 @@ contract FileSys is IFileSys, Owner {
         uint256 linearPaid;// release 75% of manage when pay for provider; need?
     }
 
-    uint16 public version = 2;
-
     uint8 public constant taxRate = 1;
+
+    uint16 public version = 2;
 
     mapping(uint64 => mapping(uint8 => uint256)) balances; // 账户可用的余额
     mapping(uint64 => mapping(uint8 => uint256)) lock;     // cannot withdraw 

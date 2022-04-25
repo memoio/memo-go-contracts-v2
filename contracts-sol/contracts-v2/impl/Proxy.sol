@@ -33,8 +33,8 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).banG(_gi, _ban, signs);
     }
 
-    function createGroup(uint16 _level, uint256 _kr, uint256 _pr, uint8 _mr) external override {
-        IControl(instances[100]).createGroup(_level, _kr, _pr, _mr);
+    function createGroup(uint16 _level, uint8 _mr, uint256 _kr, uint256 _pr) external override {
+        IControl(instances[100]).createGroup(_level, _mr, _kr, _pr);
     }
 
     function registerAccount() external override {

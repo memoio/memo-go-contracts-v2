@@ -11,11 +11,11 @@ import "../Recover.sol";
 contract Auth is IAuth {
     using Recover for bytes32;
     
-    uint16 public version = 2;
     uint8 public constant floor = 3;
+    uint16 public version = 2;
     
-    address[] public controls; // five address
     uint256 public nonce;
+    address[] public controls; // five address
 
     // deployed by admin?
     constructor(address[] memory _addrs) {

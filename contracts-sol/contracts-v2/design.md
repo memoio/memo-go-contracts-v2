@@ -20,7 +20,7 @@
 + 100 control (interact control) can upgrade
 + 101 getter
 
-kmanage has no contract type, get it by role.getKManage()
+kmanage (keeper profit data) has no contract type, get it by role.getKManage()
 
 ## base contracts
 
@@ -157,6 +157,6 @@ pro取钱
 ## upgrade
 
 + data sol(erc、pool、role、token、fs、kmanage): better no upgrade
-+ control sol(access、pledge、issu): can upgrade 
-+ base control sol: can upgrage
++ control sol(control、access): can upgrade 
++ base control sol(pledge、issu): can upgrage
 + auth sol: can upgrade, be caution;

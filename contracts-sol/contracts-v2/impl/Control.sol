@@ -67,9 +67,9 @@ contract Control is IControl, Owner {
         IRoleSetter(instances[6]).banG(_gi, _isBan);
     }
 
-    function createGroup(uint16 _level, uint256 _k, uint256 _p, uint8 _mr) external override {
+    function createGroup(uint16 _level, uint8 _mr, uint256 _k, uint256 _p) external override {
         require(_mr > 1 && _mr % 4 == 0, "MRL");
-        IRoleSetter(instances[6]).createGroup(_level, _k, _p, _mr);
+        IRoleSetter(instances[6]).createGroup(_level, _mr, _k, _p);
     }
 
     function registerAccount(address _a) external onlyOwner override {

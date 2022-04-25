@@ -22,12 +22,13 @@ contract Kmanage is IKmanage, Owner {
     uint64 period = 7*86400;     // keeper根据比例获取收益的时间间隔, one week
     uint64 lastTime;             // 上次分利润时间
 
+    uint64 totalCount; // 记录所有keeper触发order相关函数的总次数
+
     uint64[] keepers;
     uint8[] tokens;
     mapping(uint8 => uint256) tAcc; // 记录分润值
     
     mapping(uint64 => uint64) count; // 记录keeper触发Order相关函数的次数，用于分润
-    uint64 totalCount; // 记录所有keeper触发order相关函数的总次数
 
     mapping(uint64 => mapping(uint8 => uint256)) balances; // 账户可用的余额
     mapping(uint8 => StoreInfo) sinfo;

@@ -11,11 +11,14 @@ import "./Owner.sol";
 contract Issuance is IIssuance, Owner {
     struct MintInfo {
         uint16 ratio;
-        uint256 size;
         uint64 duration;
+        uint256 size;
     }
 
     uint16 public version = 2;
+
+    uint16 public issuRatio; // issuance ratio
+    uint16 public minRatio; // minimum issuance ratio
 
     uint public mintLevel;
     MintInfo[] mint;
@@ -29,8 +32,6 @@ contract Issuance is IIssuance, Owner {
     /// @notice Issuance target at the current stage.Initial issuance target is 50 billion,after reaching,the target value of each stage is halved
     uint256 public periodTarget;
     uint256 public periodTotalReward; // total reward at the current stage
-    uint16 public issuRatio; // issuance ratio
-    uint16 public minRatio; // minimum issuance ratio
 
     mapping(uint64 => uint256) public subPMap; // 保存sprice
     mapping(uint64 => uint256) public subSMap; // 保存size
@@ -39,11 +40,11 @@ contract Issuance is IIssuance, Owner {
         uint256 time = block.timestamp; // now time
         lastMint = time;
 
-        mint.push(MintInfo(50,109951162777600,8640000)); // 50%, 100*1024*1024*1024*1024 B = 100 TB, 100*24*60*60 s = 100 days
-        mint.push(MintInfo(80, 1125899906842624, 12960000)); // 80%, 1PB, 150*24*60*60 s = 150 days
-        mint.push(MintInfo(100, 56294995342131200, 17280000)); // 100%, 50PB, 200days
-        mint.push(MintInfo(80, 1152921504606846976, 8640000)); // 80%, 1EB, 300days
-        mint.push(MintInfo(50, 57646075230342348800, 63072000)); // 50%, 50EB, 730 days
+        mint.push(MintInfo(50,8640000,109951162777600)); // 50%, 100*24*60*60 s = 100 days, 100*1024*1024*1024*1024 B = 100 TB
+        mint.push(MintInfo(80, 12960000, 1125899906842624)); // 80%, 150*24*60*60 s = 150 days, 1PB
+        mint.push(MintInfo(100, 17280000, 56294995342131200)); // 100%, 200days, 50PB
+        mint.push(MintInfo(80, 8640000, 1152921504606846976)); // 80%, 300days, 1EB
+        mint.push(MintInfo(50, 63072000, 57646075230342348800)); // 50%, 730 days, 50EB
 
         minRatio = 3;
         periodTarget = 150000000000000000000000000; // initialTarget 150 million * token_decimal
