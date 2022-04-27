@@ -2,14 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IGroup.sol";
-import "../interfaces/IAuth.sol";
 import "./Owner.sol";
 import "./Pool.sol";
 import "./Kmanage.sol";
 
 /**
  *@author MemoLabs
- *@title Manage account, roles and groups in the memo system.
+ *@title Manage groups in the memo system.
  */
 contract Group is IGroup, Owner {
     struct GroupInfo {

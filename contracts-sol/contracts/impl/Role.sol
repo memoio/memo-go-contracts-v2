@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IRole.sol";
-import "../interfaces/IAuth.sol";
 import "./Owner.sol";
 
 /**

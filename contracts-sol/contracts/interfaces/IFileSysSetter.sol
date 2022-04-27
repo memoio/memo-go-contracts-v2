@@ -24,7 +24,6 @@ struct PWIn {
     uint256 lost;
 }
 
-
 interface IFileSysSetter {
     function addOrder(OrderIn memory ps, uint256 _mr) external;
     function subOrder(OrderIn memory ps, uint256 _mr) external returns (uint256) ;

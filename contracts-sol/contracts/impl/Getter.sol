@@ -9,6 +9,8 @@ import "../interfaces/IGetter.sol";
  *@author MemoLabs
  *@title get interface in memo system
  */
+
+// need add more get interface 
 contract Getter is IGetter {
     uint16 public version = 2;
     address public owner;

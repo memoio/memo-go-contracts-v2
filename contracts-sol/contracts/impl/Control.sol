@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "../interfaces/IControl.sol";
 import "../interfaces/IRole.sol";
 import "../interfaces/IGroup.sol";
-import "../interfaces/IFileSys.sol";
+import "../interfaces/IFileSysSetter.sol";
 import "../interfaces/IIssuance.sol";
 import "../interfaces/IToken.sol";
 import "../interfaces/IERC20.sol";
@@ -76,8 +76,7 @@ contract Control is IControl, Owner {
 
     // role
     function reAcc(address _a) external onlyOwner override {
-        IRoleSetter r = IRoleSetter(instances[6]);
-        return r.reAcc(_a);
+        return IRoleSetter(instances[6]).reAcc(_a);
     }
 
     function reRole(address _a, uint8 _rtype, bytes memory extra) external onlyOwner override {
@@ -137,14 +136,14 @@ contract Control is IControl, Owner {
 
     // use a's money, recharge for ui
     function recharge(address _a, uint64 _ui, uint8 _ti, uint256 money, bool isLock) external override {
-        (address _t, bool _v) = ITokenGetter(instances[7]).getTA(0);
+        (address _t, bool _v) = ITokenGetter(instances[7]).getTA(_ti);
         require(!_v, "TB"); // token banned
         
         (,,uint64 _gi,)  = IRoleGetter(instances[6]).checkIG(_ui, 0);
         
         IPool(IGroupGetter(instances[11]).getPool(_gi)).inflow(_t, _a, money);
         
-        IFileSys(instances[10]).recharge(_ui, _ti, money, isLock); 
+        IFileSysSetter(instances[10]).recharge(_ui, _ti, money, isLock); 
     }
 
     // called by Proxy.sol, tx.origin = a, need a = addr[i].payee; obly by payee
@@ -157,7 +156,7 @@ contract Control is IControl, Owner {
 
         IGroupGetter g =  IGroupGetter(instances[11]);
 
-        uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money); // reduce balances[i] in fs
+        uint256 _money = IFileSysSetter(instances[10]).withdraw(_i, _ti, money); // reduce balances[i] in fs
         if (money > _money) {
             money -= _money;
             uint256 _m = IKmanage(g.getKManage(_gi)).withdraw(_i, _ti, money);
@@ -171,9 +170,10 @@ contract Control is IControl, Owner {
 
         require(ps.size > 0, "sz"); // size zero
         require(ps.sPrice > 0, "pz" ); // sizePrice zero
-        require(ps.end > ps.start + 8640000, "es"); // end more than start+100 day
-        require(ps.end < ps.start + 86400000, "el"); // end no more than start+1000 day
+        require(ps.end >= ps.start + 8640000, "es"); // end more than start+100 day
+        require(ps.end <= ps.start + 86400000, "el"); // end no more than start+1000 day
         require(ps.end%86400 == 0, "te"); // end time error; align to day
+        require(ps.start < block.timestamp, "se"); // start is less than now
 
         // 检查uIndex、pIndex角色是否正确
         (address uAddr,,uint64 _gi,) = r.checkIG(ps.uIndex, 1);
@@ -210,7 +210,7 @@ contract Control is IControl, Owner {
         require(_a == _u, "IC"); // illegal caller
 
         IKmanage ikm =  IKmanage(IGroupGetter(instances[11]).getKManage(_gi));
-        IFileSys(instances[10]).addOrder(ps, uint256(ikm.getRate()));        
+        IFileSysSetter(instances[10]).addOrder(ps, uint256(ikm.getRate()));        
         
         // 产生奖励
         if (ps.tIndex == 0) { 
@@ -237,7 +237,7 @@ contract Control is IControl, Owner {
 
         IKmanage ikm =  IKmanage(IGroupGetter(instances[11]).getKManage(_gi));
 
-        uint256 ep = IFileSys(instances[10]).subOrder(ps, uint256(ikm.getRate()));
+        uint256 ep = IFileSysSetter(instances[10]).subOrder(ps, uint256(ikm.getRate()));
 
         uint64 kIndex;
         if (_a != uAddr) {
@@ -287,7 +287,7 @@ contract Control is IControl, Owner {
         require(sigCnt >= g.getLevel(_gi), "KNE");
         require(sigCnt >= 2 * (ikm.getKCnt() + 1) / 3, "KSE"); // kSigns error
         
-        (uint256 _money, uint256 _pr) = IFileSys(instances[10]).proWithdraw(ps, uint256(ikm.getRate()));
+        (uint256 _money, uint256 _pr) = IFileSysSetter(instances[10]).proWithdraw(ps, uint256(ikm.getRate()));
         IPool(g.getPool(_gi)).outflow(_t, pOwner, _money);
 
         ikm.addProfit(ps.tIndex, _pr);
