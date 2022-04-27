@@ -4,15 +4,15 @@ pragma solidity ^0.8.0;
 import "./IFileSys.sol";
 
 interface IProxy {
-    function activate(uint64 _i, bool _active, bytes[] memory signs) external;
+    function activate(uint64 _i, bytes[] memory signs) external;
     function ban(uint64 _i, bool _ban, bytes[] memory signs) external;
     function addT(address _t, bool _ban, bytes[] memory signs) external;
     function banG(uint64 _gi, bool _ban, bytes[] memory signs) external;
 
     function createGroup(uint16 _level, uint8 _mr, uint256 _kr, uint256 _pr) external;
     // register self to get index
-    function registerAccount() external; 
-    function registerRole(uint8 _rtype, bytes memory _extra) external;
+    function reAcc() external; 
+    function reRole(uint8 _rtype, bytes memory _extra) external;
     // add a user/keeper/provider to group
     function addToGroup(uint64 _gi) external;
     

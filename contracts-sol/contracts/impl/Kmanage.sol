@@ -51,6 +51,7 @@ contract Kmanage is IKmanage, Owner {
 
     // after add keeper to group, called by Control.sol
     function addKeeper(uint64 _ki) external override onlyOwner {
+        require(count[_ki] == 0, "KE"); // keeper exists
         keepers.push(_ki);
         count[_ki] = 1;
         totalCount++;
@@ -121,6 +122,14 @@ contract Kmanage is IKmanage, Owner {
         return (sinfo[_ti].size, sinfo[_ti].sprice);
     }
 
+    function getKCnt() external view override returns (uint16) {
+        return uint16(keepers.length);
+    }
+
+    function getK(uint64 _i) external view override returns (uint64) {
+        return keepers[_i];
+    }
+
     function balanceOf(uint64 _ki, uint8 _ti) external view override returns(uint256, uint256){
         uint256 avail = balances[_ki][_ti];
         uint256 tmp = 0;
@@ -129,7 +138,7 @@ contract Kmanage is IKmanage, Owner {
             return (avail, tmp);
         }
 
-        if(count[_ki]!=0){
+        if(count[_ki]>0){
             uint256 sum = tAcc[_ti] * count[_ki];
             uint256 pro = sum / totalCount;
             if((block.timestamp-lastTime)>=period){

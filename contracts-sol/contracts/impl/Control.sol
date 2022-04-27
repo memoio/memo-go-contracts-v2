@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IControl.sol";
 import "../interfaces/IRole.sol";
+import "../interfaces/IGroup.sol";
 import "../interfaces/IFileSys.sol";
 import "../interfaces/IIssuance.sol";
 import "../interfaces/IToken.sol";
@@ -28,24 +29,7 @@ contract Control is IControl, Owner {
 
     receive() external payable {}
 
-    function activate(uint64 _i, bool _active, bytes[] memory signs) external override {
-        IAuth ia = IAuth(instances[2]);
-        bytes32 h = keccak256(abi.encodePacked(address(this), "activate", _i, _active));
-        ia.perm(h, signs);
-
-        address kmanage = IRoleSetter(instances[6]).activate(_i, _active);
-        if (kmanage != address(0)) {
-            IKmanageSetter(kmanage).addKeeper(_i);
-        }
-    }
-
-    function ban(uint64 _i, bool _ban, bytes[] memory signs) external override {
-        IAuth ia = IAuth(instances[2]);
-        bytes32 h = keccak256(abi.encodePacked(address(this), "ban", _i, _ban));
-        ia.perm(h, signs);
-
-        IRoleSetter(instances[6]).ban(_i, _ban);
-    } 
+    // admin
 
     function addT(address _t, bool _ban, bytes[] memory signs) external override {
         IAuth ia = IAuth(instances[2]);
@@ -59,33 +43,61 @@ contract Control is IControl, Owner {
         }
     }
 
+    function ban(uint64 _i, bool _ban, bytes[] memory signs) external override {
+        IAuth ia = IAuth(instances[2]);
+        bytes32 h = keccak256(abi.encodePacked(address(this), "ban", _i, _ban));
+        ia.perm(h, signs);
+
+        IRoleSetter(instances[6]).ban(_i, _ban);
+    }
+
+    // activate keeper
+    function activate(uint64 _i, bytes[] memory signs) external override {
+        IAuth ia = IAuth(instances[2]);
+        bytes32 h = keccak256(abi.encodePacked(address(this), "activate", _i));
+        ia.perm(h, signs);
+
+        uint64 _gi = IRoleSetter(instances[6]).activate(_i);
+
+        IKmanage ikm =  IKmanage(IGroupGetter(instances[11]).getKManage(_gi));
+        ikm.addKeeper(_i);
+        
+        uint16 kcnt = ikm.getKCnt();
+        IGroupSetter(instances[11]).activate(_gi, kcnt);
+    }
+
     function banG(uint64 _gi, bool _isBan, bytes[] memory signs) external override {
         IAuth ia = IAuth(instances[2]);
         bytes32 h = keccak256(abi.encodePacked(address(this), "banG", _gi, _isBan));
         ia.perm(h, signs);
 
-        IRoleSetter(instances[6]).banG(_gi, _isBan);
+        IGroupSetter(instances[11]).ban(_gi, _isBan);
+    } 
+
+    // role
+    function reAcc(address _a) external onlyOwner override {
+        IRoleSetter r = IRoleSetter(instances[6]);
+        return r.reAcc(_a);
+    }
+
+    function reRole(address _a, uint8 _rtype, bytes memory extra) external onlyOwner override {
+        uint64 _i = IRoleGetter(instances[6]).getIndex(_a);
+        return IRoleSetter(instances[6]).reRole(_i, _rtype, extra);
     }
 
     function createGroup(uint16 _level, uint8 _mr, uint256 _k, uint256 _p) external override {
         require(_mr > 1 && _mr % 4 == 0, "MRL");
-        IRoleSetter(instances[6]).createGroup(_level, _mr, _k, _p);
-    }
-
-    function registerAccount(address _a) external onlyOwner override {
-        IRoleSetter r = IRoleSetter(instances[6]);
-        return r.registerAccount(_a);
-    }
-
-    function registerRole(address _a, uint8 _rtype, bytes memory extra) external onlyOwner override {
-        uint64 _i = IRoleGetter(instances[6]).getIndex(_a);
-        return IRoleSetter(instances[6]).registerRole(_i, _rtype, extra);
+        IGroupSetter(instances[11]).create(_level, _mr, _k, _p);
     }
     
     function addToGroup(address _a, uint64 _gi) external onlyOwner override {
         uint64 _i = IRoleGetter(instances[6]).getIndex(_a);
+        (,,uint64 _ogi, uint8 _rType) = IRoleGetter(instances[6]).checkIG(_i, 0);
+        require(_ogi==0,"GE"); //group exists
+
         uint256 bal = IPledgeGetter(instances[8]).balanceOf(_i, 0);
-        return IRoleSetter(instances[6]).addToGroup(_i, _gi, bal);
+        IGroupGetter(instances[11]).add(_rType, _gi, bal);
+        IRoleSetter(instances[6]).setG(_i, _gi);
     }
 
     // anyone can pledge using its money, use a's money, pledge for i
@@ -97,13 +109,25 @@ contract Control is IControl, Owner {
         IPledgeSetter(instances[8]).pledge(_i, money);
     }
 
-    // cancle pledge
+    // cancle pledge; unpledge only by payee?
     function unpledge(address _a, uint64 _i, uint8 _ti, uint256 money) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(_ti);
         require(!_v, "TB"); // token banned
 
-        (,address _re, , uint256 _lock) = IRoleGetter(instances[6]).checkIG(_i, 0);
+        (, address _re, uint64 _gi, uint8 _rType) = IRoleGetter(instances[6]).checkIG(_i, 0);
         require(_re == _a, "IC");
+
+        uint256 _lock;
+        if (_gi > 0) {
+            (uint256 _kp, uint256 _pp) = IGroupGetter(instances[11]).getPInfo(_gi);
+            if (_rType == 2) {
+                _lock = _pp;
+            }
+
+            if (_rType == 3) {
+                _lock = _kp;
+            }
+        }
 
         // todo: need lock more from fs
 
@@ -116,30 +140,30 @@ contract Control is IControl, Owner {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(0);
         require(!_v, "TB"); // token banned
         
-        IRoleGetter r = IRoleGetter(instances[6]);
-        (,,uint64 _gi,)  = r.checkIG(_ui, 0);
+        (,,uint64 _gi,)  = IRoleGetter(instances[6]).checkIG(_ui, 0);
         
-        IPool(r.getPool(_gi)).inflow(_t, _a, money);
+        IPool(IGroupGetter(instances[11]).getPool(_gi)).inflow(_t, _a, money);
         
         IFileSys(instances[10]).recharge(_ui, _ti, money, isLock); 
     }
 
-    // called by Proxy.sol, tx.origin = a, need a = addr[i] or a = addr[i].payee
+    // called by Proxy.sol, tx.origin = a, need a = addr[i].payee; obly by payee
     function withdraw(address _a, uint64 _i, uint8 _ti, uint256 money) external onlyOwner override {
         (address _t, bool _v) = ITokenGetter(instances[7]).getTA(_ti);
         require(!_v, "TB"); // token banned
+ 
+        (, address _re, uint64 _gi, ) = IRoleGetter(instances[6]).checkIG(_i, 0);
+        require(_re == _a, "IC");
 
-        IRoleGetter r = IRoleGetter(instances[6]);
-        (address _w, address _re, uint64 _gi, ) = r.checkIG(_i, 0);
-        require((_w == _a ||_re == _a), "IC");
+        IGroupGetter g =  IGroupGetter(instances[11]);
 
         uint256 _money = IFileSys(instances[10]).withdraw(_i, _ti, money); // reduce balances[i] in fs
         if (money > _money) {
             money -= _money;
-            uint256 _m = IKmanage(r.getKManage(_gi)).withdraw(_i, _ti, money);
+            uint256 _m = IKmanage(g.getKManage(_gi)).withdraw(_i, _ti, money);
             _money += _m;
         } 
-        IPool(r.getPool(_gi)).outflow(_t, _re, _money);
+        IPool(g.getPool(_gi)).outflow(_t, _re, _money);
     }
 
     function checkParam(OrderIn memory ps) internal view returns (address, uint64) {
@@ -184,9 +208,8 @@ contract Control is IControl, Owner {
         
         (address _u, uint64 _gi) = checkParam(ps);
         require(_a == _u, "IC"); // illegal caller
-        
-        IRoleGetter r = IRoleGetter(instances[6]);
-        IKmanage ikm =  IKmanage(r.getKManage(_gi));
+
+        IKmanage ikm =  IKmanage(IGroupGetter(instances[11]).getKManage(_gi));
         IFileSys(instances[10]).addOrder(ps, uint256(ikm.getRate()));        
         
         // 产生奖励
@@ -212,13 +235,13 @@ contract Control is IControl, Owner {
         (address uAddr, uint64 _gi) = checkParam(ps);
         require(ps.end <= block.timestamp, "ET"); // time error
 
-        IRoleGetter r = IRoleGetter(instances[6]);
-        IKmanage ikm =  IKmanage(r.getKManage(_gi));
+        IKmanage ikm =  IKmanage(IGroupGetter(instances[11]).getKManage(_gi));
 
         uint256 ep = IFileSys(instances[10]).subOrder(ps, uint256(ikm.getRate()));
 
         uint64 kIndex;
         if (_a != uAddr) {
+            IRoleGetter r = IRoleGetter(instances[6]);
             kIndex = r.getIndex(_a);
             // not user, should be keeper
             (,,uint64 _ngi,) = r.checkIG(kIndex, 3);
@@ -255,13 +278,17 @@ contract Control is IControl, Owner {
             }
             _start = kIndexes[i];           
         }
-        // valid sig should not less than 2*(N+1)/3, N: kNum of group
-        require(sigCnt >= 2 * (r.getKCnt(_gi) + 1) / 3, "KSE"); // kSigns error
 
-        IKmanage ikm =  IKmanage(r.getKManage(_gi));
+        IGroupGetter g = IGroupGetter(instances[1]);
+        IKmanage ikm =  IKmanage(g.getKManage(_gi));
+
+
+        // valid sig should not less than 2*(N+1)/3, N: kNum of group
+        require(sigCnt >= g.getLevel(_gi), "KNE");
+        require(sigCnt >= 2 * (ikm.getKCnt() + 1) / 3, "KSE"); // kSigns error
         
         (uint256 _money, uint256 _pr) = IFileSys(instances[10]).proWithdraw(ps, uint256(ikm.getRate()));
-        IPool(r.getPool(_gi)).outflow(_t, pOwner, _money);
+        IPool(g.getPool(_gi)).outflow(_t, pOwner, _money);
 
         ikm.addProfit(ps.tIndex, _pr);
     }

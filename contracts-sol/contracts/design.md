@@ -16,6 +16,7 @@
 + 8 pledge (pledge control) can upgrade
 + 9 issue (issue control) can upgrade
 + 10 fs (fs data) non-upgrade
++ 11 group
 
 + 100 control (interact control) can upgrade
 + 101 getter
@@ -29,6 +30,7 @@ token
 pool
 pledge
 role
+group
 issue
 fs
 kmanage
@@ -58,10 +60,11 @@ getter -> base contracts
 + deploy kmanage(control, auth) => kmanage address, deployed when createGroup by Role.sol
 + deploy pledge(control, auth, token, pool) => pledge address
 + deploy role(control, auth, foundation) => role address
++ deploy group(control, auth) => group address
 + deploy fs(control, auth) => fs address
 + deploy issuance(control, auth) => issu address
 
-+ set token, pool, kmanage, pledge, role, fs, issuance to control address
++ set token, pool, kmanage, pledge, role, group, fs, issuance to control address
 
 ### add token
 
@@ -81,7 +84,7 @@ note: keeper need activate
 
 ## proxy/control
 
-+ function activate(uint64 _i, bool _active, bytes[] memory signs) external
++ function activate(uint64 _i, bytes[] memory signs) external
 
 admin激活账户，用于keeper加入组后激活
 
@@ -101,11 +104,11 @@ admin禁止某组
 
 创建一个新的组，组中会创建对应的kmanage，pool合约；kr: keeper pledge requirement, typically 1 memo; pr: provider pledge requirement, typically 1 memo; mr: manage rate, typically 4;
 
-+ function registerAccount(address _a) external; 
++ function reAcc(address _a) external; 
 
 地址注册获得账户号
 
-+ function registerRole(address _a, uint8 _rtype, bytes memory _extra) external;
++ function reRole(address _a, uint8 _rtype, bytes memory _extra) external;
 
 地址注册角色
 

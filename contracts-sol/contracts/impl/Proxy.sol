@@ -17,8 +17,8 @@ contract Proxy is IProxy, Owner {
 
     receive() external payable {}
 
-    function activate(uint64 _i, bool _active, bytes[] memory signs) external override {
-        IControl(instances[100]).activate(_i, _active, signs);
+    function activate(uint64 _i, bytes[] memory signs) external override {
+        IControl(instances[100]).activate(_i, signs);
     }
 
     function ban(uint64 _i, bool _ban, bytes[] memory signs) external override {
@@ -37,12 +37,12 @@ contract Proxy is IProxy, Owner {
         IControl(instances[100]).createGroup(_level, _mr, _kr, _pr);
     }
 
-    function registerAccount() external override {
-        IControl(instances[100]).registerAccount(msg.sender);
+    function reAcc() external override {
+        IControl(instances[100]).reAcc(msg.sender);
     }
     
-    function registerRole(uint8 _rtype, bytes memory _extra) external override {
-        IControl(instances[100]).registerRole(msg.sender, _rtype, _extra);
+    function reRole(uint8 _rtype, bytes memory _extra) external override {
+        IControl(instances[100]).reRole(msg.sender, _rtype, _extra);
     }
 
     function addToGroup(uint64 _gi) external override {
