@@ -111,10 +111,4 @@ contract Group is IGroup, Owner {
     function getPool(uint64 i) external view override returns (address) {
         return groups[i].pool;
     }
-
-    function getGInfo(uint64 i) external view override returns (GroupOut memory) {
-        GroupOut memory g;
-        g.isActive = groups[i].isActive;
-        return g;
-    }
 }
