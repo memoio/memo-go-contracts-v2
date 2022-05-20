@@ -1092,16 +1092,15 @@ none
 
 var setAddrCmd = &cli.Command{
 	Name:      "setAddr",
-	Usage:     "RoleFS - Admin set issuan, role, fileSys, rtoken address to RoleFS contract.",
-	ArgsUsage: "<issuAddr roleAddr fsAddr rtokenAddr>",
+	Usage:     "RoleFS - Admin set issuan, role, rtoken address to RoleFS contract.",
+	ArgsUsage: "<issuAddr roleAddr rtokenAddr>",
 	Description: `
 SetAddr is a function in RoleFS contract.
-Set the address of issuance contract, fs contract, rtoken contract for RoleFS contract.
+Set the address of issuance contract, role contract, rtoken contract for RoleFS contract.
 
 Arguments:
 issuaAddr - the address of issuance contract
 roleAddr - the address of role contract
-fsAddr - the address of fs contract
 rtokenAddr - the address of rtoken contract
 	`,
 	Flags: []cli.Flag{
@@ -1113,8 +1112,8 @@ rtokenAddr - the address of rtoken contract
 		},
 	},
 	Action: func(cctx *cli.Context) error {
-		if cctx.Args().Len() != 4 {
-			return errors.New("should have 4 arguments. Args0:issuAddr, Args1:roleAddr, Args2:rtokenAddr")
+		if cctx.Args().Len() != 3 {
+			return errors.New("should have 3 arguments. Args0:issuAddr, Args1:roleAddr, Args2:rtokenAddr")
 		}
 		issuAddr := cctx.Args().Get(0)
 		roleAddr := cctx.Args().Get(1)
