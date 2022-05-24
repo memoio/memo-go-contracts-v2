@@ -198,7 +198,10 @@ target - the target address which the Eth is transfered to.
 		}
 		fmt.Println()
 
-		err := test.TransferTo(transferEth, common.HexToAddress(acc), callconts.EndPoint, callconts.QEndPoint)
+		endPoint := cctx.String("endPoint")
+		fmt.Println("endPoint:", endPoint)
+
+		err := test.TransferTo(transferEth, common.HexToAddress(acc), endPoint, endPoint)
 		if err != nil {
 			return err
 		}
