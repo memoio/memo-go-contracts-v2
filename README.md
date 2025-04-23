@@ -2,64 +2,65 @@
 
 ## contracts
 
-合约文件通过`abigen`转换为 go 文件，保存在该目录中。
+The contract file is converted to a go file through `abigen` and saved in this directory.
 
 ## interface
 
-包含了所有合约的访问接口。
+Contains the access interface of all contracts.
 
 ## callcontracts
 
-定义了一个`ContractModule`的结构体，在该目录下，实现了 ContractModule 对上述所有合约接口的调用。
+A `ContractModule` structure is defined. In this directory, ContractModule calls all the above contract interfaces.
 
 ## cmd
 
-该目录下提供了查询余额、转账（erc20 token 以及 eth token）的命令行操作。以及 admin 部署合约、调用合约的命令行操作。
+This directory provides command line operations for querying balances and transferring (erc20 tokens and eth tokens). And the command line operations for admin to deploy contracts and call contracts.
 
-## 注意事项
+## Notes
 
-在 callcontracts/common.go 中定义了 ERC20Addr、RoleAddr、RoleFSAddr、RTokenAddr、FileSysAddr、PledgePoolAddr、IssuanceAddr 以及 admin 的账户地址和私钥信息，以供全局使用。
+ERC20Addr, RoleAddr, RoleFSAddr, RTokenAddr, FileSysAddr, PledgePoolAddr, IssueAddr, and admin's account address and private key information are defined in callcontracts/common.go for global use.
 
-这些合约地址由 admin 部署合约从而得到，admin 部署合约步骤：
+These contract addresses are obtained by admin deploying contracts. Admin deploys contracts in the following steps:
 
 1. DeployERC20 => erc20Addr
-2. DeployRole => roleAddr、rTokenAddr
+2. DeployRole => roleAddr, rTokenAddr
 3. DeployRoleFS => rolefsAddr
 4. DeployPledgePool => pledgePoolAddr
 5. DeployIssuance => issuAddr
 
 recompile memoc
 
-6. role.SetPI 
+6. role.SetPI
 7. role.CreateGroup => fsAddr
 8. rolefs.SetAddr
 9. erc20.SetUpRole(rolefsAddr, 1)
 
-admin 选取一部分 keeper(也可以为空，因为后续可以调用 addKeeperToGroup 增添 keeper 到 group 中)创建 group(createGroup)，每个 group 对应一个 filesys。所以在 admin 调用 createGroup 时，会同时部署一个 FileSys 合约。
+Admin selects a part of keepers (can also be empty, because addKeeperToGroup can be called later to add keepers to the group) to create a group (createGroup). Each group corresponds to a filesys. So when admin calls createGroup, a FileSys contract will be deployed at the same time.
 
 ## index
 
-系统中存在三种 index：角色索引（rIndex）、group 索引（gIndex）、代币索引（tIndex）
-rIndex 从 1 开始，不能为 0；
-gIndex 也从 1 开始，不能为 0；
-tIndex 从 0 开始，tIndex=0 表示主代币；
+There are three indexes in the system: role index (rIndex), group index (gIndex), token index (tIndex)
+rIndex starts from 1 and cannot be 0;
+gIndex also starts from 1 and cannot be 0;
+tIndex starts from 0, tIndex=0 indicates the main token;
 
 ## nonce
 
-涉及到的 nonce 值都需要从 0 开始依次累加，从而与合约中的 nonce 值匹配；
+All nonce values ​​involved need to be accumulated from 0 in sequence to match the nonce value in the contract;
 
-## 交易返回错误
+## Transaction return error
 
 **ErrTxExecu("transaction mined but execution failed")**
-当返回这种错误，可能的情况是：
+When this error is returned, the possible situations are:
 
-1. 交易超出设定的 gasLimit
-2. 交易的输入信息有问题，导致合约里面执行出现 revert 错误
+1. The transaction exceeds the set gasLimit
+
+2. There is a problem with the input information of the transaction, resulting in a revert error in the execution of the contract
 
 **ErrTxFail("transaction not packaged")**
-出现这种错误，表明链上交易量较多，在给定的时间内交易还未被打包。代码会尝试加大 gasPrice 重新发起交易。
+This error indicates that the transaction volume on the chain is large and the transaction has not been packaged within the given time. The code will try to increase the gasPrice and re-initiate the transaction.
 
-## foundation 取回 fs 中的收益
+## Foundation retrieves the income in fs
 
-foundation 在所有的 filesystem 中都有收益。
-首先选择一个 userIndex（用来确认哪一个 filesystem ），然后由 foundation 自己调用 Role 合约中的 withdrawFromFs 函数，就可以取得在该 filesystem 中的收益了。
+Foundation has income in all filesystems.
+First select a userIndex (to confirm which filesystem), and then the foundation itself calls the withdrawFromFs function in the Role contract to obtain the income in the filesystem.
